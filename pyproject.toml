@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools >= 61.2"]
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = "nxscli"
+version = "0.0.1"
+authors = [{name = "raiden00", email = "raiden00@railab.me"}]
+description = "Nxscope CLI client"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+classifiers = ["License :: OSI Approved :: Apache Software License"]
+dependencies = [
+         "nxslib @ git+https://github.com/railab/nxslib.git",
+         "matplotlib>=3.6",
+         "click>=8.1"
+]
+
+[tool.black]
+line-length = 79
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 79
