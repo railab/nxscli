@@ -78,23 +78,23 @@ def test_main_chan(runner):
     assert result.exit_code == 0
 
 
-def test_main_pcapture(runner):
+def test_main_pcap(runner):
     # test context needed
     Environment.testctx_set(True)
 
-    args = ["chan", "1", "pcapture", "1"]
+    args = ["chan", "1", "pcap", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
 
-    # args = ["dummy", "pcapture", "1"]
+    # args = ["dummy", "pcap", "1"]
     # result = runner.invoke(main, args)
     # assert result.exit_code == 1
 
-    args = ["dummy", "chan", "1", "pcapture", "1"]
+    args = ["dummy", "chan", "1", "pcap", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
-    args = ["dummy", "chan", "1", "pcapture", "1000"]
+    args = ["dummy", "chan", "1", "pcap", "1000"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
@@ -127,39 +127,39 @@ def test_main_pcsv(runner):
         assert result.exit_code == 0
 
 
-def test_main_panimation1(runner):
+def test_main_pani1(runner):
     # test context needed
     Environment.testctx_set(True)
 
-    args = ["chan", "1", "panimation1"]
+    args = ["chan", "1", "pani1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
 
-    args = ["dummy", "1", "panimation1"]
+    args = ["dummy", "1", "pani1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
 
-    args = ["dummy", "chan", "1", "panimation1"]
+    args = ["dummy", "chan", "1", "pani1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
 
-def test_main_panimation2(runner):
+def test_main_pani2(runner):
     # test context needed
     Environment.testctx_set(True)
 
-    args = ["chan", "1", "panimation2", "1"]
+    args = ["chan", "1", "pani2", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
 
-    # args = ["dummy", "panimation2", "1"]
+    # args = ["dummy", "pani2", "1"]
     # result = runner.invoke(main, args)
     # assert result.exit_code == 1
 
-    args = ["dummy", "chan", "1", "panimation2"]
+    args = ["dummy", "chan", "1", "pani2"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
 
-    args = ["dummy", "chan", "1", "panimation2", "1"]
+    args = ["dummy", "chan", "1", "pani2", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0

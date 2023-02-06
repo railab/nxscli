@@ -205,7 +205,7 @@ def plot_options(fn):
 @click.command()
 @plot_options
 @pass_environment
-def panimation1(ctx, chan, fmt, write):
+def pani1(ctx, chan, fmt, write):
     """[plugin] dynamic animation without length limit."""
     ctx.phandler.enable("animation1", channels=chan, fmt=fmt, write=write)
 
@@ -218,7 +218,7 @@ def panimation1(ctx, chan, fmt, write):
 @click.argument("maxsamples", type=int, required=True)
 @plot_options
 @pass_environment
-def panimation2(ctx, maxsamples, chan, fmt, write):
+def pani2(ctx, maxsamples, chan, fmt, write):
     """[plugin] dynamic animation with length limit."""
     if maxsamples == 0:  # pragma: no cover
         click.secho("ERROR: Missing argument MAXSAMPLES", err=True, fg="red")
@@ -241,7 +241,7 @@ def panimation2(ctx, maxsamples, chan, fmt, write):
 @click.argument("samples", type=int, required=True)
 @plot_options
 @pass_environment
-def pcapture(ctx, samples, chan, fmt, write):
+def pcap(ctx, samples, chan, fmt, write):
     """[plugin] capture static plot.
 
     If SAMPLES argument is set to 0 then we capture data until enter is press.
@@ -415,7 +415,7 @@ def cli_on_close(ctx):
 
 def click_final_init():
     """Handle final Click initialization."""
-    commands = [chan, panimation1, panimation2, pcapture, pcsv, pdevinfo]
+    commands = [chan, pani1, pani2, pcap, pcsv, pdevinfo]
     groups = [dummy, serial]
 
     # add commands to interfaces
