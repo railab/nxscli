@@ -24,7 +24,7 @@ class EnvironmentData:
 
     debug: bool = False
     waitenter: bool = False
-    nxslib: NxscopeHandler | None = None
+    nxscope: NxscopeHandler | None = None
     parser: Parser | None = None
     plugins: list | None = None
     interface: bool = False
@@ -58,11 +58,11 @@ pass_environment = click.make_pass_decorator(Environment, ensure=True)
 
 @click.group()
 @click.option(
-    "--debug/--no-debug", default=False, is_flag=True, envvar="NXSLIB_DEBUG"
+    "--debug/--no-debug", default=False, is_flag=True, envvar="NXSCLI_DEBUG"
 )
 @pass_environment
 def main(ctx, debug):
-    """Nxslib - Python based client to the Apache NuttX Nxslib library."""
+    """Nxscli - CLI to the Nxslib."""
     ctx.debug = debug
     if debug:  # pragma: no cover
         logger.setLevel("DEBUG")
@@ -72,9 +72,8 @@ def main(ctx, debug):
     # configure mplt
     MplManager.mpl_config()
 
-    nxslib = NxscopeHandler()
     ctx.phandler = PluginHandler(g_plugins_default)
-    ctx.nxslib = nxslib
+    ctx.nxscope = NxscopeHandler()
     parse = Parser()
     ctx.parser = parse
 
@@ -93,12 +92,12 @@ def dummy(ctx, writepadding):
     intf = DummyDev()
     intf.write_padding = writepadding
 
-    # initialize nxslibunication handler
+    # initialize nxslib communication handler
     comm = CommHandler(intf, ctx.parser)
-    ctx.nxslib.intf_connect(comm)
+    ctx.nxscope.intf_connect(comm)
 
     # connect nxscope to phandler
-    ctx.phandler.nxscope_connect(ctx.nxslib)
+    ctx.phandler.nxscope_connect(ctx.nxscope)
 
     ctx.interface = True
 
@@ -113,12 +112,12 @@ def serial(ctx, path, baud, writepadding):  # pragma: no cover
     intf = SerialDevice(path, baud=baud)
     intf.write_padding = writepadding
 
-    # initialize nxslibunication handler
+    # initialize nxslib communication handler
     comm = CommHandler(intf, ctx.parser)
-    ctx.nxslib.intf_connect(comm)
+    ctx.nxscope.intf_connect(comm)
 
     # connect nxscope to phandler
-    ctx.phandler.nxscope_connect(ctx.nxslib)
+    ctx.phandler.nxscope_connect(ctx.nxscope)
 
     ctx.interface = True
 
@@ -422,7 +421,7 @@ def cli_on_close(ctx):
 
     if len(ctx.phandler.enabled) == 0:
         click.secho("ERROR: No plugins selected !", err=True, fg="red")
-        ctx.nxslib.disconnect()
+        ctx.nxscope.disconnect()
         return False
 
     # start plugins
@@ -441,7 +440,7 @@ def cli_on_close(ctx):
 
     print("closing...")
     ctx.phandler.stop()
-    ctx.nxslib.disconnect()
+    ctx.nxscope.disconnect()
 
 
 def click_final_init():
