@@ -342,13 +342,21 @@ def showinfo(ctx):
     return True
 
 
+def showinfo_print(info):
+    """Print device information."""
+    print("\nDevice common:\n")
+    pprint.pprint(info["cmn"])
+    print("\nDevice channels:")
+    pprint.pprint(info["channels"])
+    print('\n')
+
+
 def handle_plugin(plugin):
     """Handle a given plugin."""
     if plugin.ptype is EPluginType.TEXT:
+        # REVISIT: only showinfo supported for now
         info = plugin.result()
-        print()
-        pprint.pprint(info)
-        print()
+        showinfo_print(info)
         return None
 
     elif plugin.ptype is EPluginType.PLOT:
