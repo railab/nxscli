@@ -19,10 +19,10 @@ def test_main_dummy(runner):
     assert result.exit_code == 0
 
 
-def test_main_showinfo(runner):
+def test_main_devinfo(runner):
     # test context not needed here
     Environment.testctx_set(False)
-    result = runner.invoke(main, ["dummy", "showinfo"])
+    result = runner.invoke(main, ["dummy", "devinfo"])
     assert result.exit_code == 0
 
 

@@ -1,17 +1,17 @@
-"""Module containing showinfo plugin."""
+"""Module containing devinfo plugin."""
 
 from nxscli.iplugin import IPluginText
 
 ###############################################################################
-# Class: PluginShowinfo
+# Class: PluginDevinfo
 ###############################################################################
 
 
-class PluginShowinfo(IPluginText):
+class PluginDevinfo(IPluginText):
     """Plugin that shows device information."""
 
     def __init__(self):
-        """Initialize showinfo plugin."""
+        """Initialize devinfo plugin."""
         super().__init__()
         self._return = None
 
@@ -21,14 +21,14 @@ class PluginShowinfo(IPluginText):
         return False
 
     def stop(self):
-        """Stop showinfo plugin."""
+        """Stop devinfo plugin."""
 
     def data_wait(self, timeout=None):
         """Return True if data are ready."""
         return True
 
     def start(self, _) -> bool:
-        """Start showinfo plugin."""
+        """Start devinfo plugin."""
         assert self._phandler
         assert self._phandler.dev
 
@@ -59,5 +59,5 @@ class PluginShowinfo(IPluginText):
         return True
 
     def result(self):
-        """Get showinfo plugin result."""
+        """Get devinfo plugin result."""
         return self._return

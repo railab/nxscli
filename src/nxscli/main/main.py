@@ -331,18 +331,18 @@ def csv(ctx, samples, path, chan, metastr):
 
 @click.command()
 @pass_environment
-def showinfo(ctx):
-    """[plugin] Show nxsope device info."""
+def devinfo(ctx):
+    """[plugin] Show NxSope device info."""
     if ctx.interface is False:  # pragma: no cover
         click.secho("ERROR: No interface selected !", err=True, fg="red")
         return False
 
-    ctx.phandler.enable("showinfo")
+    ctx.phandler.enable("devinfo")
 
     return True
 
 
-def showinfo_print(info):
+def devinfo_print(info):
     """Print device information."""
     print("\nDevice common:\n")
     pprint.pprint(info["cmn"])
@@ -354,9 +354,9 @@ def showinfo_print(info):
 def handle_plugin(plugin):
     """Handle a given plugin."""
     if plugin.ptype is EPluginType.TEXT:
-        # REVISIT: only showinfo supported for now
+        # REVISIT: only devinfo supported for now
         info = plugin.result()
-        showinfo_print(info)
+        devinfo_print(info)
         return None
 
     elif plugin.ptype is EPluginType.PLOT:
@@ -446,7 +446,7 @@ def cli_on_close(ctx):
 
 def click_final_init():
     """Handle final Click initialization."""
-    commands = [chan, animation1, animation2, capture, csv, showinfo]
+    commands = [chan, animation1, animation2, capture, csv, devinfo]
     groups = [dummy, serial]
 
     # add commands to interfaces
