@@ -22,14 +22,14 @@ from nxscli.plot_mpl import MplManager
 class EnvironmentData:
     """Environment data."""
 
-    debug: bool
-    waitenter: bool
-    nxslib: NxscopeHandler | None
-    parser: Parser | None
-    plugins: list
-    interface: bool
-    channels: Any
-    phandler: PluginHandler
+    debug: bool = False
+    waitenter: bool = False
+    nxslib: NxscopeHandler | None = None
+    parser: Parser | None = None
+    plugins: list | None = None
+    interface: bool = False
+    channels: Any = None
+    phandler: PluginHandler | None = None
 
 
 class Environment(EnvironmentData):
@@ -39,7 +39,7 @@ class Environment(EnvironmentData):
 
     def __init__(self):
         """Initialize environmet."""
-        super().__init__(False, False, None, None, [], False, None, None)
+        super().__init__()
 
     @property
     def testctx(self) -> bool:
