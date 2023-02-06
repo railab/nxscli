@@ -1,9 +1,11 @@
 """The matplotlib plot specific module."""
 
 import queue
+import time
 from functools import partial
 
 import matplotlib.pyplot as plt  # type: ignore
+from matplotlib import _pylab_helpers  # type: ignore
 from matplotlib.animation import FuncAnimation  # type: ignore
 from matplotlib.animation import FFMpegWriter, PillowWriter  # type: ignore
 from matplotlib.axes import Axes  # type: ignore
@@ -32,9 +34,20 @@ class MplManager:
         return plt.get_fignums()
 
     @staticmethod
-    def pause(time):  # pragma: no cover
-        """Matplotlib pause."""
-        plt.pause(time)
+    def pause(interval):  # pragma: no cover
+        """Handle Matplotlib events.
+
+        Modified pyplot.pause() without show(False) in the middle.
+        """
+        manager = _pylab_helpers.Gcf.get_active()
+        if manager is not None:
+            canvas = manager.canvas
+            if canvas.figure.stale:
+                canvas.draw_idle()
+            # show(block=False)
+            canvas.start_event_loop(interval)
+        else:
+            time.sleep(interval)
 
     @staticmethod
     def show(block: bool = True) -> None:
