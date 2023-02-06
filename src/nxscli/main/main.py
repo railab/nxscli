@@ -28,6 +28,7 @@ class EnvironmentData:
     parser: Parser | None = None
     plugins: list | None = None
     interface: bool = False
+    needchannels: bool = False
     channels: Any = None
     phandler: PluginHandler | None = None
 
@@ -76,10 +77,7 @@ def main(ctx, debug):
     ctx.nxscope = NxscopeHandler()
     parse = Parser()
     ctx.parser = parse
-
     ctx.plugins = []
-    ctx.interface = False
-    ctx.channels = None
 
     click.get_current_context().call_on_close(cli_on_close)
 
@@ -209,11 +207,9 @@ def plot_options(fn):
 @pass_environment
 def panimation1(ctx, chan, fmt, write):
     """[plugin] dynamic animation without length limit."""
-    if ctx.channels is None:  # pragma: no cover
-        click.secho("ERROR: No channels selected !", err=True, fg="red")
-        return False
-
     ctx.phandler.enable("animation1", channels=chan, fmt=fmt, write=write)
+
+    ctx.needchannels = True
 
     return True
 
@@ -224,10 +220,6 @@ def panimation1(ctx, chan, fmt, write):
 @pass_environment
 def panimation2(ctx, maxsamples, chan, fmt, write):
     """[plugin] dynamic animation with length limit."""
-    if ctx.channels is None:  # pragma: no cover
-        click.secho("ERROR: No channels selected !", err=True, fg="red")
-        return False
-
     if maxsamples == 0:  # pragma: no cover
         click.secho("ERROR: Missing argument MAXSAMPLES", err=True, fg="red")
         return False
@@ -239,6 +231,8 @@ def panimation2(ctx, maxsamples, chan, fmt, write):
         fmt=fmt,
         write=write,
     )
+
+    ctx.needchannels = True
 
     return True
 
@@ -252,10 +246,6 @@ def pcapture(ctx, samples, chan, fmt, write):
 
     If SAMPLES argument is set to 0 then we capture data until enter is press.
     """
-    if ctx.channels is None:  # pragma: no cover
-        click.secho("ERROR: No channels selected !", err=True, fg="red")
-        return False
-
     # wait for enter if samples set to 0
     if samples == 0:  # pragma: no cover
         ctx.waitenter = True
@@ -268,6 +258,8 @@ def pcapture(ctx, samples, chan, fmt, write):
         write=write,
         nostop=ctx.waitenter,
     )
+
+    ctx.needchannels = True
 
     return True
 
@@ -288,10 +280,6 @@ def pcsv(ctx, samples, path, chan, metastr):
     If SAMPLES argument is set to 0 then we capture data until enter is press.
     Each channel will be stored in a separate file.
     """
-    if ctx.channels is None:  # pragma: no cover
-        click.secho("ERROR: No channels selected !", err=True, fg="red")
-        return False
-
     # wait for enter if samples set to 0
     if samples == 0:  # pragma: no cover
         ctx.waitenter = True
@@ -304,6 +292,8 @@ def pcsv(ctx, samples, path, chan, metastr):
         metastr=metastr,
         nostop=ctx.waitenter,
     )
+
+    ctx.needchannels = True
 
     return True
 
@@ -393,6 +383,10 @@ def wait_for_plugins(ret):
 def cli_on_close(ctx):
     """Handle requested plugins on Click close."""
     if ctx.interface is False:
+        return False
+
+    if ctx.needchannels and ctx.channels is None:  # pragma: no cover
+        click.secho("ERROR: No channels selected !", err=True, fg="red")
         return False
 
     if len(ctx.phandler.enabled) == 0:
