@@ -19,10 +19,10 @@ def test_main_dummy(runner):
     assert result.exit_code == 0
 
 
-def test_main_devinfo(runner):
+def test_main_pdevinfo(runner):
     # test context not needed here
     Environment.testctx_set(False)
-    result = runner.invoke(main, ["dummy", "devinfo"])
+    result = runner.invoke(main, ["dummy", "pdevinfo"])
     assert result.exit_code == 0
 
 
@@ -68,78 +68,78 @@ def test_main_chan(runner):
     assert result.exit_code == 0
 
 
-def test_main_capture(runner):
+def test_main_pcapture(runner):
     # test context needed
     Environment.testctx_set(True)
 
-    result = runner.invoke(main, ["chan", "1", "capture", "1"])
+    result = runner.invoke(main, ["chan", "1", "pcapture", "1"])
     assert result.exit_code == 2
 
-    # result = runner.invoke(main, ["dummy", "capture", "1"])
+    # result = runner.invoke(main, ["dummy", "pcapture", "1"])
     # assert result.exit_code == 1
 
-    result = runner.invoke(main, ["dummy", "chan", "1", "capture", "1"])
+    result = runner.invoke(main, ["dummy", "chan", "1", "pcapture", "1"])
     assert result.exit_code == 0
 
-    result = runner.invoke(main, ["dummy", "chan", "1", "capture", "1000"])
+    result = runner.invoke(main, ["dummy", "chan", "1", "pcapture", "1000"])
     assert result.exit_code == 0
 
 
-def test_main_csv(runner):
+def test_main_pcsv(runner):
     # test context needed
     Environment.testctx_set(True)
 
-    result = runner.invoke(main, ["chan", "1", "csv", "1", "./test"])
+    result = runner.invoke(main, ["chan", "1", "pcsv", "1", "./test"])
     assert result.exit_code == 2
 
-    # result = runner.invoke(main, ["dummy", "csv", "1", "./test"])
+    # result = runner.invoke(main, ["dummy", "pcsv", "1", "./test"])
     # assert result.exit_code == 1
 
     with runner.isolated_filesystem():
         result = runner.invoke(
-            main, ["dummy", "chan", "1", "csv", "1", "./test"]
+            main, ["dummy", "chan", "1", "pcsv", "1", "./test"]
         )
         assert result.exit_code == 0
 
     with runner.isolated_filesystem():
         result = runner.invoke(
-            main, ["dummy", "chan", "1", "csv", "1000", "./test"]
+            main, ["dummy", "chan", "1", "pcsv", "1000", "./test"]
         )
         assert result.exit_code == 0
 
     with runner.isolated_filesystem():
         result = runner.invoke(
-            main, ["dummy", "chan", "8", "csv", "--metastr", "1", "./test"]
+            main, ["dummy", "chan", "8", "pcsv", "--metastr", "1", "./test"]
         )
         assert result.exit_code == 0
 
 
-def test_main_animation1(runner):
+def test_main_panimation1(runner):
     # test context needed
     Environment.testctx_set(True)
 
-    result = runner.invoke(main, ["chan", "1", "animation1"])
+    result = runner.invoke(main, ["chan", "1", "panimation1"])
     assert result.exit_code == 2
 
-    result = runner.invoke(main, ["dummy", "1", "animation1"])
+    result = runner.invoke(main, ["dummy", "1", "panimation1"])
     assert result.exit_code == 2
 
-    result = runner.invoke(main, ["dummy", "chan", "1", "animation1"])
+    result = runner.invoke(main, ["dummy", "chan", "1", "panimation1"])
     assert result.exit_code == 0
 
 
-def test_main_animation2(runner):
+def test_main_panimation2(runner):
     # test context needed
     Environment.testctx_set(True)
 
-    result = runner.invoke(main, ["chan", "1", "animation2", "1"])
+    result = runner.invoke(main, ["chan", "1", "panimation2", "1"])
     assert result.exit_code == 2
 
-    # result = runner.invoke(main, ["dummy", "animation2", "1"])
+    # result = runner.invoke(main, ["dummy", "panimation2", "1"])
     # assert result.exit_code == 1
 
-    result = runner.invoke(main, ["dummy", "chan", "1", "animation2"])
+    result = runner.invoke(main, ["dummy", "chan", "1", "panimation2"])
     assert result.exit_code == 2
 
-    result = runner.invoke(main, ["dummy", "chan", "1", "animation2", "1"])
+    result = runner.invoke(main, ["dummy", "chan", "1", "panimation2", "1"])
     assert result.exit_code == 0

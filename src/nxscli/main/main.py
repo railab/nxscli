@@ -212,7 +212,7 @@ def plot_options(fn):
 @click.command()
 @plot_options
 @pass_environment
-def animation1(ctx, chan, fmt, write):
+def panimation1(ctx, chan, fmt, write):
     """[plugin] dynamic animation without length limit."""
     if ctx.interface is False:  # pragma: no cover
         click.secho("ERROR: No interface selected !", err=True, fg="red")
@@ -231,7 +231,7 @@ def animation1(ctx, chan, fmt, write):
 @click.argument("maxsamples", type=int, required=True)
 @plot_options
 @pass_environment
-def animation2(ctx, maxsamples, chan, fmt, write):
+def panimation2(ctx, maxsamples, chan, fmt, write):
     """[plugin] dynamic animation with length limit."""
     if ctx.interface is False:  # pragma: no cover
         click.secho("ERROR: No interface selected !", err=True, fg="red")
@@ -260,7 +260,7 @@ def animation2(ctx, maxsamples, chan, fmt, write):
 @click.argument("samples", type=int, required=True)
 @plot_options
 @pass_environment
-def capture(ctx, samples, chan, fmt, write):
+def pcapture(ctx, samples, chan, fmt, write):
     """[plugin] capture static plot.
 
     If SAMPLES argument is set to 0 then we capture data until enter is press.
@@ -299,7 +299,7 @@ def capture(ctx, samples, chan, fmt, write):
     "--metastr", default=False, is_flag=True, help="store metadata as string"
 )
 @pass_environment
-def csv(ctx, samples, path, chan, metastr):
+def pcsv(ctx, samples, path, chan, metastr):
     """[plugin] Store samples in csv files.
 
     If SAMPLES argument is set to 0 then we capture data until enter is press.
@@ -331,7 +331,7 @@ def csv(ctx, samples, path, chan, metastr):
 
 @click.command()
 @pass_environment
-def devinfo(ctx):
+def pdevinfo(ctx):
     """[plugin] Show NxSope device info."""
     if ctx.interface is False:  # pragma: no cover
         click.secho("ERROR: No interface selected !", err=True, fg="red")
@@ -348,7 +348,7 @@ def devinfo_print(info):
     pprint.pprint(info["cmn"])
     print("\nDevice channels:")
     pprint.pprint(info["channels"])
-    print('\n')
+    print("\n")
 
 
 def handle_plugin(plugin):
@@ -446,7 +446,7 @@ def cli_on_close(ctx):
 
 def click_final_init():
     """Handle final Click initialization."""
-    commands = [chan, animation1, animation2, capture, csv, devinfo]
+    commands = [chan, panimation1, panimation2, pcapture, pcsv, pdevinfo]
     groups = [dummy, serial]
 
     # add commands to interfaces

@@ -56,4 +56,4 @@ To run the application with a simulated mode use this command:
 
 Example 1: 
 
-`python -m nxscli dummy chan 1,2,3,4 capture --chan 1 100 capture --chan 2,3 200 capture 300`
+`python -m nxscli dummy chan 1,2,3,4 pcapture --chan 1 100 pcapture --chan 2,3 200 pcapture 300`
