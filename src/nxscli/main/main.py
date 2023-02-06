@@ -178,10 +178,6 @@ def chan(ctx, channels, divider):
     By default all channels from this command are passed to the plugins,
     but can be precisely selected with plugin '--channels' option.
     """
-    if ctx.interface is False:  # pragma: no cover
-        click.secho("ERROR: No interface selected !", err=True, fg="red")
-        return False
-
     ctx.channels = (channels, divider)
     # configure channles
     ctx.phandler.channels_configure(channels, divider)
@@ -213,10 +209,6 @@ def plot_options(fn):
 @pass_environment
 def panimation1(ctx, chan, fmt, write):
     """[plugin] dynamic animation without length limit."""
-    if ctx.interface is False:  # pragma: no cover
-        click.secho("ERROR: No interface selected !", err=True, fg="red")
-        return False
-
     if ctx.channels is None:  # pragma: no cover
         click.secho("ERROR: No channels selected !", err=True, fg="red")
         return False
@@ -232,10 +224,6 @@ def panimation1(ctx, chan, fmt, write):
 @pass_environment
 def panimation2(ctx, maxsamples, chan, fmt, write):
     """[plugin] dynamic animation with length limit."""
-    if ctx.interface is False:  # pragma: no cover
-        click.secho("ERROR: No interface selected !", err=True, fg="red")
-        return False
-
     if ctx.channels is None:  # pragma: no cover
         click.secho("ERROR: No channels selected !", err=True, fg="red")
         return False
@@ -264,10 +252,6 @@ def pcapture(ctx, samples, chan, fmt, write):
 
     If SAMPLES argument is set to 0 then we capture data until enter is press.
     """
-    if ctx.interface is False:  # pragma: no cover
-        click.secho("ERROR: No interface selected !", err=True, fg="red")
-        return False
-
     if ctx.channels is None:  # pragma: no cover
         click.secho("ERROR: No channels selected !", err=True, fg="red")
         return False
@@ -304,10 +288,6 @@ def pcsv(ctx, samples, path, chan, metastr):
     If SAMPLES argument is set to 0 then we capture data until enter is press.
     Each channel will be stored in a separate file.
     """
-    if ctx.interface is False:  # pragma: no cover
-        click.secho("ERROR: No interface selected !", err=True, fg="red")
-        return False
-
     if ctx.channels is None:  # pragma: no cover
         click.secho("ERROR: No channels selected !", err=True, fg="red")
         return False
@@ -332,10 +312,6 @@ def pcsv(ctx, samples, path, chan, metastr):
 @pass_environment
 def pdevinfo(ctx):
     """[plugin] Show NxSope device info."""
-    if ctx.interface is False:  # pragma: no cover
-        click.secho("ERROR: No interface selected !", err=True, fg="red")
-        return False
-
     ctx.phandler.enable("devinfo")
 
     return True
