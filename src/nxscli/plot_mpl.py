@@ -47,9 +47,9 @@ class MplManager:
         plt.style.use(["ggplot", "fast"])
 
     @staticmethod
-    def figure():
+    def figure(dpi: float = 100.0):
         """Get figure."""
-        return plt.figure()
+        return plt.figure(dpi=dpi)
 
     @staticmethod
     def close(fig):
@@ -259,7 +259,8 @@ class PluginAnimationCommonMpl:
             if tmp[-1] == "gif":
                 self._writer = PillowWriter(fps=fps)
             elif tmp[-1] == "mp4":
-                self._writer = FFMpegWriter(fps=fps)
+                bitrate = 200
+                self._writer = FFMpegWriter(fps=fps, bitrate=bitrate)
             else:
                 raise TypeError
 
@@ -427,6 +428,7 @@ class PluginPlotMpl(PluginData):
         self,
         chanlist: list[DeviceChannel],
         cb: PluginDataCb,
+        dpi: float = 100.0,
         fmt: str = "",
     ):
         """Intiialize a plot handler."""
@@ -442,7 +444,7 @@ class PluginPlotMpl(PluginData):
 
         super().__init__(newchanlist, cb)
 
-        self._fig = MplManager.figure()
+        self._fig = MplManager.figure(dpi)
         self._ax: list[Axes] = []
         self._ani: list[PluginAnimationCommonMpl] = []
         self._fmt = fmt

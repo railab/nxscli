@@ -190,6 +190,7 @@ _plot_options = (
         type=Channels(),
         help=_channels_option_help,
     ),
+    click.option("--dpi", type=int, default=100),
     click.option("--fmt", default=""),
     click.option("--write", type=click.Path(resolve_path=False), default=None),
 )
@@ -205,9 +206,11 @@ def plot_options(fn):
 @click.command()
 @plot_options
 @pass_environment
-def pani1(ctx, chan, fmt, write):
+def pani1(ctx, chan, dpi, fmt, write):
     """[plugin] dynamic animation without length limit."""
-    ctx.phandler.enable("animation1", channels=chan, fmt=fmt, write=write)
+    ctx.phandler.enable(
+        "animation1", channels=chan, dpi=dpi, fmt=fmt, write=write
+    )
 
     ctx.needchannels = True
 
@@ -218,7 +221,7 @@ def pani1(ctx, chan, fmt, write):
 @click.argument("maxsamples", type=int, required=True)
 @plot_options
 @pass_environment
-def pani2(ctx, maxsamples, chan, fmt, write):
+def pani2(ctx, maxsamples, chan, dpi, fmt, write):
     """[plugin] dynamic animation with length limit."""
     if maxsamples == 0:  # pragma: no cover
         click.secho("ERROR: Missing argument MAXSAMPLES", err=True, fg="red")
@@ -228,6 +231,7 @@ def pani2(ctx, maxsamples, chan, fmt, write):
         "animation2",
         maxsamples=maxsamples,
         channels=chan,
+        dpi=dpi,
         fmt=fmt,
         write=write,
     )
@@ -241,7 +245,7 @@ def pani2(ctx, maxsamples, chan, fmt, write):
 @click.argument("samples", type=int, required=True)
 @plot_options
 @pass_environment
-def pcap(ctx, samples, chan, fmt, write):
+def pcap(ctx, samples, chan, dpi, fmt, write):
     """[plugin] capture static plot.
 
     If SAMPLES argument is set to 0 then we capture data until enter is press.
@@ -254,6 +258,7 @@ def pcap(ctx, samples, chan, fmt, write):
         "capture",
         samples=samples,
         channels=chan,
+        dpi=dpi,
         fmt=fmt,
         write=write,
         nostop=ctx.waitenter,

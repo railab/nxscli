@@ -203,7 +203,7 @@ class PluginHandler:
         return PluginData(chanlist, cb)
 
     def plot_handler(
-        self, chanlist: list[DeviceChannel], fmt: str = ""
+        self, chanlist: list[DeviceChannel], dpi: float = 100.0, fmt: str = ""
     ) -> PluginPlotMpl:
         """Prepare plot handler."""
         assert self._nxs
@@ -211,7 +211,7 @@ class PluginHandler:
         logger.info("prepare plot %s", str(chanlist))
 
         cb = PluginDataCb(self._nxs.stream_sub, self._nxs.stream_unsub)
-        return PluginPlotMpl(chanlist, cb, fmt)
+        return PluginPlotMpl(chanlist, cb, dpi, fmt)
 
     def chanlist_plugin(
         self, channels: str | list[int] | None

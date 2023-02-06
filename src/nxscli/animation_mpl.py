@@ -66,11 +66,11 @@ class IPluginAnimation(IPluginPlotDynamic):
 
         logger.info("start %s", str(kwargs))
 
-        fmt = kwargs["fmt"]
-
         chanlist = self._phandler.chanlist_plugin(kwargs["channels"])
 
-        self._plot = self._phandler.plot_handler(chanlist, fmt=fmt)
+        self._plot = self._phandler.plot_handler(
+            chanlist, dpi=kwargs["dpi"], fmt=kwargs["fmt"]
+        )
         assert self._plot
 
         # clear previous animations
