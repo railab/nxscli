@@ -288,7 +288,7 @@ class PluginAnimationCommonMpl:
             except queue.Empty:
                 break
 
-            # print("qsize=", q.qsize())
+            # print("qsize=", qdata._queue.qsize())
             for sample in data:
                 for i in range(self._qdata.vdim):
                     ydata[i].append(sample[0][i])
