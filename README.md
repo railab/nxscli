@@ -1,48 +1,35 @@
 # Nxscli
+![master workflow](https://github.com/railab/nxscli/actions/workflows/master.yml/badge.svg)
 
-_Nxscli_ is the command-line application to the [Apache NuttX](https://nuttx.apache.org/) _NxScope_ real-time logging library.
-It is based on [Nxslib](https://github.com/railab/nxslib/) and is entirely written in Python.
+_Nxscli_ is a command-line client to the [Apache NuttX](https://nuttx.apache.org/)
+_NxScope_ real-time logging module.
+
+Compatible with Python 3.10+.
 
 ## Features
 
-- built-in simulated _NxScope_ device that allows application development without connecting a real NuttX device
-- support for the _NxScope_ serial protocol
-- dump stream data to CSV files
-- plotting with [Matplotlib](https://github.com/matplotlib/matplotlib)
-- capture data on a static plot
-- real-time animation plot (can be written as `gif` or `mp4` file)
+* Save data to CSV files
+* Plotting with [Matplotlib](https://github.com/matplotlib/matplotlib),
+  * Capture data on a static plot
+  * Real-time animation plot (can be written as `gif` or `mp4` file)
 
-## Contributing
+## Features Planned
 
-### Setting up for development
-
-Create a new venv and activate it
-
-```
-virtualenv venv
-. venv/bin/activate
-```
-
-install _Nxscli_ in editable mode
-
-`pip install -e .`
-
-and now you are ready to modify the code.
-
-You can run `tox` to verify your changes.
-All available environments for tox can be found with
-
-`tox list`
-
-and then run with
-
-`tox -e test`
+* Save data in NumPy format (`.npy`)
+* NumPy `numpy.memmap()` support
+* Stream data as audio (inspired by audio knock detection systems)
+* Client-based triggering (global and per-channel triggers)
+* Plugins for character-type channels
+* Improve `pdevinfo` output (human-readable prints)
+* Metadata as X-axis
+* PyQtGraph ??
+* Interactive mode ?
 
 ## Instalation
 
 To install _Nxscli_ locally from this repository use:
 
-`pip install --user .`
+`pip install --user git+https://github.com/railab/nxscli.git`
 
 ## Usage
 
@@ -58,7 +45,7 @@ Example 1:
 
 `python -m nxscli dummy chan 1,2,3,4 pcap --chan 1 100 pcap --chan 2,3 200 pcap 300`
 
-## NuttX simulation
+#### NuttX simulation
 
 You can establish a connection with the simulated NuttX target using `socat`:
 
@@ -72,3 +59,26 @@ stty -F $SERIAL_HOST raw
 stty -F $SERIAL_NUTTX 115200
 stty -F $SERIAL_HOST 115200
 ```
+
+## Contributing
+
+#### Setting up for development
+
+1. Clone the repository.
+
+2. Create a new venv and activate it
+
+```
+virtualenv venv
+. venv/bin/activate
+```
+
+3. Install _Nxscli_ in editable mode
+
+`pip install -e .`
+
+and now you are ready to modify the code.
+
+#### CI
+
+Please run `tox` before submitting a patch to be sure your changes will pass CI.
