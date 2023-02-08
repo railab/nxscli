@@ -96,8 +96,10 @@ class PluginHandler:
         if not isinstance(nxs, NxscopeHandler):
             raise TypeError
         self._nxs = nxs
+        logger.info("connecting to nxs device...")
         # connect nxscope device
         self._nxs.connect()
+        logger.info("connected!")
 
     def plugin_add(self, cls) -> None:
         """Add plugin."""
