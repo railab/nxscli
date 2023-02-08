@@ -24,7 +24,7 @@ class Animation1(PluginAnimationCommonMpl):
         fig: "Figure",
         pdata: PlotDataAxesMpl,
         qdata: "PluginQueueData",
-        write: str | None,
+        write: str,
     ) -> None:
         """Initialzie an animtaion1 handler."""
         PluginAnimationCommonMpl.__init__(self, fig, pdata, qdata, write)

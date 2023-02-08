@@ -24,7 +24,7 @@ class Animation2(PluginAnimationCommonMpl):
         fig: "Figure",
         pdata: PlotDataAxesMpl,
         qdata: "PluginQueueData",
-        write: str | None,
+        write: str,
         static_xticks: bool = True,
         disable_xaxis: bool = False,
     ):

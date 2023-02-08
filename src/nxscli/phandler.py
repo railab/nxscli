@@ -216,12 +216,10 @@ class PluginHandler:
         cb = PluginDataCb(self._nxs.stream_sub, self._nxs.stream_unsub)
         return PluginPlotMpl(chanlist, cb, dpi, fmt)
 
-    def chanlist_plugin(
-        self, channels: str | list[int] | None
-    ) -> list["DeviceChannel"]:
+    def chanlist_plugin(self, channels: list[int]) -> list["DeviceChannel"]:
         """Prepare channels list for a plugin."""
         chanlist = []
-        if channels is not None and channels != "all":
+        if channels and channels[0] != -1:
             # plugin specific channels configuration
             for chan in self.chanlist:
                 if chan.chan in channels:

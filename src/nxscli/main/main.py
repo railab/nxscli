@@ -62,7 +62,7 @@ pass_environment = click.make_pass_decorator(Environment, ensure=True)
     "--debug/--no-debug", default=False, is_flag=True, envvar="NXSCLI_DEBUG"
 )
 @pass_environment
-def main(ctx: Any, debug: bool) -> bool:
+def main(ctx: Environment, debug: bool) -> bool:
     """Nxscli - CLI to the Nxslib."""
     ctx.debug = debug
     if debug:  # pragma: no cover
@@ -211,7 +211,7 @@ _plot_options = (
     ),
     click.option("--dpi", type=int, default=100),
     click.option("--fmt", default=""),
-    click.option("--write", type=click.Path(resolve_path=False), default=None),
+    click.option("--write", type=click.Path(resolve_path=False), default=""),
 )
 
 
@@ -226,7 +226,7 @@ def plot_options(fn: Any) -> Any:
 @plot_options
 @pass_environment
 def pani1(
-    ctx: Environment, chan: list[int], dpi: float, fmt: str, write: str | None
+    ctx: Environment, chan: list[int], dpi: float, fmt: str, write: str
 ) -> bool:
     """[plugin] dynamic animation without length limit."""
     assert ctx.phandler
@@ -249,7 +249,7 @@ def pani2(
     chan: list[int],
     dpi: float,
     fmt: str,
-    write: str | None,
+    write: str,
 ) -> bool:
     """[plugin] dynamic animation with length limit."""
     assert ctx.phandler
@@ -281,7 +281,7 @@ def pcap(
     chan: list[int],
     dpi: float,
     fmt: str,
-    write: str | None,
+    write: str,
 ) -> bool:
     """[plugin] capture static plot.
 
@@ -363,13 +363,13 @@ def devinfo_print(info: dict) -> None:
     print("\n")
 
 
-def handle_plugin(plugin: type[IPlugin]) -> tuple | None:
+def handle_plugin(plugin: type[IPlugin]) -> tuple:
     """Handle a given plugin."""
     if plugin.ptype is EPluginType.TEXT:
         # REVISIT: only devinfo supported for now
         info = plugin.result()
         devinfo_print(info)
-        return None
+        return ()
 
     elif plugin.ptype is EPluginType.PLOT:
         plot = plugin.result()
@@ -377,16 +377,16 @@ def handle_plugin(plugin: type[IPlugin]) -> tuple | None:
             # plot samples
             pdata.plot()
         MplManager.show(block=False)
-        return EPluginType.PLOT, plot
+        return (EPluginType.PLOT, plot)
 
     elif plugin.ptype is EPluginType.ANIMATION:
         plot = plugin.result()
         MplManager.show(block=False)
-        return EPluginType.ANIMATION, plot
+        return (EPluginType.ANIMATION, plot)
 
     elif plugin.ptype is EPluginType.FILE:
         print("TODO: file handler ?")
-        return None
+        return ()
 
     else:
         raise AssertionError
@@ -404,10 +404,8 @@ def plugin_loop(ctx: Environment) -> list:
         if len(plugins) > 0:
             for x in plugins:
                 r = handle_plugin(x)
-                if ret is not None:
+                if ret:  # pragma: no cover
                     ret.append(r)
-                else:  # pragma: no cover
-                    pass
         else:  # pragma: no cover
             pass
 

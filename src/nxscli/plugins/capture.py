@@ -25,7 +25,7 @@ class PluginCapture(IPluginPlotStatic):
         self._thrd: threading.Thread
         self._samples: int
         self._plot: "PluginPlotMpl"
-        self._write: bool
+        self._write: str
         self._ready = threading.Event()
         self._stop_flag = threading.Event()
         self._nostop = False

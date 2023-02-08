@@ -267,7 +267,7 @@ class PluginAnimationCommonMpl:
         fig: "Figure",
         pdata: PlotDataAxesMpl,
         qdata: PluginQueueData,
-        write: str | None,
+        write: str,
     ):
         """Initialize animation handler."""
         self._fig = fig
