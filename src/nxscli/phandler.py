@@ -234,7 +234,7 @@ class PluginHandler:
         return chanlist
 
     def channels_configure(
-        self, channels: str | list[int], div: int | list[int] = 0
+        self, channels: list[int], div: int | list[int] = 0
     ) -> None:
         """Configure channels."""
         assert self._nxs

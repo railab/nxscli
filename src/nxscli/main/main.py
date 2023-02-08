@@ -29,7 +29,7 @@ class EnvironmentData:
     plugins: list | None = None
     interface: bool = False
     needchannels: bool = False
-    channels: Any = None
+    channels: tuple | None = None
     phandler: PluginHandler | None = None
 
 
@@ -139,13 +139,15 @@ class Channels(click.ParamType):
 
     name = "channels"
 
-    def convert(self, value: Any, param: Any, ctx: Any) -> list[int] | str:
+    def convert(self, value: Any, param: Any, ctx: Any) -> list[int]:
         """Convert channels argument."""
+        lint = []
         if value == "all":
-            return "all"
+            # special case to indicate all channels
+            lint.append(-1)
+            return lint
 
         lstr = value.split(",")
-        lint = []
         for chan in lstr:
             chan = int(chan)
             if chan < 0 or chan > 255:
@@ -183,7 +185,7 @@ class Divider(click.ParamType):
 @click.argument("channels", required=True, type=Channels())
 @click.option("--divider", default="0", type=Divider())
 @pass_environment
-def chan(ctx: Environment, channels: Any, divider: Any) -> bool:
+def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
     """[config] Channels configuration.
 
     This command configure and enable channels.
@@ -224,7 +226,7 @@ def plot_options(fn: Any) -> Any:
 @plot_options
 @pass_environment
 def pani1(
-    ctx: Environment, chan: list | str, dpi: float, fmt: str, write: str | None
+    ctx: Environment, chan: list[int], dpi: float, fmt: str, write: str | None
 ) -> bool:
     """[plugin] dynamic animation without length limit."""
     assert ctx.phandler
@@ -244,7 +246,7 @@ def pani1(
 def pani2(
     ctx: Environment,
     maxsamples: int,
-    chan: list | str,
+    chan: list[int],
     dpi: float,
     fmt: str,
     write: str | None,
@@ -276,7 +278,7 @@ def pani2(
 def pcap(
     ctx: Environment,
     samples: int,
-    chan: list | str,
+    chan: list[int],
     dpi: float,
     fmt: str,
     write: str | None,
@@ -316,7 +318,7 @@ def pcap(
 )
 @pass_environment
 def pcsv(
-    ctx: Environment, samples: int, path: str, chan: list | str, metastr: bool
+    ctx: Environment, samples: int, path: str, chan: list[int], metastr: bool
 ) -> bool:
     """[plugin] Store samples in csv files.
 
