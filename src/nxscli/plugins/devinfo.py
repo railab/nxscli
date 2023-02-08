@@ -1,5 +1,7 @@
 """Module containing devinfo plugin."""
 
+from typing import Any
+
 from nxscli.iplugin import IPluginText
 
 ###############################################################################
@@ -10,7 +12,7 @@ from nxscli.iplugin import IPluginText
 class PluginDevinfo(IPluginText):
     """Plugin that shows device information."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize devinfo plugin."""
         super().__init__()
         self._return = None
@@ -20,21 +22,21 @@ class PluginDevinfo(IPluginText):
         """Return True if this plugin needs stream."""
         return False
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop devinfo plugin."""
 
-    def data_wait(self, timeout=None):
+    def data_wait(self, timeout: float = 0.0) -> bool:
         """Return True if data are ready."""
         return True
 
-    def start(self, _) -> bool:
+    def start(self, _: dict) -> bool:
         """Start devinfo plugin."""
         assert self._phandler
         assert self._phandler.dev
 
         dev = self._phandler.dev
 
-        ret = {}
+        ret: Any = {}
         ret["cmn"] = {}
         ret["cmn"]["chmax"] = dev.chmax
         ret["cmn"]["flags"] = dev.flags
@@ -44,7 +46,7 @@ class PluginDevinfo(IPluginText):
         for chid in range(dev.chmax):
             chinfo = dev.channel_get(chid)
             assert chinfo
-            chan = {}
+            chan: Any = {}
             chan["chan"] = chinfo.chan
             chan["type"] = chinfo._type
             chan["vdim"] = chinfo.vdim
@@ -58,6 +60,6 @@ class PluginDevinfo(IPluginText):
 
         return True
 
-    def result(self):
+    def result(self) -> dict | None:
         """Get devinfo plugin result."""
         return self._return

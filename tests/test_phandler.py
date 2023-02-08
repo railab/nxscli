@@ -106,15 +106,15 @@ def test_phandler_init():
 
     # invalid data type
     plugins = [[MockPlugin1(), 1]]
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         _ = PluginHandler(plugins)
 
     plugins = [[MockPlugin1()]]
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         _ = PluginHandler(plugins)
 
     plugins = [[1, MockPlugin1]]
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         _ = PluginHandler(plugins)
 
     # valid data
@@ -126,16 +126,16 @@ def test_phandler_init():
     assert p.plugin_get("plugin2") == MockPlugin2
 
     # add plugin - invalid type
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         p.plugin_add("xxx")
     assert p.names == ["plugin1", "plugin2"]
 
     # add plugin - invalid data
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         p.plugin_add(MockPlugin3())
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         p.plugin_add(MockPlugin3)
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         p.plugin_add(["plugin3", MockPlugin3()])
 
     # add plugin = valid data

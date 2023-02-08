@@ -1,17 +1,21 @@
 """Module containing the common matplotlib animation plugin logic."""
 
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
-from matplotlib.figure import Figure  # type: ignore
-
-from nxscli.idata import PluginQueueData
 from nxscli.iplugin import IPluginPlotDynamic
 from nxscli.logger import logger
-from nxscli.plot_mpl import (
-    PlotDataAxesMpl,
-    PluginAnimationCommonMpl,
-    PluginPlotMpl,
-)
+
+if TYPE_CHECKING:
+    from matplotlib.figure import Figure  # type: ignore
+
+    from nxscli.idata import PluginQueueData
+    from nxscli.plot_mpl import (
+        PlotDataAxesMpl,
+        PluginAnimationCommonMpl,
+        PluginPlotMpl,
+    )
+
 
 ###############################################################################
 # Class: IPluginAnimation
@@ -21,20 +25,20 @@ from nxscli.plot_mpl import (
 class IPluginAnimation(IPluginPlotDynamic):
     """The common logic for an animation plugin."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize an animation plugin."""
         super().__init__()
 
-        self._plot = None
+        self._plot: "PluginPlotMpl"
 
     @abstractmethod
     def _start(
         self,
-        fig: Figure,
-        pdata: PlotDataAxesMpl,
-        qdata: PluginQueueData,
-        kwargs,
-    ) -> PluginAnimationCommonMpl:
+        fig: "Figure",
+        pdata: "PlotDataAxesMpl",
+        qdata: "PluginQueueData",
+        kwargs: dict,
+    ) -> "PluginAnimationCommonMpl":
         """Abstract method."""
 
     @property
@@ -56,11 +60,11 @@ class IPluginAnimation(IPluginPlotDynamic):
 
         self._plot.ani_clear()
 
-    def data_wait(self, timeout=None):
+    def data_wait(self, timeout: float = 0.0) -> bool:
         """Return True if data are ready."""
         return True
 
-    def start(self, kwargs) -> bool:
+    def start(self, kwargs: dict) -> bool:
         """Start animation plugin."""
         assert self._phandler
 
@@ -88,7 +92,7 @@ class IPluginAnimation(IPluginPlotDynamic):
 
         return True
 
-    def result(self) -> PluginPlotMpl:
+    def result(self) -> "PluginPlotMpl":
         """Get animation plugin result."""
         assert self._plot
         return self._plot

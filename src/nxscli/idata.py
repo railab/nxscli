@@ -1,10 +1,13 @@
 """Module containing common plugin data definition."""
 
 import queue
-from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from nxslib.dev import DeviceChannel
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from nxslib.dev import DeviceChannel
 
 ###############################################################################
 # Class: PluginDataCb
@@ -15,8 +18,8 @@ from nxslib.dev import DeviceChannel
 class PluginDataCb:
     """Plugin data callbacks."""
 
-    stream_sub: Callable[[int], queue.Queue]
-    stream_unsub: Callable[[int, queue.Queue], None]
+    stream_sub: "Callable[[int], queue.Queue]"
+    stream_unsub: "Callable[[int, queue.Queue], None]"
 
 
 ###############################################################################
@@ -27,12 +30,12 @@ class PluginDataCb:
 class PluginQueueData:
     """The class used to handler stream queue data."""
 
-    def __init__(self, que: queue.Queue, channel: DeviceChannel):
+    def __init__(self, que: queue.Queue, channel: "DeviceChannel"):
         """Initialize a queue data handler."""
         self._queue = que
         self._channel = channel
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Format string representation."""
         _str = "PluginQueueData" + "(channel=" + str(self._channel.chan) + ")"
         return _str
@@ -62,7 +65,7 @@ class PluginQueueData:
         """Return stream metadata dimension."""
         return self._channel.mlen
 
-    def queue_get(self, block, timeout=1) -> list:
+    def queue_get(self, block: bool, timeout: float = 1.0) -> list:
         """Get data from a stream queue."""
         ret = []
         try:
@@ -81,7 +84,7 @@ class PluginQueueData:
 class PluginData:
     """A common plugin data handler."""
 
-    def __init__(self, chanlist: list[DeviceChannel], cb: PluginDataCb):
+    def __init__(self, chanlist: list["DeviceChannel"], cb: PluginDataCb):
         """Initialize a plugin data handler."""
         self._qdlist = []
 
@@ -94,7 +97,7 @@ class PluginData:
         # queue handlers
         self._qdlist = self._qdlist_init()
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Deinitialize queue handlers."""
         self._queue_deinit()
 

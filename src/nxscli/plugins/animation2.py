@@ -1,8 +1,15 @@
 """Module containing animation2 plugin."""
 
+from typing import TYPE_CHECKING
+
 from nxscli.animation_mpl import IPluginAnimation
-from nxscli.idata import PluginQueueData
 from nxscli.plot_mpl import PlotDataAxesMpl, PluginAnimationCommonMpl
+
+if TYPE_CHECKING:
+    from matplotlib.figure import Figure  # type: ignore
+    from matplotlib.lines import Line2D  # type: ignore
+
+    from nxscli.idata import PluginQueueData
 
 ###############################################################################
 # Class: Animation2
@@ -13,20 +20,33 @@ class Animation2(PluginAnimationCommonMpl):
     """Animation with x axis saturation."""
 
     def __init__(
-        self, fig, pdata, qdata, write, static_xticks=True, disable_xaxis=False
+        self,
+        fig: "Figure",
+        pdata: PlotDataAxesMpl,
+        qdata: "PluginQueueData",
+        write: str | None,
+        static_xticks: bool = True,
+        disable_xaxis: bool = False,
     ):
         """Initialzie an animtaion2 handler."""
         PluginAnimationCommonMpl.__init__(self, fig, pdata, qdata, write)
 
         if static_xticks is True:
-            self._animation_update = self._animation_update_staticx
+            self._animation_update_priv = self._animation_update_staticx
         else:  # pragma: no cover
-            self._animation_update = self._animation_update_dynamicx
+            self._animation_update_priv = self._animation_update_dynamicx
 
         if disable_xaxis is True:  # pragma: no cover
             self.xaxis_disable()
 
-    def _animation_update_staticx(self, frame, pdata):  # pragma: no cover
+    def _animation_update(
+        self, frame: list, pdata: PlotDataAxesMpl
+    ) -> "Line2D":  # pragma: no cover
+        return self._animation_update_priv(frame, pdata)
+
+    def _animation_update_staticx(
+        self, frame: list, pdata: PlotDataAxesMpl
+    ) -> "Line2D":  # pragma: no cover
         """Update an animation with static X ticks."""
         # update sample
         pdata.xdata_extend_max(frame[0])
@@ -43,7 +63,9 @@ class Animation2(PluginAnimationCommonMpl):
 
         return pdata.lns
 
-    def _animation_update_dynamicx(self, frame, pdata):  # pragma: no cover
+    def _animation_update_dynamicx(
+        self, frame: list, pdata: PlotDataAxesMpl
+    ) -> "Line2D":  # pragma: no cover
         """Update an animation with dynamic X ticks."""
         xdata = frame[0]
         ydata = frame[1]
@@ -78,12 +100,16 @@ class Animation2(PluginAnimationCommonMpl):
 class PluginAnimation2(IPluginAnimation):
     """Animation with x axis saturation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize an animation2 plugin."""
         IPluginAnimation.__init__(self)
 
     def _start(
-        self, fig, pdata: PlotDataAxesMpl, qdata: PluginQueueData, kwargs
+        self,
+        fig: "Figure",
+        pdata: PlotDataAxesMpl,
+        qdata: "PluginQueueData",
+        kwargs: dict,
     ) -> PluginAnimationCommonMpl:
         """Start an animation2 plugin."""
         maxsamples = kwargs["maxsamples"]

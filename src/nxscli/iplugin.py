@@ -2,6 +2,10 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from nxscli.phandler import PluginHandler
 
 ###############################################################################
 # Enum: EPluginType
@@ -25,14 +29,14 @@ class EPluginType(Enum):
 class IPlugin(ABC):
     """The Nxscli plugin common interface."""
 
-    def __init__(self, ptype: EPluginType):
+    def __init__(self, ptype: EPluginType) -> None:
         """Initialize a Nxslib plugin."""
         if not isinstance(ptype, EPluginType):
             raise TypeError
 
         self._ptype = ptype
         self._handled = False
-        self._phandler = None
+        self._phandler: "PluginHandler"
 
     @property
     def ptype(self) -> EPluginType:
@@ -45,7 +49,7 @@ class IPlugin(ABC):
         return self._handled
 
     @handled.setter
-    def handled(self, val: bool):
+    def handled(self, val: bool) -> None:
         """Set handled flag."""
         self._handled = val
 
@@ -54,7 +58,7 @@ class IPlugin(ABC):
     def stream(self) -> bool:
         """Return True if this plugin needs stream."""
 
-    def connect_phandler(self, phandler):
+    def connect_phandler(self, phandler: "PluginHandler") -> None:
         """Connect phandler."""
         self._phandler = phandler
 
@@ -63,15 +67,15 @@ class IPlugin(ABC):
         """Interface method."""
 
     @abstractmethod
-    def start(self, kwargs) -> bool:
+    def start(self, kwargs: dict) -> bool:
         """Interface method."""
 
     @abstractmethod
-    def data_wait(self, timeout=None) -> bool:
+    def data_wait(self, timeout: float = 0.0) -> bool:
         """Return True if data are ready."""
 
     @abstractmethod
-    def result(self):
+    def result(self) -> Any:
         """Interface method."""
 
 
@@ -83,7 +87,7 @@ class IPlugin(ABC):
 class IPluginText(IPlugin):
     """Text-type plugin."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize text-type plugin."""
         super().__init__(EPluginType.TEXT)
 
@@ -96,7 +100,7 @@ class IPluginText(IPlugin):
 class IPluginPlotStatic(IPlugin):
     """Static-plot plugin."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize static-plot-type plugin."""
         super().__init__(EPluginType.PLOT)
 
@@ -109,7 +113,7 @@ class IPluginPlotStatic(IPlugin):
 class IPluginPlotDynamic(IPlugin):
     """Dynamic-plot plugin."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize dynamic-plot-type plugin."""
         super().__init__(EPluginType.ANIMATION)
 
@@ -122,6 +126,6 @@ class IPluginPlotDynamic(IPlugin):
 class IPluginPlotFile(IPlugin):
     """File-type plugin."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize file-type plugin."""
         super().__init__(EPluginType.FILE)

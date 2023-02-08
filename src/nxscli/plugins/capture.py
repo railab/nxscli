@@ -1,10 +1,13 @@
 """Module containing capture plugin."""
 
 import threading
+from typing import TYPE_CHECKING
 
 from nxscli.iplugin import IPluginPlotStatic
 from nxscli.logger import logger
-from nxscli.plot_mpl import PluginPlotMpl
+
+if TYPE_CHECKING:
+    from nxscli.plot_mpl import PluginPlotMpl
 
 ###############################################################################
 # Class: PluginCapture
@@ -21,7 +24,7 @@ class PluginCapture(IPluginPlotStatic):
 
         self._thrd: threading.Thread
         self._samples: int
-        self._plot: PluginPlotMpl
+        self._plot: "PluginPlotMpl"
         self._write: bool
         self._ready = threading.Event()
         self._stop_flag = threading.Event()
@@ -38,14 +41,14 @@ class PluginCapture(IPluginPlotStatic):
         """Stop capture plugin."""
         self._stop_flag.set()
 
-    def data_wait(self, timeout=None):
+    def data_wait(self, timeout: float = 0.0) -> bool:
         """Return True if data are ready."""
         if self._nostop:  # pragma: no cover
             return True
         else:
             return self._ready.wait(timeout)
 
-    def _is_done(self, datalen) -> bool:
+    def _is_done(self, datalen: list[int]) -> bool:
         if not self._nostop:
             # check if capture done
             done = True
@@ -56,7 +59,7 @@ class PluginCapture(IPluginPlotStatic):
             done = False
         return done
 
-    def _start_thread(self):
+    def _start_thread(self) -> None:
         assert self._phandler
 
         datalen = [0 for _ in range(len(self._plot.qdlist))]
@@ -73,7 +76,7 @@ class PluginCapture(IPluginPlotStatic):
                         continue
 
                 # store data
-                ydata = [[] for v in range(pdata.vdim)]
+                ydata: list[list] = [[] for v in range(pdata.vdim)]
                 for sample in data:
                     for i in range(pdata.vdim):
                         ydata[i].append(sample[0][i])
@@ -93,7 +96,7 @@ class PluginCapture(IPluginPlotStatic):
 
         self._ready.set()
 
-    def start(self, kwargs) -> bool:
+    def start(self, kwargs: dict) -> bool:
         """Start capture plugin."""
         assert self._phandler
 
@@ -124,7 +127,7 @@ class PluginCapture(IPluginPlotStatic):
 
         return True
 
-    def result(self) -> PluginPlotMpl:
+    def result(self) -> "PluginPlotMpl":
         """Get capture plugin result."""
         assert self._plot
 

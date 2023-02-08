@@ -1,12 +1,17 @@
 """Module containt the nxscli handler implementation."""
 
-from nxslib.dev import DeviceChannel
+from typing import TYPE_CHECKING, Any
+
 from nxslib.nxscope import NxscopeHandler
 
 from nxscli.idata import PluginData, PluginDataCb
 from nxscli.iplugin import IPlugin
 from nxscli.logger import logger
 from nxscli.plot_mpl import PluginPlotMpl
+
+if TYPE_CHECKING:
+    from nxslib.dev import Device, DeviceChannel
+
 
 ###############################################################################
 # Class: PluginHandler
@@ -32,22 +37,15 @@ class PluginHandler:
         # stream flags
         self._stream = False
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Disconnect nxscope if connected."""
         if self._nxs:
             self._nxs.disconnect()
 
-    def _validate_plugin(self, cls):
-        if not isinstance(cls, list):
-            raise TypeError
-
-        if not isinstance(cls[0], str):
-            raise TypeError
-
-        if not callable(cls[1]):
-            raise TypeError
-
-        return True
+    def _validate_plugin(self, cls: list) -> None:
+        assert isinstance(cls, list)
+        assert isinstance(cls[0], str)
+        assert callable(cls[1])
 
     @property
     def names(self) -> list[str]:
@@ -60,38 +58,38 @@ class PluginHandler:
         return self._plugins
 
     @property
-    def chanlist(self) -> list[DeviceChannel]:
+    def chanlist(self) -> list["DeviceChannel"]:
         """Get configured channels."""
         assert self._nxs
         return self._nxs.chanlist
 
     @property
-    def dev(self):
+    def dev(self) -> "Device | None":
         """Get Nxscope device info."""
         assert self._nxs
         return self._nxs.dev
 
     @property
-    def stream(self):
+    def stream(self) -> bool:
         """Get stream flag."""
         return self._stream
 
     @property
-    def enabled(self):
+    def enabled(self) -> list:
         """Get enabled plugins."""
         return self._enabled
 
-    def stream_start(self):
+    def stream_start(self) -> None:
         """Start stream."""
         assert self._nxs
-        return self._nxs.stream_start()
+        self._nxs.stream_start()
 
-    def stream_stop(self):
+    def stream_stop(self) -> None:
         """Stop stream."""
         assert self._nxs
-        return self._nxs.stream_stop()
+        self._nxs.stream_stop()
 
-    def nxscope_connect(self, nxs: NxscopeHandler):
+    def nxscope_connect(self, nxs: NxscopeHandler) -> None:
         """Connect Nxslib instance."""
         if not isinstance(nxs, NxscopeHandler):
             raise TypeError
@@ -101,23 +99,23 @@ class PluginHandler:
         self._nxs.connect()
         logger.info("connected!")
 
-    def plugin_add(self, cls) -> None:
+    def plugin_add(self, cls: list) -> None:
         """Add plugin."""
         self._validate_plugin(cls)
         self._plugins[cls[0]] = cls[1]
 
-    def plugin_get(self, name) -> IPlugin:
+    def plugin_get(self, name: str) -> IPlugin:
         """Get plugin by name."""
         return self._plugins[name]
 
-    def enable(self, name, **kwargs) -> int:
+    def enable(self, name: str, **kwargs: Any) -> int:
         """Enable plugin."""
         pid = len(self._enabled)
         plugin = [pid, self._plugins[name], kwargs]
         self._enabled.append(plugin)
         return pid
 
-    def disable(self, pid) -> None:
+    def disable(self, pid: int) -> None:
         """Disable plugin with a given ID."""
         found = False
         i = 0
@@ -195,7 +193,7 @@ class PluginHandler:
 
         return ret
 
-    def data_handler(self, chanlist: list[DeviceChannel]) -> PluginData:
+    def data_handler(self, chanlist: list["DeviceChannel"]) -> PluginData:
         """Prepare data handler."""
         assert self._nxs
 
@@ -205,7 +203,10 @@ class PluginHandler:
         return PluginData(chanlist, cb)
 
     def plot_handler(
-        self, chanlist: list[DeviceChannel], dpi: float = 100.0, fmt: str = ""
+        self,
+        chanlist: list["DeviceChannel"],
+        dpi: float = 100.0,
+        fmt: str = "",
     ) -> PluginPlotMpl:
         """Prepare plot handler."""
         assert self._nxs
@@ -217,7 +218,7 @@ class PluginHandler:
 
     def chanlist_plugin(
         self, channels: str | list[int] | None
-    ) -> list[DeviceChannel]:
+    ) -> list["DeviceChannel"]:
         """Prepare channels list for a plugin."""
         chanlist = []
         if channels is not None and channels != "all":

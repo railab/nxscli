@@ -2,10 +2,13 @@
 
 import csv
 import threading
+from typing import TYPE_CHECKING
 
-from nxscli.idata import PluginData
 from nxscli.iplugin import IPluginPlotFile
 from nxscli.logger import logger
+
+if TYPE_CHECKING:
+    from nxscli.idata import PluginData
 
 ###############################################################################
 # Class: PluginCsv
@@ -22,7 +25,7 @@ class PluginCsv(IPluginPlotFile):
 
         self._thrd: threading.Thread
         self._samples: int
-        self._data: PluginData
+        self._data: "PluginData"
         self._path: str
         self._ready = threading.Event()
         self._meta_string = False
@@ -57,7 +60,7 @@ class PluginCsv(IPluginPlotFile):
 
         return csvwriters
 
-    def _is_done(self, datalen) -> bool:
+    def _is_done(self, datalen: list[int]) -> bool:
         if not self._nostop:
             # check if capture done
             done = True
@@ -68,7 +71,7 @@ class PluginCsv(IPluginPlotFile):
             done = False
         return done
 
-    def _sample_row_get(self, sample):
+    def _sample_row_get(self, sample: tuple) -> tuple:
         # covert to string
         if self._meta_string:
             return (sample[0], bytes(list(sample[1])).decode())
@@ -119,14 +122,14 @@ class PluginCsv(IPluginPlotFile):
 
         self._ready.set()
 
-    def data_wait(self, timeout=None):
+    def data_wait(self, timeout: float = 0.0) -> bool:
         """Return True if data are ready."""
         if self._nostop:  # pragma: no cover
             return True
         else:
             return self._ready.wait(timeout)
 
-    def start(self, kwargs) -> bool:
+    def start(self, kwargs: dict) -> bool:
         """Start CSV plugin."""
         assert self._phandler
 
@@ -142,7 +145,7 @@ class PluginCsv(IPluginPlotFile):
         self._data = self._phandler.data_handler(chanlist)
 
         if not self._data.qdlist:  # pragma: no cover
-            return
+            return False
 
         self._thrd = threading.Thread(target=self._start_thread)
         self._thrd.start()

@@ -1,8 +1,15 @@
 """Module containing animation1 plugin."""
 
+from typing import TYPE_CHECKING
+
 from nxscli.animation_mpl import IPluginAnimation
-from nxscli.idata import PluginQueueData
 from nxscli.plot_mpl import PlotDataAxesMpl, PluginAnimationCommonMpl
+
+if TYPE_CHECKING:
+    from matplotlib.figure import Figure  # type: ignore
+    from matplotlib.lines import Line2D  # type: ignore
+
+    from nxscli.idata import PluginQueueData
 
 ###############################################################################
 # Class: Animation1
@@ -12,11 +19,19 @@ from nxscli.plot_mpl import PlotDataAxesMpl, PluginAnimationCommonMpl
 class Animation1(PluginAnimationCommonMpl):
     """Infinity animation with x axis extension."""
 
-    def __init__(self, fig, pdata, qdata, write):
+    def __init__(
+        self,
+        fig: "Figure",
+        pdata: PlotDataAxesMpl,
+        qdata: "PluginQueueData",
+        write: str | None,
+    ) -> None:
         """Initialzie an animtaion1 handler."""
         PluginAnimationCommonMpl.__init__(self, fig, pdata, qdata, write)
 
-    def _animation_update(self, frame, pdata):  # pragma: no cover
+    def _animation_update(
+        self, frame: list, pdata: PlotDataAxesMpl
+    ) -> "Line2D":  # pragma: no cover
         """Update an animation with dynamic scaling."""
         # update sample
         pdata.xdata_extend(frame[0])
@@ -45,12 +60,16 @@ class Animation1(PluginAnimationCommonMpl):
 class PluginAnimation1(IPluginAnimation):
     """Infinity animation with x axis extension."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize an animation1 plugin."""
         IPluginAnimation.__init__(self)
 
     def _start(
-        self, fig, pdata: PlotDataAxesMpl, qdata: PluginQueueData, kwargs
+        self,
+        fig: "Figure",
+        pdata: PlotDataAxesMpl,
+        qdata: "PluginQueueData",
+        kwargs: dict,
     ) -> PluginAnimationCommonMpl:
         """Start an animation1 plugin."""
         return Animation1(fig, pdata, qdata, kwargs["write"])

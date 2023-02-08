@@ -3,17 +3,21 @@
 import queue
 import time
 from functools import partial
+from typing import TYPE_CHECKING, Generator
 
 import matplotlib.pyplot as plt  # type: ignore
 from matplotlib import _pylab_helpers  # type: ignore
 from matplotlib.animation import FuncAnimation  # type: ignore
 from matplotlib.animation import FFMpegWriter, PillowWriter  # type: ignore
-from matplotlib.axes import Axes  # type: ignore
-from matplotlib.figure import Figure  # type: ignore
 from nxslib.dev import DeviceChannel
 
 from nxscli.idata import PluginData, PluginDataCb, PluginQueueData
 from nxscli.logger import logger
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes  # type: ignore
+    from matplotlib.figure import Figure  # type: ignore
+    from matplotlib.lines import Line2D  # type: ignore
 
 ###############################################################################
 # Class: MplManager
@@ -34,7 +38,7 @@ class MplManager:
         return plt.get_fignums()
 
     @staticmethod
-    def pause(interval):  # pragma: no cover
+    def pause(interval: float) -> None:  # pragma: no cover
         """Handle Matplotlib events.
 
         Modified pyplot.pause() without show(False) in the middle.
@@ -55,19 +59,19 @@ class MplManager:
         plt.show(block=block)
 
     @staticmethod
-    def mpl_config():
+    def mpl_config() -> None:
         """Configure matplotlib."""
         plt.style.use(["ggplot", "fast"])
 
     @staticmethod
-    def figure(dpi: float = 100.0):
+    def figure(dpi: float = 100.0) -> "Figure":
         """Get figure."""
         return plt.figure(dpi=dpi)
 
     @staticmethod
-    def close(fig):
+    def close(fig: "Figure") -> None:
         """Close figure."""
-        return plt.close(fig)
+        plt.close(fig)
 
 
 ###############################################################################
@@ -154,7 +158,7 @@ class PlotDataAxesMpl(PlotDataCommon):
 
     def __init__(
         self,
-        ax: Axes,
+        ax: "Axes",
         channel: DeviceChannel,
         fmt: str = "",
     ):
@@ -180,52 +184,58 @@ class PlotDataAxesMpl(PlotDataCommon):
         if len(channel.name) > 0:
             self.plot_title = channel.name
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Format string representation."""
         _str = "PlotDataAxesMpl" + "(channel=" + str(self.chan) + ")"
         return _str
 
     @property
-    def ax(self) -> list[Axes]:
+    def ax(self) -> "Axes":
         """Get axes."""
         return self._ax
 
-    # TODO: typing
     @property
-    def lns(self):
+    def lns(self) -> list["Line2D"]:
         """Get lines."""
         return self._lns
 
     @property
     def xlim(self) -> list:
         """Get pot X limits."""
+        assert self._ax
         return self._ax.get_xlim()
 
     @property
     def ylim(self) -> list:
         """Get pot Y limits."""
+        assert self._ax
         return self._ax.get_ylim()
 
     @property
     def plot_title(self) -> str:
         """Get the plot title."""
+        assert self._ax
         return self._ax.get_title()
 
     @plot_title.setter
     def plot_title(self, title: str) -> None:
         """Set the plot title."""
+        assert self._ax
         self._ax.set_title(title)
 
     def set_xlim(self, xlim: tuple) -> None:
         """Set plot X limits."""
+        assert self._ax
         self._ax.set_xlim(*xlim)
 
     def set_ylim(self, ylim: tuple) -> None:
         """Set plot Y limits."""
+        assert self._ax
         self._ax.set_ylim(*ylim)
 
     def plot(self) -> None:
         """Plot all data."""
+        assert self._ax
         for i in self._ydata:
             self._ax.plot(i, self._fmt)
 
@@ -235,10 +245,12 @@ class PlotDataAxesMpl(PlotDataCommon):
 
     def xaxis_set_ticks(self, ticks: list) -> None:
         """Set ticks for X axis."""
+        assert self._ax
         self._ax.get_xaxis().set_ticks(ticks)
 
     def grid_set(self, enable: bool) -> None:
         """Enable grid on plots."""
+        assert self._ax
         self._ax.grid(enable)
 
 
@@ -252,7 +264,7 @@ class PluginAnimationCommonMpl:
 
     def __init__(
         self,
-        fig: Figure,
+        fig: "Figure",
         pdata: PlotDataAxesMpl,
         qdata: PluginQueueData,
         write: str | None,
@@ -282,10 +294,12 @@ class PluginAnimationCommonMpl:
         else:
             self._writer = None
 
-    def _animation_init(self, pdata: PlotDataAxesMpl):
+    def _animation_init(self, pdata: PlotDataAxesMpl) -> "Line2D":
         return pdata.lns
 
-    def _animation_frames(self, qdata: PluginQueueData):  # pragma: no cover
+    def _animation_frames(
+        self, qdata: PluginQueueData
+    ) -> Generator:  # pragma: no cover
         ydata: list[list] = []
         xdata: list[list] = []
 
@@ -312,8 +326,8 @@ class PluginAnimationCommonMpl:
         yield xdata, ydata
 
     def _animation_update(
-        self, frame: list, pdata: PlotDataAxesMpl, qdata: PluginQueueData
-    ):
+        self, frame: list, pdata: PlotDataAxesMpl
+    ) -> list["Line2D"] | None:
         pass  # pragma: no cover
 
     def pause(self) -> None:
@@ -330,7 +344,9 @@ class PluginAnimationCommonMpl:
         if self._writer:
             self._writer.finish()
 
-    def _animation_update_cmn(self, frame, pdata):  # pragma: no cover
+    def _animation_update_cmn(
+        self, frame: list, pdata: PlotDataAxesMpl
+    ) -> list["Line2D"]:  # pragma: no cover
         """Update animation common logic."""
         # no data
         if len(frame[0]) == 0 or len(frame[1]) == 0:
@@ -338,6 +354,7 @@ class PluginAnimationCommonMpl:
 
         # implementation specific
         lines = self._animation_update(frame, pdata)
+        assert lines
 
         # handle writer
         if self._writer:
@@ -367,9 +384,10 @@ class PluginAnimationCommonMpl:
         self._pdata.xaxis_disable()
 
     def yscale_extend(
-        self, frame, pdata, scale=1.1
+        self, frame: list, pdata: PlotDataAxesMpl, scale: float = 1.1
     ) -> None:  # pragma: no cover
         """Extend yscale if needed with a given scale factor."""
+        assert pdata.ax
         ymin, ymax = pdata.ax.get_ylim()
 
         new_ymax = ymax
@@ -398,9 +416,10 @@ class PluginAnimationCommonMpl:
             pdata.ax.figure.canvas.draw()
 
     def xscale_extend(
-        self, frame, pdata, scale=2.0
+        self, frame: list, pdata: PlotDataAxesMpl, scale: float = 2.0
     ) -> None:  # pragma: no cover
         """Exten x axis if needed with a agiven scale factor."""
+        assert pdata.ax
         xmin, xmax = pdata.ax.get_xlim()
 
         tmax = xmax
@@ -416,8 +435,11 @@ class PluginAnimationCommonMpl:
             pdata.ax.set_xlim(xmin, scale * xmax)
             pdata.ax.figure.canvas.draw()
 
-    def xscale_saturate(self, _, pdata) -> None:  # pragma: no cover
+    def xscale_saturate(
+        self, _: list, pdata: PlotDataAxesMpl
+    ) -> None:  # pragma: no cover
         """Saturate x axis."""
+        assert pdata.ax
         xmin, xmax = pdata.ax.get_xlim()
 
         # change x scale fit for xdata
@@ -467,7 +489,7 @@ class PluginPlotMpl(PluginData):
 
         self._plist = self._plist_init()
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Close figure and clean queue handlers."""
         MplManager.close(self._fig)
         super().__del__()
@@ -510,7 +532,7 @@ class PluginPlotMpl(PluginData):
             i += 1
 
     @property
-    def fig(self):
+    def fig(self) -> "Figure":
         """Get figure handler."""
         return self._fig
 

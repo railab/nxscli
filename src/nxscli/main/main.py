@@ -11,7 +11,7 @@ from nxslib.intf.serial import SerialDevice
 from nxslib.nxscope import NxscopeHandler
 from nxslib.proto.parse import Parser
 
-from nxscli.iplugin import EPluginType
+from nxscli.iplugin import EPluginType, IPlugin
 from nxscli.logger import logger
 from nxscli.pdefault import g_plugins_default
 from nxscli.phandler import PluginHandler
@@ -38,7 +38,7 @@ class Environment(EnvironmentData):
 
     _testctx = False
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize environmet."""
         super().__init__()
 
@@ -48,7 +48,7 @@ class Environment(EnvironmentData):
         return self._testctx
 
     @classmethod
-    def testctx_set(cls, val: bool):
+    def testctx_set(cls: type["Environment"], val: bool) -> None:
         """Set the test context - workaroud for a plugins busy-waiting."""
         cls._testctx = val
 
@@ -62,7 +62,7 @@ pass_environment = click.make_pass_decorator(Environment, ensure=True)
     "--debug/--no-debug", default=False, is_flag=True, envvar="NXSCLI_DEBUG"
 )
 @pass_environment
-def main(ctx, debug):
+def main(ctx: Any, debug: bool) -> bool:
     """Nxscli - CLI to the Nxslib."""
     ctx.debug = debug
     if debug:  # pragma: no cover
@@ -81,12 +81,17 @@ def main(ctx, debug):
 
     click.get_current_context().call_on_close(cli_on_close)
 
+    return True
+
 
 @main.group(chain=True)
 @click.option("--writepadding", default=0)
 @pass_environment
-def dummy(ctx, writepadding):
+def dummy(ctx: Environment, writepadding: int) -> bool:
     """[interface] use dummy interface."""
+    assert ctx.phandler
+    assert ctx.parser
+    assert ctx.nxscope
     intf = DummyDev()
     intf.write_padding = writepadding
 
@@ -99,14 +104,21 @@ def dummy(ctx, writepadding):
 
     ctx.interface = True
 
+    return True
+
 
 @main.group(chain=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @click.option("--baud", default=115200)
 @click.option("--writepadding", default=0)
 @pass_environment
-def serial(ctx, path, baud, writepadding):  # pragma: no cover
+def serial(
+    ctx: Environment, path: str, baud: int, writepadding: bool
+) -> bool:  # pragma: no cover
     """[interface] use serial port interface."""
+    assert ctx.phandler
+    assert ctx.nxscope
+    assert ctx.parser
     intf = SerialDevice(path, baud=baud)
     intf.write_padding = writepadding
 
@@ -119,13 +131,15 @@ def serial(ctx, path, baud, writepadding):  # pragma: no cover
 
     ctx.interface = True
 
+    return True
+
 
 class Channels(click.ParamType):
     """Parse channels argument."""
 
     name = "channels"
 
-    def convert(self, value, param, ctx):
+    def convert(self, value: Any, param: Any, ctx: Any) -> list[int] | str:
         """Convert channels argument."""
         if value == "all":
             return "all"
@@ -148,7 +162,7 @@ class Divider(click.ParamType):
 
     name = "divider"
 
-    def convert(self, value, param, ctx):
+    def convert(self, value: Any, param: Any, ctx: Any) -> list[int]:
         """Convert divider argument."""
         lstr = value.split(",")
         lint = []
@@ -169,16 +183,19 @@ class Divider(click.ParamType):
 @click.argument("channels", required=True, type=Channels())
 @click.option("--divider", default="0", type=Divider())
 @pass_environment
-def chan(ctx, channels, divider):
+def chan(ctx: Environment, channels: Any, divider: Any) -> bool:
     """[config] Channels configuration.
 
     This command configure and enable channels.
     By default all channels from this command are passed to the plugins,
     but can be precisely selected with plugin '--channels' option.
     """
+    assert ctx.phandler
     ctx.channels = (channels, divider)
     # configure channles
     ctx.phandler.channels_configure(channels, divider)
+
+    return True
 
 
 _channels_option_help = "plugin specific channels configuration"
@@ -196,7 +213,7 @@ _plot_options = (
 )
 
 
-def plot_options(fn):
+def plot_options(fn: Any) -> Any:
     """Decorate command with common plot options decorator."""
     for decorator in reversed(_plot_options):
         fn = decorator(fn)
@@ -206,8 +223,11 @@ def plot_options(fn):
 @click.command()
 @plot_options
 @pass_environment
-def pani1(ctx, chan, dpi, fmt, write):
+def pani1(
+    ctx: Environment, chan: list | str, dpi: float, fmt: str, write: str | None
+) -> bool:
     """[plugin] dynamic animation without length limit."""
+    assert ctx.phandler
     ctx.phandler.enable(
         "animation1", channels=chan, dpi=dpi, fmt=fmt, write=write
     )
@@ -221,8 +241,16 @@ def pani1(ctx, chan, dpi, fmt, write):
 @click.argument("maxsamples", type=int, required=True)
 @plot_options
 @pass_environment
-def pani2(ctx, maxsamples, chan, dpi, fmt, write):
+def pani2(
+    ctx: Environment,
+    maxsamples: int,
+    chan: list | str,
+    dpi: float,
+    fmt: str,
+    write: str | None,
+) -> bool:
     """[plugin] dynamic animation with length limit."""
+    assert ctx.phandler
     if maxsamples == 0:  # pragma: no cover
         click.secho("ERROR: Missing argument MAXSAMPLES", err=True, fg="red")
         return False
@@ -245,12 +273,20 @@ def pani2(ctx, maxsamples, chan, dpi, fmt, write):
 @click.argument("samples", type=int, required=True)
 @plot_options
 @pass_environment
-def pcap(ctx, samples, chan, dpi, fmt, write):
+def pcap(
+    ctx: Environment,
+    samples: int,
+    chan: list | str,
+    dpi: float,
+    fmt: str,
+    write: str | None,
+) -> bool:
     """[plugin] capture static plot.
 
     If SAMPLES argument is set to 0 then we capture data until enter is press.
     """
     # wait for enter if samples set to 0
+    assert ctx.phandler
     if samples == 0:  # pragma: no cover
         ctx.waitenter = True
 
@@ -279,13 +315,16 @@ def pcap(ctx, samples, chan, dpi, fmt, write):
     "--metastr", default=False, is_flag=True, help="store metadata as string"
 )
 @pass_environment
-def pcsv(ctx, samples, path, chan, metastr):
+def pcsv(
+    ctx: Environment, samples: int, path: str, chan: list | str, metastr: bool
+) -> bool:
     """[plugin] Store samples in csv files.
 
     If SAMPLES argument is set to 0 then we capture data until enter is press.
     Each channel will be stored in a separate file.
     """
     # wait for enter if samples set to 0
+    assert ctx.phandler
     if samples == 0:  # pragma: no cover
         ctx.waitenter = True
 
@@ -305,14 +344,15 @@ def pcsv(ctx, samples, path, chan, metastr):
 
 @click.command()
 @pass_environment
-def pdevinfo(ctx):
+def pdevinfo(ctx: Environment) -> bool:
     """[plugin] Show NxSope device info."""
+    assert ctx.phandler
     ctx.phandler.enable("devinfo")
 
     return True
 
 
-def devinfo_print(info):
+def devinfo_print(info: dict) -> None:
     """Print device information."""
     print("\nDevice common:\n")
     pprint.pprint(info["cmn"])
@@ -321,7 +361,7 @@ def devinfo_print(info):
     print("\n")
 
 
-def handle_plugin(plugin):
+def handle_plugin(plugin: type[IPlugin]) -> tuple | None:
     """Handle a given plugin."""
     if plugin.ptype is EPluginType.TEXT:
         # REVISIT: only devinfo supported for now
@@ -350,9 +390,10 @@ def handle_plugin(plugin):
         raise AssertionError
 
 
-def plugin_loop(ctx):
+def plugin_loop(ctx: Environment) -> list:
     """Plugin loop."""
-    ret = []
+    assert ctx.phandler
+    ret: list[Any] = []
     while True:
         plugins = ctx.phandler.poll()
         if plugins is None:
@@ -371,7 +412,7 @@ def plugin_loop(ctx):
     return ret
 
 
-def wait_for_plugins(ret):
+def wait_for_plugins(ret: list) -> None:
     """Wait for plugins."""
     while True:  # pragma: no cover
         fig_open = False
@@ -385,8 +426,10 @@ def wait_for_plugins(ret):
 
 
 @pass_environment
-def cli_on_close(ctx):
+def cli_on_close(ctx: Environment) -> bool:
     """Handle requested plugins on Click close."""
+    assert ctx.phandler
+    assert ctx.nxscope
     if ctx.interface is False:
         return False
 
@@ -417,8 +460,10 @@ def cli_on_close(ctx):
     ctx.phandler.stop()
     ctx.nxscope.disconnect()
 
+    return True
 
-def click_final_init():
+
+def click_final_init() -> None:
     """Handle final Click initialization."""
     commands = [chan, pani1, pani2, pcap, pcsv, pdevinfo]
     groups = [dummy, serial]

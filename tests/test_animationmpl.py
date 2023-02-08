@@ -33,13 +33,13 @@ def test_ipluginanimation_init():
     x = XTestPluginAnimation()
 
     # phandler not connected
-    with pytest.raises(AssertionError):
+    with pytest.raises(AttributeError):
         x.start(None)
-    with pytest.raises(AssertionError):
+    with pytest.raises(AttributeError):
         x.result()
-    with pytest.raises(AssertionError):
+    with pytest.raises(AttributeError):
         x.clear()
-    with pytest.raises(AssertionError):
+    with pytest.raises(AttributeError):
         x.stop()
 
     assert x.stream is True
