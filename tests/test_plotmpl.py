@@ -12,6 +12,7 @@ from nxscli.plot_mpl import (
     PluginAnimationCommonMpl,
     PluginPlotMpl,
 )
+from nxscli.trigger import DTriggerConfig, ETriggerType, TriggerHandler
 
 
 def test_plotdatacommon():
@@ -85,7 +86,8 @@ def test_pluginanimationcommonmpl():
     fig = Figure()
     axes = Axes(fig, (1, 1, 2, 6))
     pdata = PlotDataAxesMpl(axes, chan)
-    qdata = PluginQueueData(q, chan)
+    dtc = DTriggerConfig(ETriggerType.ALWAYS_OFF)
+    qdata = PluginQueueData(q, chan, dtc)
     x = PluginAnimationCommonMpl(fig, pdata, qdata, False)
 
     x.stop()
@@ -102,8 +104,10 @@ def dummy_stream_unsub(ch, q):
 
 def test_pluginplotmpl():
     chanlist = [DeviceChannel(0, 2, 2, "chan0")]
+    dtc = DTriggerConfig(ETriggerType.ALWAYS_OFF)
+    trig = [TriggerHandler(dtc)]
     cb = PluginDataCb(dummy_stream_sub, dummy_stream_unsub)
-    x = PluginPlotMpl(chanlist, cb)
+    x = PluginPlotMpl(chanlist, trig, cb)
 
     assert x.fig is not None
     assert x.ani == []

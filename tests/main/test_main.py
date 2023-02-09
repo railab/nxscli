@@ -191,3 +191,39 @@ def test_main_pani2(runner):
     args = ["dummy", "chan", "1", "pani2", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
+
+
+def test_main_trig(runner):
+    # test context not needed here
+    Environment.testctx_set(False)
+
+    # test context needed
+    Environment.testctx_set(True)
+
+    args = ["dummy", "chan", "1", "trig", "xxx", "pani2", "1"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 1
+
+    args = ["dummy", "chan", "1", "trig", "x=1", "pani2", "1"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 1
+
+    args = ["dummy", "chan", "1", "trig", "g:1", "pani2", "1"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 1
+
+    args = ["dummy", "chan", "1", "trig", "g=on", "pani2", "1"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+    args = ["dummy", "chan", "1", "trig", "g=off", "pani2", "1"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+    args = ["dummy", "chan", "1,2", "trig", "1=on;2=off", "pani2", "1"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+    args = ["dummy", "chan", "1,2,3", "pani2", "--trig", "2=off", "1"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0

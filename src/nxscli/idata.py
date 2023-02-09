@@ -9,6 +9,8 @@ if TYPE_CHECKING:
 
     from nxslib.dev import DeviceChannel
 
+    from nxscli.trigger import TriggerHandler
+
 ###############################################################################
 # Class: PluginDataCb
 ###############################################################################
@@ -30,14 +32,21 @@ class PluginDataCb:
 class PluginQueueData:
     """The class used to handler stream queue data."""
 
-    def __init__(self, que: queue.Queue, channel: "DeviceChannel"):
+    def __init__(
+        self,
+        que: queue.Queue,
+        channel: "DeviceChannel",
+        trig: "TriggerHandler",
+    ):
         """Initialize a queue data handler.
 
         :param que: queue subscribed to a given channel
         :param channel: instance of a channel
+        :param dtc: trigger configuration
         """
         self._queue = que
         self._channel = channel
+        self._trigger = trig
 
     def __str__(self) -> str:
         """Format string representation."""
@@ -81,7 +90,7 @@ class PluginQueueData:
             ret = self._queue.get(block=block, timeout=timeout)
         except queue.Empty:
             pass
-        return ret
+        return self._trigger.data_triggered(ret)
 
 
 ###############################################################################
@@ -92,16 +101,22 @@ class PluginQueueData:
 class PluginData:
     """A common plugin data handler."""
 
-    def __init__(self, chanlist: list["DeviceChannel"], cb: PluginDataCb):
+    def __init__(
+        self,
+        chanlist: list["DeviceChannel"],
+        trig: list["TriggerHandler"],
+        cb: PluginDataCb,
+    ):
         """Initialize a plugin data handler.
 
         :param chanlist: a list with plugin channels
         :param cb: plugin callback to nxslib
         """
-        self._qdlist = []
         assert isinstance(cb, PluginDataCb)
+        assert len(chanlist) == len(trig)
 
         self._chanlist = chanlist
+        self._trig = trig
         self._cb = cb
 
         # queue handlers
@@ -109,15 +124,19 @@ class PluginData:
 
     def __del__(self) -> None:
         """Deinitialize queue handlers."""
-        self._queue_deinit()
+        try:
+            self._queue_deinit()
+        except AttributeError:
+            pass
 
     def _qdlist_init(self) -> list[PluginQueueData]:
         ret = []
-        for channel in self._chanlist:
-            # initialize plot
+        for i, channel in enumerate(self._chanlist):
+            # get queue with data
             que = self._cb.stream_sub(channel.chan)
-            pdata = PluginQueueData(que, channel)
-            # add plot to list
+            # initialize queue handler
+            pdata = PluginQueueData(que, channel, self._trig[i])
+            # add hanler to a list
             ret.append(pdata)
         return ret
 

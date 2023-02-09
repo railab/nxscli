@@ -172,7 +172,7 @@ def test_phandler_connect(nxscope):
     with pytest.raises(AssertionError):
         _ = p.stream_stop()
     with pytest.raises(AssertionError):
-        _ = p.data_handler([])
+        _ = p.data_handler([], [])
     with pytest.raises(AssertionError):
         _ = p.channels_configure([])
 
@@ -358,3 +358,25 @@ def test_phandler_start_noready(nxscope):
 
     # stop plugins
     p.stop()
+
+
+def test_phandler_trigger():
+    p = PluginHandler()
+
+    assert p.trigger_get(0) == [("on", None)]
+    assert p.trigger_get(1) == [("on", None)]
+
+    trg = {-1: [("off", None)]}
+    p.triggers_configure(trg)
+    assert p.trigger_get(0) == [("off", None)]
+    assert p.trigger_get(1) == [("off", None)]
+
+    trg = {-1: [("on", None)]}
+    p.triggers_configure(trg)
+    assert p.trigger_get(0) == [("on", None)]
+    assert p.trigger_get(1) == [("on", None)]
+
+    trg = {0: [("on", None)], 1: [("off", None)]}
+    p.triggers_configure(trg)
+    assert p.trigger_get(0) == [("on", None)]
+    assert p.trigger_get(1) == [("off", None)]
