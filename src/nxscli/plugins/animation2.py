@@ -28,7 +28,15 @@ class Animation2(PluginAnimationCommonMpl):
         static_xticks: bool = True,
         disable_xaxis: bool = False,
     ):
-        """Initialzie an animtaion2 handler."""
+        """Initialzie an animtaion2 handler.
+
+        :param fig: matplotlib Figure
+        :param pdata: axes handler
+        :param qdata: stream queue handler
+        :param write: write path
+        :param static_xticks: use static X axis ticks
+        :param disable_xaxis: disable X axis ticks
+        """
         PluginAnimationCommonMpl.__init__(self, fig, pdata, qdata, write)
 
         if static_xticks is True:

@@ -32,22 +32,6 @@ class PluginCapture(IPluginPlotStatic):
 
         self._stop_flag.clear()
 
-    @property
-    def stream(self) -> bool:
-        """Return True if this plugin needs stream."""
-        return True
-
-    def stop(self) -> None:
-        """Stop capture plugin."""
-        self._stop_flag.set()
-
-    def data_wait(self, timeout: float = 0.0) -> bool:
-        """Return True if data are ready."""
-        if self._nostop:  # pragma: no cover
-            return True
-        else:
-            return self._ready.wait(timeout)
-
     def _is_done(self, datalen: list[int]) -> bool:
         if not self._nostop:
             # check if capture done
@@ -96,8 +80,30 @@ class PluginCapture(IPluginPlotStatic):
 
         self._ready.set()
 
+    @property
+    def stream(self) -> bool:
+        """Return True if this plugin needs stream."""
+        return True
+
+    def stop(self) -> None:
+        """Stop capture plugin."""
+        self._stop_flag.set()
+
+    def data_wait(self, timeout: float = 0.0) -> bool:
+        """Return True if data are ready.
+
+        :param timeout: data wait timeout
+        """
+        if self._nostop:  # pragma: no cover
+            return True
+        else:
+            return self._ready.wait(timeout)
+
     def start(self, kwargs: dict) -> bool:
-        """Start capture plugin."""
+        """Start capture plugin.
+
+        :param kwargs: implementation specific arguments
+        """
         assert self._phandler
 
         logger.info("start capture %s", str(kwargs))

@@ -31,7 +31,11 @@ class PluginQueueData:
     """The class used to handler stream queue data."""
 
     def __init__(self, que: queue.Queue, channel: "DeviceChannel"):
-        """Initialize a queue data handler."""
+        """Initialize a queue data handler.
+
+        :param que: queue subscribed to a given channel
+        :param channel: instance of a channel
+        """
         self._queue = que
         self._channel = channel
 
@@ -66,7 +70,11 @@ class PluginQueueData:
         return self._channel.mlen
 
     def queue_get(self, block: bool, timeout: float = 1.0) -> list:
-        """Get data from a stream queue."""
+        """Get data from a stream queue.
+
+        :param block: blocking operation
+        :param timeout: get data timeout
+        """
         ret = []
         try:
             # get data from queue
@@ -85,7 +93,11 @@ class PluginData:
     """A common plugin data handler."""
 
     def __init__(self, chanlist: list["DeviceChannel"], cb: PluginDataCb):
-        """Initialize a plugin data handler."""
+        """Initialize a plugin data handler.
+
+        :param chanlist: a list with plugin channels
+        :param cb: plugin callback to nxslib
+        """
         self._qdlist = []
 
         if not isinstance(cb, PluginDataCb):

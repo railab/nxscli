@@ -34,15 +34,6 @@ class PluginCsv(IPluginPlotFile):
 
         self._stop_flag.clear()
 
-    @property
-    def stream(self) -> bool:
-        """Return True if this plugin needs stream."""
-        return True
-
-    def stop(self) -> None:
-        """Stop CSV plugin."""
-        self._stop_flag.set()
-
     def _csvwriters_open(self) -> list:
         csvwriters = []
         for pdata in self._data.qdlist:
@@ -122,15 +113,30 @@ class PluginCsv(IPluginPlotFile):
 
         self._ready.set()
 
+    @property
+    def stream(self) -> bool:
+        """Return True if this plugin needs stream."""
+        return True
+
+    def stop(self) -> None:
+        """Stop CSV plugin."""
+        self._stop_flag.set()
+
     def data_wait(self, timeout: float = 0.0) -> bool:
-        """Return True if data are ready."""
+        """Return True if data are ready.
+
+        :param timeout: data wait timeout
+        """
         if self._nostop:  # pragma: no cover
             return True
         else:
             return self._ready.wait(timeout)
 
     def start(self, kwargs: dict) -> bool:
-        """Start CSV plugin."""
+        """Start CSV plugin.
+
+        :param kwargs: implementation specific arguments
+        """
         assert self._phandler
 
         logger.info("start csv %s", str(kwargs))

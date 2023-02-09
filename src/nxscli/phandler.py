@@ -22,7 +22,10 @@ class PluginHandler:
     """A class implementing a plugins handler."""
 
     def __init__(self, plugins: list | None = None):
-        """Initialize a plugin handler."""
+        """Initialize a plugin handler.
+
+        :param plugins: a list with plugins
+        """
         self._nxs: NxscopeHandler | None = None
         self._plugins = {}
 
@@ -42,8 +45,8 @@ class PluginHandler:
         if self._nxs:
             self._nxs.disconnect()
 
-    def _validate_plugin(self, cls: list) -> None:
-        assert isinstance(cls, list)
+    def _validate_plugin(self, cls: tuple) -> None:
+        assert isinstance(cls, tuple)
         assert isinstance(cls[0], str)
         assert callable(cls[1])
 
@@ -90,7 +93,10 @@ class PluginHandler:
         self._nxs.stream_stop()
 
     def nxscope_connect(self, nxs: NxscopeHandler) -> None:
-        """Connect Nxslib instance."""
+        """Connect Nxslib instance.
+
+        :param nxs: Nxscope handler
+        """
         if not isinstance(nxs, NxscopeHandler):
             raise TypeError
         self._nxs = nxs
@@ -99,24 +105,37 @@ class PluginHandler:
         self._nxs.connect()
         logger.info("connected!")
 
-    def plugin_add(self, cls: list) -> None:
-        """Add plugin."""
+    def plugin_add(self, cls: tuple) -> None:
+        """Add plugin.
+
+        :param cls: tuple with plugin data
+        """
         self._validate_plugin(cls)
         self._plugins[cls[0]] = cls[1]
 
     def plugin_get(self, name: str) -> IPlugin:
-        """Get plugin by name."""
+        """Get plugin by name.
+
+        :param name: plugin name
+        """
         return self._plugins[name]
 
     def enable(self, name: str, **kwargs: Any) -> int:
-        """Enable plugin."""
+        """Enable plugin.
+
+        :param name: plugin name
+        :param kwargs: implementation specific arguments
+        """
         pid = len(self._enabled)
         plugin = [pid, self._plugins[name], kwargs]
         self._enabled.append(plugin)
         return pid
 
     def disable(self, pid: int) -> None:
-        """Disable plugin with a given ID."""
+        """Disable plugin with a given ID.
+
+        :param pid: disable plugin by ID
+        """
         found = False
         i = 0
         for x in self._enabled:
@@ -194,7 +213,10 @@ class PluginHandler:
         return ret
 
     def data_handler(self, chanlist: list["DeviceChannel"]) -> PluginData:
-        """Prepare data handler."""
+        """Prepare data handler.
+
+        :param chanlist: a list with plugin channels
+        """
         assert self._nxs
 
         logger.info("prepare data %s", str(chanlist))
@@ -208,7 +230,12 @@ class PluginHandler:
         dpi: float = 100.0,
         fmt: str = "",
     ) -> PluginPlotMpl:
-        """Prepare plot handler."""
+        """Prepare plot handler.
+
+        :param chanlist: a list with plugin channels
+        :param dpi: figure DPI
+        :param fmt: plot format
+        """
         assert self._nxs
 
         logger.info("prepare plot %s", str(chanlist))
@@ -217,7 +244,10 @@ class PluginHandler:
         return PluginPlotMpl(chanlist, cb, dpi, fmt)
 
     def chanlist_plugin(self, channels: list[int]) -> list["DeviceChannel"]:
-        """Prepare channels list for a plugin."""
+        """Prepare channels list for a plugin.
+
+        :param chanlist: a list with plugin channels
+        """
         chanlist = []
         if channels and channels[0] != -1:
             # plugin specific channels configuration
@@ -234,6 +264,10 @@ class PluginHandler:
     def channels_configure(
         self, channels: list[int], div: int | list[int] = 0
     ) -> None:
-        """Configure channels."""
+        """Configure channels.
+
+        :param chanlist: a list with plugin channels
+        :param div: divider configuration
+        """
         assert self._nxs
         self._nxs.channels_configure(channels, div)

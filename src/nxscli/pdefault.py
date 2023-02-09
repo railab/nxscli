@@ -8,9 +8,9 @@ from nxscli.plugins.csv import PluginCsv
 from nxscli.plugins.devinfo import PluginDevinfo
 
 g_plugins_default = [
-    ["devinfo", PluginDevinfo],
-    ["capture", PluginCapture],
-    ["animation1", PluginAnimation1],
-    ["animation2", PluginAnimation2],
-    ["csv", PluginCsv],
+    ("devinfo", PluginDevinfo),
+    ("capture", PluginCapture),
+    ("animation1", PluginAnimation1),
+    ("animation2", PluginAnimation2),
+    ("csv", PluginCsv),
 ]

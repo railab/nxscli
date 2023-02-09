@@ -26,7 +26,13 @@ class Animation1(PluginAnimationCommonMpl):
         qdata: "PluginQueueData",
         write: str,
     ) -> None:
-        """Initialzie an animtaion1 handler."""
+        """Initialzie an animtaion1 handler.
+
+        :param fig: matplotlib Figure
+        :param pdata: axes handler
+        :param qdata: stream queue handler
+        :param write: write path
+        """
         PluginAnimationCommonMpl.__init__(self, fig, pdata, qdata, write)
 
     def _animation_update(

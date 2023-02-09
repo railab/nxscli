@@ -26,7 +26,10 @@ class PluginDevinfo(IPluginText):
         """Stop devinfo plugin."""
 
     def data_wait(self, timeout: float = 0.0) -> bool:
-        """Return True if data are ready."""
+        """Return True if data are ready.
+
+        :param timeout: not used
+        """
         return True
 
     def start(self, _: dict) -> bool:

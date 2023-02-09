@@ -42,6 +42,8 @@ class MplManager:
         """Handle Matplotlib events.
 
         Modified pyplot.pause() without show(False) in the middle.
+
+        :param interval: pause interval
         """
         manager = _pylab_helpers.Gcf.get_active()
         if manager is not None:
@@ -55,7 +57,10 @@ class MplManager:
 
     @staticmethod
     def show(block: bool = True) -> None:
-        """Show an animation."""
+        """Show an animation.
+
+        :param block: blocking operation
+        """
         plt.show(block=block)
 
     @staticmethod
@@ -65,12 +70,18 @@ class MplManager:
 
     @staticmethod
     def figure(dpi: float = 100.0) -> "Figure":
-        """Get figure."""
+        """Get figure.
+
+        :param dpi: figure DPI
+        """
         return plt.figure(dpi=dpi)
 
     @staticmethod
     def close(fig: "Figure") -> None:
-        """Close figure."""
+        """Close figure.
+
+        :param fig: matplotlib Figure
+        """
         plt.close(fig)
 
 
@@ -83,7 +94,10 @@ class PlotDataCommon:
     """A class implementing common plot data."""
 
     def __init__(self, channel: DeviceChannel):
-        """Initialize common plot data."""
+        """Initialize common plot data.
+
+        :param channel: channel instance
+        """
         assert isinstance(channel, DeviceChannel)
 
         self._xdata: list = []
@@ -118,21 +132,33 @@ class PlotDataCommon:
 
     @samples_max.setter
     def samples_max(self, smax: int) -> None:
-        """Set max samples."""
+        """Set max samples.
+
+        :param smax: set max num of samples
+        """
         self._samples_max = smax
 
     def xdata_extend(self, data: list[list]) -> None:
-        """Extend X data."""
+        """Extend X data.
+
+        :param data: X data to extend
+        """
         for i, xdata in enumerate(self._xdata):
             xdata.extend(data[i])
 
     def ydata_extend(self, data: list[list]) -> None:
-        """Extend Y data."""
+        """Extend Y data.
+
+        :param data: Y data to extend
+        """
         for i, ydata in enumerate(self._ydata):
             ydata.extend(data[i])
 
     def xdata_extend_max(self, data: list[list]) -> None:
-        """Extend X data and saturate to a configured number of samples."""
+        """Extend X data and saturate to a configured number of samples.
+
+        :param data: X data to extend
+        """
         for i, _ in enumerate(self._xdata):
             self._xdata[i].extend(data[i])
             remove = len(self._xdata[i]) - self._samples_max
@@ -140,7 +166,10 @@ class PlotDataCommon:
                 self._xdata[i] = self._xdata[i][remove:]
 
     def ydata_extend_max(self, data: list[list]) -> None:
-        """Extend Y data and saturate to a configured number of samples."""
+        """Extend Y data and saturate to a configured number of samples.
+
+        :param data: Y data to extend
+        """
         for i, _ in enumerate(self._xdata):
             self._ydata[i].extend(data[i])
             remove = len(self._ydata[i]) - self._samples_max
@@ -162,7 +191,12 @@ class PlotDataAxesMpl(PlotDataCommon):
         channel: DeviceChannel,
         fmt: str = "",
     ):
-        """Initialize matplotlib specific plot data."""
+        """Initialize matplotlib specific plot data.
+
+        :param ax: matplotlib Axes
+        :param channel: channel instance
+        :param fmt: plot format
+        """
         PlotDataCommon.__init__(self, channel)
 
         # initialize axis only if numerical channel
@@ -219,17 +253,26 @@ class PlotDataAxesMpl(PlotDataCommon):
 
     @plot_title.setter
     def plot_title(self, title: str) -> None:
-        """Set the plot title."""
+        """Set the plot title.
+
+        :param title: plot title
+        """
         assert self._ax
         self._ax.set_title(title)
 
     def set_xlim(self, xlim: tuple) -> None:
-        """Set plot X limits."""
+        """Set plot X limits.
+
+        :param xlim: set X limits
+        """
         assert self._ax
         self._ax.set_xlim(*xlim)
 
     def set_ylim(self, ylim: tuple) -> None:
-        """Set plot Y limits."""
+        """Set plot Y limits.
+
+        :param ylim: set Y limits
+        """
         assert self._ax
         self._ax.set_ylim(*ylim)
 
@@ -244,12 +287,18 @@ class PlotDataAxesMpl(PlotDataCommon):
         self.xaxis_set_ticks([])
 
     def xaxis_set_ticks(self, ticks: list) -> None:
-        """Set ticks for X axis."""
+        """Set ticks for X axis.
+
+        :param ticks: set ticks for X axis
+        """
         assert self._ax
         self._ax.get_xaxis().set_ticks(ticks)
 
     def grid_set(self, enable: bool) -> None:
-        """Enable grid on plots."""
+        """Enable grid on plots.
+
+        :param enable: enable or disable grid
+        """
         assert self._ax
         self._ax.grid(enable)
 
@@ -269,7 +318,13 @@ class PluginAnimationCommonMpl:
         qdata: PluginQueueData,
         write: str,
     ):
-        """Initialize animation handler."""
+        """Initialize animation handler.
+
+        :param fig: matplotlib Figure
+        :param pdata: axes handler
+        :param qdata: stream queue handler
+        :param kwargs: implementation specific arguments
+        """
         self._fig = fig
         self._cnt = 0
         self._pdata = pdata
@@ -386,7 +441,12 @@ class PluginAnimationCommonMpl:
     def yscale_extend(
         self, frame: list, pdata: PlotDataAxesMpl, scale: float = 1.1
     ) -> None:  # pragma: no cover
-        """Extend yscale if needed with a given scale factor."""
+        """Extend yscale if needed with a given scale factor.
+
+        :param frame: frame data
+        :param pdata: axes handler
+        :param scale: scale factor
+        """
         assert pdata.ax
         ymin, ymax = pdata.ax.get_ylim()
 
@@ -418,7 +478,12 @@ class PluginAnimationCommonMpl:
     def xscale_extend(
         self, frame: list, pdata: PlotDataAxesMpl, scale: float = 2.0
     ) -> None:  # pragma: no cover
-        """Exten x axis if needed with a agiven scale factor."""
+        """Exten x axis if needed with a agiven scale factor.
+
+        :param frame: frame data
+        :param pdata: axes handler
+        :param scale: scale factor
+        """
         assert pdata.ax
         xmin, xmax = pdata.ax.get_xlim()
 
@@ -438,7 +503,10 @@ class PluginAnimationCommonMpl:
     def xscale_saturate(
         self, _: list, pdata: PlotDataAxesMpl
     ) -> None:  # pragma: no cover
-        """Saturate x axis."""
+        """Saturate x axis.
+
+        :param pdata: axes handler
+        """
         assert pdata.ax
         xmin, xmax = pdata.ax.get_xlim()
 
@@ -466,7 +534,13 @@ class PluginPlotMpl(PluginData):
         dpi: float = 100.0,
         fmt: str = "",
     ):
-        """Intiialize a plot handler."""
+        """Intiialize a plot handler.
+
+        :param chanlist: a list with plugin channels
+        :param cb: plugin callback to nxslib
+        :param dpi: figure DPI
+        :param fmt: plot format
+        """
         newchanlist = []
         for chan in chanlist:
             # get only numerical channels
@@ -547,7 +621,10 @@ class PluginPlotMpl(PluginData):
         return self._plist
 
     def ani_append(self, ani: PluginAnimationCommonMpl) -> None:
-        """Add animation."""
+        """Add animation.
+
+        :param ani: plugin animation handler
+        """
         self._ani.append(ani)
 
     def ani_clear(self) -> None:  # pragma: no cover

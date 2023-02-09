@@ -39,7 +39,13 @@ class IPluginAnimation(IPluginPlotDynamic):
         qdata: "PluginQueueData",
         kwargs: dict,
     ) -> "PluginAnimationCommonMpl":
-        """Abstract method."""
+        """Abstract method.
+
+        :param fig: matplotlib Figure
+        :param pdata: axes handler
+        :param qdata: stream queue handler
+        :param kwargs: implementation specific arguments
+        """
 
     @property
     def stream(self) -> bool:
@@ -61,11 +67,17 @@ class IPluginAnimation(IPluginPlotDynamic):
         self._plot.ani_clear()
 
     def data_wait(self, timeout: float = 0.0) -> bool:
-        """Return True if data are ready."""
+        """Return True if data are ready.
+
+        :param timeout: data wait timeout
+        """
         return True
 
     def start(self, kwargs: dict) -> bool:
-        """Start animation plugin."""
+        """Start animation plugin.
+
+        :param kwargs: implementation specific arguments
+        """
         assert self._phandler
 
         logger.info("start %s", str(kwargs))

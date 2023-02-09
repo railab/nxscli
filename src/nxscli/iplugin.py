@@ -30,7 +30,10 @@ class IPlugin(ABC):
     """The Nxscli plugin common interface."""
 
     def __init__(self, ptype: EPluginType) -> None:
-        """Initialize a Nxslib plugin."""
+        """Initialize a Nxslib plugin.
+
+        :param ptype: plugin type
+        """
         if not isinstance(ptype, EPluginType):
             raise TypeError
 
@@ -50,7 +53,10 @@ class IPlugin(ABC):
 
     @handled.setter
     def handled(self, val: bool) -> None:
-        """Set handled flag."""
+        """Set handled flag.
+
+        :param val: plugin handled state
+        """
         self._handled = val
 
     @property
@@ -59,7 +65,10 @@ class IPlugin(ABC):
         """Return True if this plugin needs stream."""
 
     def connect_phandler(self, phandler: "PluginHandler") -> None:
-        """Connect phandler."""
+        """Connect phandler.
+
+        :param phandler: plugin handler instance
+        """
         self._phandler = phandler
 
     @abstractmethod
@@ -68,11 +77,17 @@ class IPlugin(ABC):
 
     @abstractmethod
     def start(self, kwargs: dict) -> bool:
-        """Interface method."""
+        """Interface method.
+
+        :param kwargs: plugin specific arguments
+        """
 
     @abstractmethod
     def data_wait(self, timeout: float = 0.0) -> bool:
-        """Return True if data are ready."""
+        """Return True if data are ready.
+
+        :param timeout: data wait timeout
+        """
 
     @abstractmethod
     def result(self) -> Any:
