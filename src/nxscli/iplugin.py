@@ -34,8 +34,7 @@ class IPlugin(ABC):
 
         :param ptype: plugin type
         """
-        if not isinstance(ptype, EPluginType):
-            raise TypeError
+        assert isinstance(ptype, EPluginType)
 
         self._ptype = ptype
         self._handled = False

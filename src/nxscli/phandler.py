@@ -97,8 +97,7 @@ class PluginHandler:
 
         :param nxs: Nxscope handler
         """
-        if not isinstance(nxs, NxscopeHandler):
-            raise TypeError
+        assert isinstance(nxs, NxscopeHandler)
         self._nxs = nxs
         logger.info("connecting to nxs device...")
         # connect nxscope device

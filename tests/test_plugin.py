@@ -30,7 +30,7 @@ def test_nxscliplugin_init():
         _ = IPlugin()
 
     # invalid plugin type
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         p1 = XTestPlugin1(0)
 
     # valid plugin type

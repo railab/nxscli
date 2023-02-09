@@ -18,11 +18,11 @@ def dummy_stream_unsub(ch, q):
 
 
 def test_nxsclipdata_init():
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         PluginData(None, None)
 
     channels = [DeviceChannel(0, 1, 2, "chan0")]
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         PluginData(channels, None)
 
     cb = PluginDataCb(dummy_stream_sub, dummy_stream_unsub)

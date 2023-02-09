@@ -99,9 +99,7 @@ class PluginData:
         :param cb: plugin callback to nxslib
         """
         self._qdlist = []
-
-        if not isinstance(cb, PluginDataCb):
-            raise ValueError
+        assert isinstance(cb, PluginDataCb)
 
         self._chanlist = chanlist
         self._cb = cb

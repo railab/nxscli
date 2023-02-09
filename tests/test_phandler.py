@@ -177,7 +177,7 @@ def test_phandler_connect(nxscope):
         _ = p.channels_configure([])
 
     # invalid type
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         p.nxscope_connect(None)
 
     # connect nxslib instance
