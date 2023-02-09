@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure  # type: ignore
     from matplotlib.lines import Line2D  # type: ignore
 
+    from nxscli.trigger import TriggerHandler
+
 ###############################################################################
 # Class: MplManager
 ###############################################################################
@@ -533,6 +535,7 @@ class PluginPlotMpl(PluginData):
     def __init__(
         self,
         chanlist: list[DeviceChannel],
+        trig: list["TriggerHandler"],
         cb: PluginDataCb,
         dpi: float = 100.0,
         fmt: str = "",
@@ -554,7 +557,7 @@ class PluginPlotMpl(PluginData):
                     "NOTE: channel %d not numerical - ignore", chan.chan
                 )
 
-        super().__init__(newchanlist, cb)
+        super().__init__(newchanlist, trig, cb)
 
         self._fig = MplManager.figure(dpi)
         self._ax: list[Axes] = []

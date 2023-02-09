@@ -150,8 +150,9 @@ class PluginCsv(IPluginFile, ThreadCommon):
         self._nostop = kwargs["nostop"]
 
         chanlist = self._phandler.chanlist_plugin(kwargs["channels"])
+        trig = self._phandler.triggers_plugin(chanlist, kwargs["trig"])
 
-        self._data = self._phandler.data_handler(chanlist)
+        self._data = self._phandler.data_handler(chanlist, trig)
 
         if not self._data.qdlist:  # pragma: no cover
             return False

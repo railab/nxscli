@@ -8,6 +8,7 @@ from nxscli.idata import PluginData, PluginDataCb
 from nxscli.iplugin import IPlugin
 from nxscli.logger import logger
 from nxscli.plot_mpl import PluginPlotMpl
+from nxscli.trigger import TriggerHandler, trigger_from_str
 
 if TYPE_CHECKING:
     from nxslib.dev import Device, DeviceChannel
@@ -36,6 +37,7 @@ class PluginHandler:
 
         self._enabled: list = []
         self._started: list = []
+        self._triggers: dict = {}
 
         # stream flags
         self._stream = False
@@ -211,21 +213,50 @@ class PluginHandler:
 
         return ret
 
-    def data_handler(self, chanlist: list["DeviceChannel"]) -> PluginData:
+    def trigger_get(self, chid: int, src: dict | None = None) -> list:
+        """Get trigger for a given channel.
+
+        :param chid: channel ID
+        :param src: trigger configuration source
+        """
+        # get data from plugin private dict or global dict
+        if src:
+            array = src
+        else:
+            array = self._triggers
+
+        # get trigger configuration from a given source
+        try:
+            trg = array[chid]
+        except KeyError:
+            # check for global configuration key
+            globkey = -1
+            if globkey in array:
+                trg = array[globkey]
+            else:
+                # default on
+                trg = [("on", None)]
+        return trg
+
+    def data_handler(
+        self, chanlist: list["DeviceChannel"], trig: list[TriggerHandler]
+    ) -> PluginData:
         """Prepare data handler.
 
         :param chanlist: a list with plugin channels
         """
         assert self._nxs
+        assert len(chanlist) == len(trig)
 
         logger.info("prepare data %s", str(chanlist))
 
         cb = PluginDataCb(self._nxs.stream_sub, self._nxs.stream_unsub)
-        return PluginData(chanlist, cb)
+        return PluginData(chanlist, trig, cb)
 
     def plot_handler(
         self,
         chanlist: list["DeviceChannel"],
+        trig: list[TriggerHandler],
         dpi: float = 100.0,
         fmt: str = "",
     ) -> PluginPlotMpl:
@@ -236,11 +267,12 @@ class PluginHandler:
         :param fmt: plot format
         """
         assert self._nxs
+        assert len(chanlist) == len(trig)
 
         logger.info("prepare plot %s", str(chanlist))
 
         cb = PluginDataCb(self._nxs.stream_sub, self._nxs.stream_unsub)
-        return PluginPlotMpl(chanlist, cb, dpi, fmt)
+        return PluginPlotMpl(chanlist, trig, cb, dpi, fmt)
 
     def chanlist_plugin(self, channels: list[int]) -> list["DeviceChannel"]:
         """Prepare channels list for a plugin.
@@ -270,3 +302,39 @@ class PluginHandler:
         """
         assert self._nxs
         self._nxs.channels_configure(channels, div)
+
+    def triggers_configure(self, triggers: dict) -> None:
+        """Configure triggers.
+
+        :param triggers: dict with triggers configuration
+        """
+        self._triggers = triggers
+
+    def triggers_plugin(
+        self, chanlist: list["DeviceChannel"], triggers: dict | None
+    ) -> list[TriggerHandler]:
+        """Prepare triggers list for a plugin.
+
+        :param chanlist: a list with plugin channels
+        :param triggers: a list with plugin triggers
+        """
+        trgs = []
+        if triggers:
+            # plugin specific triggers
+            for chan in chanlist:
+                tcfg = self.trigger_get(chan.chan, triggers)
+                trgs.append(tcfg)
+        else:
+            # global configured triggers
+            for chan in chanlist:
+                tcfg = self.trigger_get(chan.chan)
+                trgs.append(tcfg)
+
+        ret = []
+        for tcfg in trgs:
+            # get trigger configuration
+            dtc = trigger_from_str(tcfg)
+            # get trigger
+            trig = TriggerHandler(dtc)
+            ret.append(trig)
+        return ret

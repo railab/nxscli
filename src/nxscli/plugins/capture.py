@@ -115,9 +115,10 @@ class PluginCapture(IPluginPlotStatic, ThreadCommon):
         self._nostop = kwargs["nostop"]
 
         chanlist = self._phandler.chanlist_plugin(kwargs["channels"])
+        trig = self._phandler.triggers_plugin(chanlist, kwargs["trig"])
 
         self._plot = self._phandler.plot_handler(
-            chanlist, dpi=kwargs["dpi"], fmt=kwargs["fmt"]
+            chanlist, trig, dpi=kwargs["dpi"], fmt=kwargs["fmt"]
         )
 
         if not self._plot.qdlist or not self._plot.plist:  # pragma: no cover

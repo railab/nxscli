@@ -35,6 +35,7 @@ class DEnvironmentData:
     needchannels: bool = False
     channels: tuple | None = None
     phandler: PluginHandler | None = None
+    triggers: dict | None = None
 
 
 ###############################################################################
@@ -93,6 +94,47 @@ class Channels(click.ParamType):
 
 
 ###############################################################################
+# Class: Trigger
+###############################################################################
+
+
+class Trigger(click.ParamType):
+    """Parse trigger argument."""
+
+    name = "trigger"
+
+    req_split = ";"
+    req_assign = "="
+    req_separator = ","
+    req_chan = "!"
+    req_global = "g"
+
+    def convert(self, value: Any, param: Any, ctx: Any) -> dict:
+        """Convert trigger argument."""
+        # remove white spaces
+        tmp = value.strip()
+        # split requests
+        tmp = tmp.split(self.req_split)
+        # get configurations
+        ret = {}
+        for trg in tmp:
+            chan, params = trg.split(self.req_assign)
+            tmp = params.split(self.req_separator)
+
+            cfg = []
+            if "!" in tmp[0]:  # pragma: no cover
+                cfg.append(tuple(tmp[0].split(self.req_chan)))
+            else:
+                cfg.append((tmp[0], None))
+
+            cfg += tmp[1:]
+            if chan == self.req_global:
+                chan = -1
+            ret[int(chan)] = cfg
+        return ret
+
+
+###############################################################################
 # Class: Divider
 ###############################################################################
 
@@ -125,6 +167,7 @@ class Divider(click.ParamType):
 
 
 _channels_option_help = "plugin specific channels configuration"
+_trigger_option_help = "plugin specific triggers configuration"
 # common plot options
 _plot_options = (
     click.option(
@@ -132,6 +175,12 @@ _plot_options = (
         default=None,
         type=Channels(),
         help=_channels_option_help,
+    ),
+    click.option(
+        "--trig",
+        default=None,
+        type=Trigger(),
+        help=_trigger_option_help,
     ),
     click.option("--dpi", type=int, default=100),
     click.option("--fmt", default=""),
@@ -181,6 +230,7 @@ def main(ctx: Environment, debug: bool) -> bool:
     parse = Parser()
     ctx.parser = parse
     ctx.plugins = []
+    ctx.triggers = {}
 
     click.get_current_context().call_on_close(cli_on_close)
 
@@ -284,6 +334,30 @@ def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
 
 
 ###############################################################################
+# Function: trig
+###############################################################################
+
+
+@click.command()
+@click.argument("triggers", type=Trigger())
+@pass_environment
+def trig(ctx: Environment, triggers: dict) -> bool:
+    """[config] Triggers configuration.
+
+    This command configure software tirggers.
+
+    Format: [channel]=[trigger][parameters]
+    Default: all channels on
+    """
+    assert ctx.phandler
+    ctx.triggers = triggers
+    # configure triggers
+    ctx.phandler.triggers_configure(ctx.triggers)
+
+    return True
+
+
+###############################################################################
 # Function: pani1
 ###############################################################################
 
@@ -292,12 +366,17 @@ def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
 @plot_options
 @pass_environment
 def pani1(
-    ctx: Environment, chan: list[int], dpi: float, fmt: str, write: str
+    ctx: Environment,
+    chan: list[int],
+    trig: dict,
+    dpi: float,
+    fmt: str,
+    write: str,
 ) -> bool:
     """[plugin] Animation plot without a length limit."""
     assert ctx.phandler
     ctx.phandler.enable(
-        "animation1", channels=chan, dpi=dpi, fmt=fmt, write=write
+        "animation1", channels=chan, trig=trig, dpi=dpi, fmt=fmt, write=write
     )
 
     ctx.needchannels = True
@@ -318,6 +397,7 @@ def pani2(
     ctx: Environment,
     maxsamples: int,
     chan: list[int],
+    trig: dict,
     dpi: float,
     fmt: str,
     write: str,
@@ -332,6 +412,7 @@ def pani2(
         "animation2",
         maxsamples=maxsamples,
         channels=chan,
+        trig=trig,
         dpi=dpi,
         fmt=fmt,
         write=write,
@@ -355,6 +436,7 @@ def pcap(
     ctx: Environment,
     samples: int,
     chan: list[int],
+    trig: dict,
     dpi: float,
     fmt: str,
     write: str,
@@ -372,6 +454,7 @@ def pcap(
         "capture",
         samples=samples,
         channels=chan,
+        trig=trig,
         dpi=dpi,
         fmt=fmt,
         write=write,
@@ -395,11 +478,19 @@ def pcap(
     "--chan", default=None, type=Channels(), help=_channels_option_help
 )
 @click.option(
+    "--trig", default=None, type=Trigger(), help=_trigger_option_help
+)
+@click.option(
     "--metastr", default=False, is_flag=True, help="store metadata as string"
 )
 @pass_environment
 def pcsv(
-    ctx: Environment, samples: int, path: str, chan: list[int], metastr: bool
+    ctx: Environment,
+    samples: int,
+    path: str,
+    chan: list[int],
+    trig: dict,
+    metastr: bool,
 ) -> bool:
     """[plugin] Store samples in CSV files.
 
@@ -416,6 +507,7 @@ def pcsv(
         samples=samples,
         path=path,
         channels=chan,
+        trig=trig,
         metastr=metastr,
         nostop=ctx.waitenter,
     )
@@ -436,9 +528,12 @@ def pcsv(
 @click.option(
     "--chan", default=None, type=Channels(), help=_channels_option_help
 )
+@click.option(
+    "--trig", default=None, type=Trigger(), help=_trigger_option_help
+)
 @pass_environment
 def pnpsave(
-    ctx: Environment, samples: int, path: str, chan: list[int]
+    ctx: Environment, samples: int, path: str, chan: list[int], trig: dict
 ) -> bool:
     """[plugin] Store samples in Nump files.
 
@@ -455,6 +550,7 @@ def pnpsave(
         samples=samples,
         path=path,
         channels=chan,
+        trig=trig,
         nostop=ctx.waitenter,
     )
 
@@ -619,7 +715,7 @@ def cli_on_close(ctx: Environment) -> bool:
 
 def click_final_init() -> None:
     """Handle final Click initialization."""
-    commands = [chan, pani1, pani2, pcap, pcsv, pnpsave, pdevinfo]
+    commands = [chan, trig, pani1, pani2, pcap, pcsv, pnpsave, pdevinfo]
     groups = [dummy, serial]
 
     # add commands to interfaces

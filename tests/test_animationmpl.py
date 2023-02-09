@@ -66,7 +66,7 @@ def test_ipluginanimation_start_nochannels(nxscope):
     x.connect_phandler(p)
 
     # start
-    args = {"channels": [], "dpi": 100, "fmt": ""}
+    args = {"channels": [], "trig": [], "dpi": 100, "fmt": ""}
     assert x.start(args) is True
 
     # clear
@@ -89,7 +89,7 @@ def test_ipluginanimation_start(nxscope):
     p.channels_configure([1], 0)
 
     # start
-    args = {"channels": [1], "dpi": 100, "fmt": "", "write": False}
+    args = {"channels": [1], "trig": [], "dpi": 100, "fmt": "", "write": False}
     assert x.start(args) is True
 
     # clear
