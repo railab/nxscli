@@ -17,9 +17,13 @@ from nxscli.pdefault import g_plugins_default
 from nxscli.phandler import PluginHandler
 from nxscli.plot_mpl import MplManager
 
+###############################################################################
+# Class: DEnvironmentData
+###############################################################################
+
 
 @dataclass
-class EnvironmentData:
+class DEnvironmentData:
     """Environment data."""
 
     debug: bool = False
@@ -33,7 +37,12 @@ class EnvironmentData:
     phandler: PluginHandler | None = None
 
 
-class Environment(EnvironmentData):
+###############################################################################
+# Class: Environment
+###############################################################################
+
+
+class Environment(DEnvironmentData):
     """A class with application environmet."""
 
     _testctx = False
@@ -53,8 +62,102 @@ class Environment(EnvironmentData):
         cls._testctx = val
 
 
+###############################################################################
+# Class: Channels
+###############################################################################
+
+
+class Channels(click.ParamType):
+    """Parse channels argument."""
+
+    name = "channels"
+
+    def convert(self, value: Any, param: Any, ctx: Any) -> list[int]:
+        """Convert channels argument."""
+        lint = []
+        if value == "all":
+            # special case to indicate all channels
+            lint.append(-1)
+            return lint
+
+        lstr = value.split(",")
+        for chan in lstr:
+            chan = int(chan)
+            if chan < 0 or chan > 255:
+                raise click.BadParameter(
+                    "channel id must be in range [0, 255]"
+                )
+            lint.append(chan)
+
+        return lint
+
+
+###############################################################################
+# Class: Divider
+###############################################################################
+
+
+class Divider(click.ParamType):
+    """Parse divider argument."""
+
+    name = "divider"
+
+    def convert(self, value: Any, param: Any, ctx: Any) -> list[int]:
+        """Convert divider argument."""
+        lstr = value.split(",")
+        lint = []
+        for div in lstr:
+            div = int(div)
+            if div < 0 or div > 255:
+                raise click.BadParameter("divnel id must be in range [0, 255]")
+            lint.append(div)
+
+        # return as int if one element
+        if len(lint) == 1:
+            return lint[0]
+        # else return list
+        return lint
+
+
+###############################################################################
+# Decorator: plot_options
+###############################################################################
+
+
+_channels_option_help = "plugin specific channels configuration"
+# common plot options
+_plot_options = (
+    click.option(
+        "--chan",
+        default=None,
+        type=Channels(),
+        help=_channels_option_help,
+    ),
+    click.option("--dpi", type=int, default=100),
+    click.option("--fmt", default=""),
+    click.option("--write", type=click.Path(resolve_path=False), default=""),
+)
+
+
+def plot_options(fn: Any) -> Any:
+    """Decorate command with common plot options decorator."""
+    for decorator in reversed(_plot_options):
+        fn = decorator(fn)
+    return fn
+
+
+###############################################################################
+# Decorator: pass_environment
+###############################################################################
+
+
 # custom environmet decorator
 pass_environment = click.make_pass_decorator(Environment, ensure=True)
+
+
+###############################################################################
+# Function: main
+###############################################################################
 
 
 @click.group()
@@ -84,11 +187,16 @@ def main(ctx: Environment, debug: bool) -> bool:
     return True
 
 
+###############################################################################
+# Function: dummy
+###############################################################################
+
+
 @main.group(chain=True)
 @click.option("--writepadding", default=0)
 @pass_environment
 def dummy(ctx: Environment, writepadding: int) -> bool:
-    """[interface] use dummy interface."""
+    """[interface] Connect with a simulated NxScope devicve."""
     assert ctx.phandler
     assert ctx.parser
     assert ctx.nxscope
@@ -107,6 +215,11 @@ def dummy(ctx: Environment, writepadding: int) -> bool:
     return True
 
 
+###############################################################################
+# Function: serial
+###############################################################################
+
+
 @main.group(chain=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @click.option("--baud", default=115200)
@@ -115,7 +228,7 @@ def dummy(ctx: Environment, writepadding: int) -> bool:
 def serial(
     ctx: Environment, path: str, baud: int, writepadding: bool
 ) -> bool:  # pragma: no cover
-    """[interface] use serial port interface."""
+    """[interface] Connect with a serial port NxScope devie."""
     assert ctx.phandler
     assert ctx.nxscope
     assert ctx.parser
@@ -134,51 +247,9 @@ def serial(
     return True
 
 
-class Channels(click.ParamType):
-    """Parse channels argument."""
-
-    name = "channels"
-
-    def convert(self, value: Any, param: Any, ctx: Any) -> list[int]:
-        """Convert channels argument."""
-        lint = []
-        if value == "all":
-            # special case to indicate all channels
-            lint.append(-1)
-            return lint
-
-        lstr = value.split(",")
-        for chan in lstr:
-            chan = int(chan)
-            if chan < 0 or chan > 255:
-                raise click.BadParameter(
-                    "channel id must be in range [0, 255]"
-                )
-            lint.append(chan)
-
-        return lint
-
-
-class Divider(click.ParamType):
-    """Parse divider argument."""
-
-    name = "divider"
-
-    def convert(self, value: Any, param: Any, ctx: Any) -> list[int]:
-        """Convert divider argument."""
-        lstr = value.split(",")
-        lint = []
-        for div in lstr:
-            div = int(div)
-            if div < 0 or div > 255:
-                raise click.BadParameter("divnel id must be in range [0, 255]")
-            lint.append(div)
-
-        # return as int if one element
-        if len(lint) == 1:
-            return lint[0]
-        # else return list
-        return lint
+###############################################################################
+# Function: chan
+###############################################################################
 
 
 @click.command()
@@ -200,26 +271,9 @@ def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
     return True
 
 
-_channels_option_help = "plugin specific channels configuration"
-# common plot options
-_plot_options = (
-    click.option(
-        "--chan",
-        default=None,
-        type=Channels(),
-        help=_channels_option_help,
-    ),
-    click.option("--dpi", type=int, default=100),
-    click.option("--fmt", default=""),
-    click.option("--write", type=click.Path(resolve_path=False), default=""),
-)
-
-
-def plot_options(fn: Any) -> Any:
-    """Decorate command with common plot options decorator."""
-    for decorator in reversed(_plot_options):
-        fn = decorator(fn)
-    return fn
+###############################################################################
+# Function: pani1
+###############################################################################
 
 
 @click.command()
@@ -228,7 +282,7 @@ def plot_options(fn: Any) -> Any:
 def pani1(
     ctx: Environment, chan: list[int], dpi: float, fmt: str, write: str
 ) -> bool:
-    """[plugin] dynamic animation without length limit."""
+    """[plugin] Animation plot without a length limit."""
     assert ctx.phandler
     ctx.phandler.enable(
         "animation1", channels=chan, dpi=dpi, fmt=fmt, write=write
@@ -237,6 +291,11 @@ def pani1(
     ctx.needchannels = True
 
     return True
+
+
+###############################################################################
+# Function: pani2
+###############################################################################
 
 
 @click.command()
@@ -251,7 +310,7 @@ def pani2(
     fmt: str,
     write: str,
 ) -> bool:
-    """[plugin] dynamic animation with length limit."""
+    """[plugin] Animation plot with a lenght limit."""
     assert ctx.phandler
     if maxsamples == 0:  # pragma: no cover
         click.secho("ERROR: Missing argument MAXSAMPLES", err=True, fg="red")
@@ -271,6 +330,11 @@ def pani2(
     return True
 
 
+###############################################################################
+# Function: pcap
+###############################################################################
+
+
 @click.command()
 @click.argument("samples", type=int, required=True)
 @plot_options
@@ -283,7 +347,7 @@ def pcap(
     fmt: str,
     write: str,
 ) -> bool:
-    """[plugin] capture static plot.
+    """[plugin] Static plot for a given number of samples.
 
     If SAMPLES argument is set to 0 then we capture data until enter is press.
     """
@@ -307,6 +371,11 @@ def pcap(
     return True
 
 
+###############################################################################
+# Function: pcsv
+###############################################################################
+
+
 @click.command()
 @click.argument("samples", type=int, required=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
@@ -320,10 +389,10 @@ def pcap(
 def pcsv(
     ctx: Environment, samples: int, path: str, chan: list[int], metastr: bool
 ) -> bool:
-    """[plugin] Store samples in csv files.
+    """[plugin] Store samples in CSV files.
 
+    Each configured channel will be stored in a separate file.
     If SAMPLES argument is set to 0 then we capture data until enter is press.
-    Each channel will be stored in a separate file.
     """
     # wait for enter if samples set to 0
     assert ctx.phandler
@@ -344,6 +413,11 @@ def pcsv(
     return True
 
 
+###############################################################################
+# Function: pdevinfo
+###############################################################################
+
+
 @click.command()
 @pass_environment
 def pdevinfo(ctx: Environment) -> bool:
@@ -354,6 +428,11 @@ def pdevinfo(ctx: Environment) -> bool:
     return True
 
 
+###############################################################################
+# Function: devinfo_print
+###############################################################################
+
+
 def devinfo_print(info: dict) -> None:
     """Print device information."""
     print("\nDevice common:\n")
@@ -361,6 +440,11 @@ def devinfo_print(info: dict) -> None:
     print("\nDevice channels:")
     pprint.pprint(info["channels"])
     print("\n")
+
+
+###############################################################################
+# Function: handle_plugin
+###############################################################################
 
 
 def handle_plugin(plugin: type[IPlugin]) -> tuple:
@@ -392,6 +476,11 @@ def handle_plugin(plugin: type[IPlugin]) -> tuple:
         raise AssertionError
 
 
+###############################################################################
+# Function: plugin_loop
+###############################################################################
+
+
 def plugin_loop(ctx: Environment) -> list:
     """Plugin loop."""
     assert ctx.phandler
@@ -412,6 +501,11 @@ def plugin_loop(ctx: Environment) -> list:
     return ret
 
 
+###############################################################################
+# Function: wait_for_plugins
+###############################################################################
+
+
 def wait_for_plugins(ret: list) -> None:
     """Wait for plugins."""
     while True:  # pragma: no cover
@@ -423,6 +517,11 @@ def wait_for_plugins(ret: list) -> None:
             break
         # pause
         MplManager.pause(1)
+
+
+###############################################################################
+# Function: cli_on_close
+###############################################################################
 
 
 @pass_environment
@@ -461,6 +560,11 @@ def cli_on_close(ctx: Environment) -> bool:
     ctx.nxscope.disconnect()
 
     return True
+
+
+###############################################################################
+# Function: click_final_init
+###############################################################################
 
 
 def click_final_init() -> None:
