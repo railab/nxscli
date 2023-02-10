@@ -82,7 +82,8 @@ class MplManager:
 
         :param fig: matplotlib Figure
         """
-        plt.close(fig)
+        if plt.fignum_exists(fig.number):  # pragma: no cover
+            plt.close(fig)
 
 
 ###############################################################################
@@ -398,6 +399,8 @@ class PluginAnimationCommonMpl:
                 self._ani.pause()
         if self._writer:
             self._writer.finish()
+
+        del self._ani
 
     def _animation_update_cmn(
         self, frame: list, pdata: PlotDataAxesMpl
