@@ -89,7 +89,7 @@ class PluginCapture(IPluginPlotStatic, ThreadCommon):
 
     def stop(self) -> None:
         """Stop capture plugin."""
-        self._stop_flag.set()
+        self.thread_stop()
 
     def data_wait(self, timeout: float = 0.0) -> bool:
         """Return True if data are ready.
