@@ -679,11 +679,13 @@ def cli_on_close(ctx: Environment) -> bool:
         return False
 
     if ctx.needchannels and ctx.channels is None:  # pragma: no cover
+        logger.error("no channels selected")
         click.secho("ERROR: No channels selected !", err=True, fg="red")
         ctx.phandler.nxscope_disconnect()
         return False
 
     if len(ctx.phandler.enabled) == 0:
+        logger.error("no plugins selected")
         click.secho("ERROR: No plugins selected !", err=True, fg="red")
         ctx.phandler.nxscope_disconnect()
         return False

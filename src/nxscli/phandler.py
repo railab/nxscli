@@ -136,6 +136,7 @@ class PluginHandler:
         """
         pid = len(self._enabled)
         plugin = [pid, self._plugins[name], kwargs]
+        logger.info("enable %s", str(plugin))
         self._enabled.append(plugin)
         return pid
 
@@ -152,6 +153,7 @@ class PluginHandler:
                 break
             i += 1
         if found:
+            logger.info("disable %d %s", pid, str(self._enabled[i]))
             self._enabled.pop(i)
         else:
             raise AttributeError
@@ -174,6 +176,7 @@ class PluginHandler:
                 logger.error("failed to start plugin %s", str(plugin))
             else:
                 self._started.append([plugin, args])
+            logger.info("started %s", str(plugin))
 
         # start stream if needed
         if self.stream:
