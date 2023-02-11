@@ -4,35 +4,38 @@ import csv
 import threading
 from typing import TYPE_CHECKING
 
+from nxslib.thread import ThreadCommon
+
 from nxscli.iplugin import IPluginPlotFile
 from nxscli.logger import logger
 
 if TYPE_CHECKING:
     from nxscli.idata import PluginData
 
+
 ###############################################################################
 # Class: PluginCsv
 ###############################################################################
 
 
-# TODO: reuse misc/thread.py
-class PluginCsv(IPluginPlotFile):
+class PluginCsv(IPluginPlotFile, ThreadCommon):
     """Plugin that capture data to CSV files."""
 
     def __init__(self) -> None:
         """Initialize a CSV plugin."""
-        super().__init__()
+        IPluginPlotFile.__init__(self)
+        ThreadCommon.__init__(
+            self, self._start_thread, self._thread_init, self._thread_final
+        )
 
-        self._thrd: threading.Thread
         self._samples: int
         self._data: "PluginData"
         self._path: str
         self._ready = threading.Event()
         self._meta_string = False
-        self._stop_flag = threading.Event()
         self._nostop = False
-
-        self._stop_flag.clear()
+        self._csvwriters: list = []
+        self._datalen: list[int] = []
 
     def _csvwriters_open(self) -> list:
         csvwriters = []
@@ -69,49 +72,49 @@ class PluginCsv(IPluginPlotFile):
         else:
             return sample
 
-    def _start_thread(self) -> None:
+    def _thread_init(self) -> None:
         assert self._phandler
-
         # open writers
-        csvwriters = self._csvwriters_open()
+        self._csvwriters = self._csvwriters_open()
 
-        datalen = [0 for _ in range(len(self._data.qdlist))]
+        self._datalen = [0 for _ in range(len(self._data.qdlist))]
 
-        # get samples
-        while not self._stop_flag.is_set():  # pragma: no cover
-            for i, pdata in enumerate(self._data.qdlist):
-                # get data from queue
-                data = pdata.queue_get(block=True, timeout=1)
-
-                if not self._nostop:
-                    # ignore data if capture done for channel
-                    if datalen[i] >= self._samples:
-                        continue
-
-                # store data
-                for sample in data:
-                    if not self._nostop:
-                        # ignore data if capture done for channel
-                        if datalen[i] >= self._samples:
-                            break
-
-                    # write row
-                    csvwriters[i][0].writerow(self._sample_row_get(sample))
-
-                    # one sample
-                    datalen[i] += 1
-
-            # break loop if done
-            if self._is_done(datalen):
-                self.stop()
-
+    def _thread_final(self) -> None:
         # close all files
-        for csvwriter in csvwriters:
+        for csvwriter in self._csvwriters:
             csvwriter[1].close()
 
         logger.info("csv capture DONE")
 
         self._ready.set()
+
+    def _start_thread(self) -> None:
+        # get samples
+        for i, pdata in enumerate(self._data.qdlist):
+            # get data from queue
+            data = pdata.queue_get(block=True, timeout=0.1)
+
+            if not self._nostop:  # pragma: no cover
+                # ignore data if capture done for channel
+                if self._datalen[i] >= self._samples:
+                    continue
+
+            # store data
+            for sample in data:
+                if not self._nostop:  # pragma: no cover
+                    # ignore data if capture done for channel
+                    if self._datalen[i] >= self._samples:
+                        break
+
+                # write row
+                self._csvwriters[i][0].writerow(self._sample_row_get(sample))
+
+                # one sample
+                self._datalen[i] += 1
+
+        # break loop if done
+        if self._is_done(self._datalen):
+            self._stop_set()
 
     @property
     def stream(self) -> bool:
@@ -120,7 +123,7 @@ class PluginCsv(IPluginPlotFile):
 
     def stop(self) -> None:
         """Stop CSV plugin."""
-        self._stop_flag.set()
+        self.thread_stop()
 
     def data_wait(self, timeout: float = 0.0) -> bool:
         """Return True if data are ready.
@@ -153,8 +156,7 @@ class PluginCsv(IPluginPlotFile):
         if not self._data.qdlist:  # pragma: no cover
             return False
 
-        self._thrd = threading.Thread(target=self._start_thread)
-        self._thrd.start()
+        self.thread_start()
 
         return True
 
