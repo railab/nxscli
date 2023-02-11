@@ -680,6 +680,7 @@ def cli_on_close(ctx: Environment) -> bool:
 
     if ctx.needchannels and ctx.channels is None:  # pragma: no cover
         click.secho("ERROR: No channels selected !", err=True, fg="red")
+        ctx.nxscope.disconnect()
         return False
 
     if len(ctx.phandler.enabled) == 0:
