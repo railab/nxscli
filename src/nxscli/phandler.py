@@ -44,8 +44,7 @@ class PluginHandler:
 
     def __del__(self) -> None:
         """Disconnect nxscope if connected."""
-        if self._nxs:
-            self._nxs.disconnect()
+        self.nxscope_disconnect()
 
     def _validate_plugin(self, cls: tuple) -> None:
         assert isinstance(cls, tuple)
@@ -93,6 +92,14 @@ class PluginHandler:
         """Stop stream."""
         assert self._nxs
         self._nxs.stream_stop()
+
+    def nxscope_disconnect(self) -> None:
+        """Disconnect from NxScope device."""
+        logger.info("disconnecting from nxs device...")
+        if self._nxs:
+            # connect nxscope device
+            self._nxs.disconnect()
+        logger.info("disconnected!")
 
     def nxscope_connect(self, nxs: NxscopeHandler) -> None:
         """Connect Nxslib instance.
