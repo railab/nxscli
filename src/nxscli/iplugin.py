@@ -133,11 +133,11 @@ class IPluginPlotDynamic(IPlugin):
 
 
 ###############################################################################
-# Class: IPluginPlotFile
+# Class: IPluginFile
 ###############################################################################
 
 
-class IPluginPlotFile(IPlugin):
+class IPluginFile(IPlugin):
     """File-type plugin."""
 
     def __init__(self) -> None:
