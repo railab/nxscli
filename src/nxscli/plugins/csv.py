@@ -103,7 +103,7 @@ class PluginCsv(IPluginPlotFile):
 
             # break loop if done
             if self._is_done(datalen):
-                break
+                self.stop()
 
         # close all files
         for csvwriter in csvwriters:

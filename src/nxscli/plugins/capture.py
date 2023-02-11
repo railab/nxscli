@@ -72,7 +72,7 @@ class PluginCapture(IPluginPlotStatic):
 
             # break loop if done
             if self._is_done(datalen):
-                break
+                self.stop()
 
         logger.info("plot capture DONE")
 
