@@ -196,7 +196,19 @@ def main(ctx: Environment, debug: bool) -> bool:
 @click.option("--writepadding", default=0)
 @pass_environment
 def dummy(ctx: Environment, writepadding: int) -> bool:
-    """[interface] Connect with a simulated NxScope devicve."""
+    r"""[interface] Connect with a simulated NxScope devicve.
+
+    Channels data:
+      chan0 - vdim = 1, random()
+      chan1 - vdim = 1, saw
+      chan2 - vdim = 1, triangle
+      chan3 - vdim = 2, random()
+      chan4 - vdim = 3, random()
+      chan5 - vdim = 3, static vector = [1.0, 0.0, -1.0]
+      chan6 - vdim = 1, 'hello' string
+      chan7 - vdim = 3, static vector = [1.0, 0.0, -1.0], meta = 1B int
+      chan7 - vdim = 0, meta = 'hello string', mlen = 16
+    """
     assert ctx.phandler
     assert ctx.parser
     assert ctx.nxscope
@@ -414,6 +426,44 @@ def pcsv(
 
 
 ###############################################################################
+# Function: pnpsave
+###############################################################################
+
+
+@click.command()
+@click.argument("samples", type=int, required=True)
+@click.argument("path", type=click.Path(resolve_path=False), required=True)
+@click.option(
+    "--chan", default=None, type=Channels(), help=_channels_option_help
+)
+@pass_environment
+def pnpsave(
+    ctx: Environment, samples: int, path: str, chan: list[int]
+) -> bool:
+    """[plugin] Store samples in Nump files.
+
+    Each configured channel will be stored in a separate file.
+    If SAMPLES argument is set to 0 then we capture data until enter is press.
+    """
+    # wait for enter if samples set to 0
+    assert ctx.phandler
+    if samples == 0:  # pragma: no cover
+        ctx.waitenter = True
+
+    ctx.phandler.enable(
+        "npsave",
+        samples=samples,
+        path=path,
+        channels=chan,
+        nostop=ctx.waitenter,
+    )
+
+    ctx.needchannels = True
+
+    return True
+
+
+###############################################################################
 # Function: pdevinfo
 ###############################################################################
 
@@ -569,7 +619,7 @@ def cli_on_close(ctx: Environment) -> bool:
 
 def click_final_init() -> None:
     """Handle final Click initialization."""
-    commands = [chan, pani1, pani2, pcap, pcsv, pdevinfo]
+    commands = [chan, pani1, pani2, pcap, pcsv, pnpsave, pdevinfo]
     groups = [dummy, serial]
 
     # add commands to interfaces

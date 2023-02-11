@@ -1,35 +1,36 @@
-"""Module containing capture plugin."""
+"""Module containing Numpy capture plugin."""
 
 import threading
 from typing import TYPE_CHECKING
 
+import numpy as np
 from nxslib.thread import ThreadCommon
 
-from nxscli.iplugin import IPluginPlotStatic
+from nxscli.iplugin import IPluginFile
 from nxscli.logger import logger
 
 if TYPE_CHECKING:
-    from nxscli.plot_mpl import PluginPlotMpl
-
+    from nxscli.idata import PluginData
 
 ###############################################################################
-# Class: PluginCapture
+# Class: PluginNpsave
 ###############################################################################
 
 
-class PluginCapture(IPluginPlotStatic, ThreadCommon):
-    """Plugin that plot static captured data."""
+class PluginNpsave(IPluginFile, ThreadCommon):
+    """Plugin that capture data to Numpy file."""
 
     def __init__(self) -> None:
-        """Intiialize a capture plot plugin."""
-        IPluginPlotStatic.__init__(self)
+        """Intiialize a Numpy capture plugin."""
+        IPluginFile.__init__(self)
         ThreadCommon.__init__(
             self, self._start_thread, self._thread_init, self._thread_final
         )
 
         self._samples: int
-        self._plot: "PluginPlotMpl"
-        self._write: str
+        self._data: "PluginData"
+        self._path: str
+        self._npdata: list = []
         self._ready = threading.Event()
         self._nostop = False
         self._datalen: list[int] = []
@@ -48,16 +49,25 @@ class PluginCapture(IPluginPlotStatic, ThreadCommon):
     def _thread_init(self) -> None:
         assert self._phandler
 
-        self._datalen = [0 for _ in range(len(self._plot.qdlist))]
+        self._datalen = [0 for _ in range(len(self._data.qdlist))]
+        self._npdata = [[] for _ in range(len(self._data.qdlist))]
+
+        for i, pdata in enumerate(self._data.qdlist):
+            self._npdata[i] = [[] for v in range(pdata.vdim)]
 
     def _thread_final(self) -> None:
-        logger.info("plot capture DONE")
+        logger.info("save captures DONE")
+
+        for i, pdata in enumerate(self._data.qdlist):
+            chanpath = self._path + "_chan" + str(pdata.chan) + ".npy"
+            npdata = np.array(self._npdata[i])
+            np.save(chanpath, npdata)
 
         self._ready.set()
 
     def _start_thread(self) -> None:
         # get samples
-        for j, pdata in enumerate(self._plot.qdlist):
+        for j, pdata in enumerate(self._data.qdlist):
             # get data from queue
             data = pdata.queue_get(block=True, timeout=1)
 
@@ -67,16 +77,13 @@ class PluginCapture(IPluginPlotStatic, ThreadCommon):
                     continue
 
             # store data
-            ydata: list[list] = [[] for v in range(pdata.vdim)]
             for sample in data:
                 for i in range(pdata.vdim):
                     # TODO: metadata not supported for now
-                    ydata[i].append(sample[0][i])
+                    self._npdata[j][i].append(sample[0][i])
 
-            # extend ydata
-            self._plot.plist[j].ydata_extend(ydata)
             # get data len
-            self._datalen[j] = len(self._plot.plist[j].ydata[0])
+            self._datalen[j] = len(self._npdata[j][0])
 
         # break loop if done
         if self._is_done(self._datalen):
@@ -111,36 +118,21 @@ class PluginCapture(IPluginPlotStatic, ThreadCommon):
         logger.info("start capture %s", str(kwargs))
 
         self._samples = kwargs["samples"]
-        self._write = kwargs["write"]
+        self._path = kwargs["path"]
         self._nostop = kwargs["nostop"]
 
         chanlist = self._phandler.chanlist_plugin(kwargs["channels"])
 
-        self._plot = self._phandler.plot_handler(
-            chanlist, dpi=kwargs["dpi"], fmt=kwargs["fmt"]
-        )
+        self._data = self._phandler.data_handler(chanlist)
 
-        if not self._plot.qdlist or not self._plot.plist:  # pragma: no cover
+        if not self._data.qdlist:  # pragma: no cover
             return False
-
-        for pdata in self._plot.plist:
-            # update xlim to fit our data
-            if self._samples:
-                pdata.set_xlim((0, self._samples))
-            else:  # pragma: no cover
-                pass
 
         self.thread_start()
 
         return True
 
-    def result(self) -> "PluginPlotMpl":
-        """Get capture plugin result."""
-        assert self._plot
-
-        if self._write:  # pragma: no cover
-            for pdata in self._plot.plist:
-                pdata.plot()
-            self._plot.fig.savefig(self._write)
-
-        return self._plot
+    def result(self) -> None:
+        """Get npsave plugin result."""
+        # TODO: return file handler ?
+        return  # pragma: no cover

@@ -9,13 +9,13 @@ Compatible with Python 3.10+.
 ## Features
 
 * Save data to CSV files
+* Save data to NumPy files (`.npy`)
 * Plotting with [Matplotlib](https://github.com/matplotlib/matplotlib),
   * Capture data on a static plot
   * Real-time animation plot (can be written as `gif` or `mp4` file)
 
 ## Features Planned
 
-* Save data in NumPy format (`.npy`)
 * NumPy `numpy.memmap()` support
 * Stream data as audio (inspired by audio knock detection systems)
 * Client-based triggering (global and per-channel triggers)
