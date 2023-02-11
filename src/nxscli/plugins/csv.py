@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from nxslib.thread import ThreadCommon
 
-from nxscli.iplugin import IPluginPlotFile
+from nxscli.iplugin import IPluginFile
 from nxscli.logger import logger
 
 if TYPE_CHECKING:
@@ -18,12 +18,12 @@ if TYPE_CHECKING:
 ###############################################################################
 
 
-class PluginCsv(IPluginPlotFile, ThreadCommon):
+class PluginCsv(IPluginFile, ThreadCommon):
     """Plugin that capture data to CSV files."""
 
     def __init__(self) -> None:
         """Initialize a CSV plugin."""
-        IPluginPlotFile.__init__(self)
+        IPluginFile.__init__(self)
         ThreadCommon.__init__(
             self, self._start_thread, self._thread_init, self._thread_final
         )
