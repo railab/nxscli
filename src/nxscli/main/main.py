@@ -680,12 +680,12 @@ def cli_on_close(ctx: Environment) -> bool:
 
     if ctx.needchannels and ctx.channels is None:  # pragma: no cover
         click.secho("ERROR: No channels selected !", err=True, fg="red")
-        ctx.nxscope.disconnect()
+        ctx.phandler.nxscope_disconnect()
         return False
 
     if len(ctx.phandler.enabled) == 0:
         click.secho("ERROR: No plugins selected !", err=True, fg="red")
-        ctx.nxscope.disconnect()
+        ctx.phandler.nxscope_disconnect()
         return False
 
     # start plugins
@@ -703,8 +703,8 @@ def cli_on_close(ctx: Environment) -> bool:
         wait_for_plugins(ret)
 
     print("closing...")
+    ctx.phandler.nxscope_disconnect()
     ctx.phandler.stop()
-    ctx.nxscope.disconnect()
 
     return True
 
