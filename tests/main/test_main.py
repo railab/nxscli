@@ -127,6 +127,34 @@ def test_main_pcsv(runner):
         assert result.exit_code == 0
 
 
+def test_main_pnpsave(runner):
+    # test context needed
+    Environment.testctx_set(True)
+
+    args = ["chan", "1", "pnpsave", "1", "./test"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 2
+
+    # args = ["dummy", "pnpsave", "1", "./test"]
+    # result = runner.invoke(main, args)
+    # assert result.exit_code == 1
+
+    with runner.isolated_filesystem():
+        args = ["dummy", "chan", "1", "pnpsave", "1", "./test"]
+        result = runner.invoke(main, args)
+        assert result.exit_code == 0
+
+    with runner.isolated_filesystem():
+        args = ["dummy", "chan", "1", "pnpsave", "1000", "./test"]
+        result = runner.invoke(main, args)
+        assert result.exit_code == 0
+
+    with runner.isolated_filesystem():
+        args = ["dummy", "chan", "5", "pnpsave", "1", "./test"]
+        result = runner.invoke(main, args)
+        assert result.exit_code == 0
+
+
 def test_main_pani1(runner):
     # test context needed
     Environment.testctx_set(True)
