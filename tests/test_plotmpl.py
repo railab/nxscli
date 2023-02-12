@@ -105,7 +105,7 @@ def dummy_stream_unsub(ch, q):
 def test_pluginplotmpl():
     chanlist = [DeviceChannel(0, 2, 2, "chan0")]
     dtc = DTriggerConfig(ETriggerType.ALWAYS_OFF)
-    trig = [TriggerHandler(dtc)]
+    trig = [TriggerHandler(0, dtc)]
     cb = PluginDataCb(dummy_stream_sub, dummy_stream_unsub)
     x = PluginPlotMpl(chanlist, trig, cb)
 
@@ -115,4 +115,5 @@ def test_pluginplotmpl():
 
     # TODO
 
+    TriggerHandler.cls_cleanup()
     del x

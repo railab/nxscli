@@ -1,8 +1,14 @@
 """Module containing Nxscli stream data trigger logic."""
 
 import itertools
+import weakref
+from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
+from threading import Lock
+from typing import Any
+
+from nxscli.logger import logger
 
 ###############################################################################
 # Enum: ETriggerType
@@ -75,15 +81,54 @@ class DTriggerConfig:
 ###############################################################################
 
 
-class TriggerHandler:
+class TriggerHandler(object):
     """The class used to handler stream data trigger."""
 
-    def __init__(self, config: DTriggerConfig) -> None:
+    _instances: weakref.WeakSet = weakref.WeakSet()
+
+    def __new__(cls, *args: Any, **kwargs: Any) -> "TriggerHandler":
+        """Create a new instance and store reference in a weak set."""
+        instance = object.__new__(cls)
+        cls._instances.add(instance)
+        return instance
+
+    def __init__(self, chan: int, config: DTriggerConfig) -> None:
         """Initialize a stream data trigger handler."""
         self._config = config
         self._cache: list[tuple] = []
-
+        self._chan: int = chan
         self._trigger = False
+        self._triger_done = False
+
+        # trigger source channel reference
+        self._src: "TriggerHandler" | None = None
+        # connected cross channels
+        self._cross: list["TriggerHandler"] = []
+
+        # subscribe to other channel if needed
+        if self._config.srcchan is not None:
+            # get first available channel
+            for x in TriggerHandler._instances:
+                if x.chan == self._config.srcchan:
+                    self._src = x
+                    break
+
+            # not found source channel
+            if not self._src:
+                logger.error(
+                    "not found cross-channel source chan=%d",
+                    self._config.srcchan,
+                )
+                raise AttributeError
+            self._src.subscribe_cross(self)
+
+        # cross trigger status protected with lock
+        self._lock = Lock()
+        self._cross_trigger = False
+
+    def __del__(self) -> None:
+        """Clean up."""
+        self.cleanup()
 
     def _pairwise(self, iterable: list) -> zip:
         (a, b) = itertools.tee(iterable)
@@ -101,10 +146,9 @@ class TriggerHandler:
     def _edgerising(self, combined: list, level: float) -> tuple[bool, int]:
         ret = False
         tmp = []
-        vect = 0
+        vect = 0  # only the first item in vect checked for now
         for idx, data in enumerate(combined):
-            # only the first item in vect checked for now
-            if data[vect][0] == level:
+            if data[0][vect] == level:
                 tmp.append(idx)
 
         for idx in tmp:
@@ -128,10 +172,9 @@ class TriggerHandler:
     def _edgefalling(self, combined: list, level: float) -> tuple[bool, int]:
         ret = False
         tmp = []
-        vect = 0
+        vect = 0  # only the first item in vect checked for now
         for idx, data in enumerate(combined):
-            # only the first item in vect checked for now
-            if data[vect][0] == level:
+            if data[0][vect] == level:
                 tmp.append(idx)
 
         for idx in tmp:
@@ -152,25 +195,103 @@ class TriggerHandler:
 
         return ret, idx
 
+    def _is_cross_trigger(self, combined: list) -> tuple[bool, int]:
+        if self.cross_trigger:
+            return True, len(self._cache)
+        else:
+            return False, 0
+
+    def _is_self_trigger(
+        self, combined: list, config: DTriggerConfig
+    ) -> tuple[bool, int]:
+        if config.ttype is ETriggerType.ALWAYS_OFF:
+            return self._alwaysoff(combined)
+        elif config.ttype is ETriggerType.ALWAYS_ON:
+            return self._alwayson(combined)
+        elif config.ttype is ETriggerType.EDGE_RISING:
+            assert config.level is not None
+            level = config.level
+            return self._edgerising(combined, level)
+        elif config.ttype is ETriggerType.EDGE_FALLING:
+            assert config.level is not None
+            level = config.level
+            return self._edgefalling(combined, level)
+        else:
+            raise AssertionError
+
     def _is_triggered(self, combined: list) -> tuple[bool, int]:
         if self._trigger:
             return True, 0
 
-        trigger = self._config.ttype
-        if trigger is ETriggerType.ALWAYS_OFF:
-            return self._alwaysoff(combined)
-        elif trigger is ETriggerType.ALWAYS_ON:
-            return self._alwayson(combined)
-        elif trigger is ETriggerType.EDGE_RISING:
-            assert self._config.level is not None
-            level = self._config.level
-            return self._edgerising(combined, level)
-        elif trigger is ETriggerType.EDGE_FALLING:
-            assert self._config.level is not None
-            level = self._config.level
-            return self._edgefalling(combined, level)
-        else:
-            raise AssertionError
+        # cross-channel trigger
+        if self._config.srcchan is not None:
+            return self._is_cross_trigger(combined)
+
+        # self-triggered
+        return self._is_self_trigger(combined, self._config)
+
+    def _cross_channel_handle(self, combined: list) -> None:
+        for cross in self._cross:
+            if cross.cross_trigger is True:
+                continue
+            # check cross channel requirements for trigger
+            trigger = self._is_self_trigger(combined, cross.config)
+            # signal if triggered
+            if trigger[0] is True:
+                cross.cross_trigger = True
+
+    @property
+    def cross_trigger(self) -> bool:
+        """Get cross tirgger state."""
+        with self._lock:
+            ret = deepcopy(self._cross_trigger)
+        return ret
+
+    @cross_trigger.setter
+    def cross_trigger(self, val: bool) -> None:
+        """Set cross tirgger state.
+
+        :param val: cross triger state
+        """
+        with self._lock:
+            self._cross_trigger = val
+
+    @property
+    def chan(self) -> int:
+        """Get channel id associated with this trigger."""
+        return self._chan
+
+    @property
+    def config(self) -> DTriggerConfig:
+        """Get trigger configuration."""
+        return self._config
+
+    @classmethod
+    def cls_cleanup(cls: type["TriggerHandler"]) -> None:
+        """Clean up all instances."""
+        for x in cls._instances:
+            x.cleanup()
+
+    def cleanup(self) -> None:
+        """Clean up instance."""
+        if self._src:
+            self._src.unsubscribe_cross(self)
+
+    def subscribe_cross(self, inst: "TriggerHandler") -> None:
+        """Subscribe as cross-channel trigger.
+
+        :param inst: trigger handler instance to subscribe
+        """
+        self._cross.append(inst)
+
+    def unsubscribe_cross(self, inst: "TriggerHandler") -> None:
+        """Unsubscribe as cross-channel trigger.
+
+        :param inst: trigger handler instance to unsubscribe
+        """
+        for i, cross in enumerate(self._cross):
+            if cross is inst:  # pragma: no cover
+                self._cross.pop(i)
 
     def data_triggered(self, data: list) -> list:
         """Get triggered data.
@@ -180,6 +301,9 @@ class TriggerHandler:
         combined = self._cache + data
         self._trigger, idx = self._is_triggered(combined)
 
+        # check all cross-channel triggers
+        self._cross_channel_handle(combined)
+
         if not self._trigger:
             # not triggered yet
             ret = []
@@ -187,8 +311,15 @@ class TriggerHandler:
             clen = len(self._cache)
             self._cache = combined[clen - self._config.hoffset :]
         else:
+            # one time hoffset for trigger
+            if not self._triger_done:
+                hoffset = self._config.hoffset
+                self._triger_done = True
+            else:
+                hoffset = 0
+
             # return data with a configured horisontal offset
-            ret = combined[idx - self._config.hoffset :]
+            ret = combined[idx - hoffset :]
             # reset cache
             self._cache = []
 

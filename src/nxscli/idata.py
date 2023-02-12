@@ -146,6 +146,11 @@ class PluginData:
             self._cb.stream_unsub(pdata.chan, pdata.queue)
             self._qdlist.pop(i)
 
+        # clean up triggers
+        # TODO: revisit where this beleong, here or in plugins ?
+        for trig in self._trig:
+            trig.cleanup()
+
     @property
     def qdlist(self) -> list[PluginQueueData]:
         """Get queue data handlers."""

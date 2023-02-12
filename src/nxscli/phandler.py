@@ -328,23 +328,24 @@ class PluginHandler:
         :param chanlist: a list with plugin channels
         :param triggers: a list with plugin triggers
         """
-        trgs = []
+        trgs: list[tuple[int, list]] = []
         if triggers:
             # plugin specific triggers
             for chan in chanlist:
                 tcfg = self.trigger_get(chan.chan, triggers)
-                trgs.append(tcfg)
+                trgs.append((chan.chan, tcfg))
         else:
             # global configured triggers
             for chan in chanlist:
                 tcfg = self.trigger_get(chan.chan)
-                trgs.append(tcfg)
+                trgs.append((chan.chan, tcfg))
 
         ret = []
-        for tcfg in trgs:
+        for item in trgs:
             # get trigger configuration
-            dtc = trigger_from_str(tcfg)
+            dtc = trigger_from_str(item[1])
             # get trigger
-            trig = TriggerHandler(dtc)
+            trig = TriggerHandler(item[0], dtc)
             ret.append(trig)
+
         return ret

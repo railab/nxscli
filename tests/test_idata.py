@@ -22,7 +22,7 @@ def test_pluginqueuedata():
     q = queue.Queue()
     chan = DeviceChannel(0, 2, 2, "chan0")
     dtc = DTriggerConfig(ETriggerType.ALWAYS_OFF)
-    trig = TriggerHandler(dtc)
+    trig = TriggerHandler(0, dtc)
     qdata = PluginQueueData(q, chan, trig)
 
     assert isinstance(str(qdata), str)
@@ -38,11 +38,13 @@ def test_pluginqueuedata():
     ret = qdata.queue_get(block=True, timeout=0.1)
     assert ret == []
 
+    TriggerHandler.cls_cleanup()
+
 
 def test_nxsclipdata_init():
     channels = [DeviceChannel(0, 1, 2, "chan0")]
     dtc = DTriggerConfig(ETriggerType.ALWAYS_OFF)
-    trig = [TriggerHandler(dtc)]
+    trig = [TriggerHandler(0, dtc)]
     cb = PluginDataCb(dummy_stream_sub, dummy_stream_unsub)
 
     with pytest.raises(AssertionError):
@@ -65,4 +67,4 @@ def test_nxsclipdata_init():
     assert gdata.qdlist[0].vdim == 2
     assert gdata.qdlist[0].mlen == 0
 
-    del gdata
+    TriggerHandler.cls_cleanup()

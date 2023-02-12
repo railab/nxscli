@@ -106,7 +106,7 @@ class Trigger(click.ParamType):
     req_split = ";"
     req_assign = "="
     req_separator = ","
-    req_chan = "!"
+    req_chan = "#"
     req_global = "g"
 
     def convert(self, value: Any, param: Any, ctx: Any) -> dict:
@@ -121,15 +121,17 @@ class Trigger(click.ParamType):
             chan, params = trg.split(self.req_assign)
             tmp = params.split(self.req_separator)
 
-            cfg = []
-            if "!" in tmp[0]:  # pragma: no cover
-                cfg.append(tuple(tmp[0].split(self.req_chan)))
+            cfg: list[tuple] = []
+            if self.req_chan in tmp[0]:  # pragma: no cover
+                trg, cross = tmp[0].split(self.req_chan)
+                cfg.append((trg, int(cross)))
             else:
                 cfg.append((tmp[0], None))
 
             cfg += tmp[1:]
             if chan == self.req_global:
                 chan = -1
+
             ret[int(chan)] = cfg
         return ret
 
