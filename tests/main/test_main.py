@@ -194,9 +194,6 @@ def test_main_pani2(runner):
 
 
 def test_main_trig(runner):
-    # test context not needed here
-    Environment.testctx_set(False)
-
     # test context needed
     Environment.testctx_set(True)
 
