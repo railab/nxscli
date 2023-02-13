@@ -7,11 +7,11 @@ from nxslib.dev import DeviceChannel
 
 from nxscli.idata import PluginDataCb, PluginQueueData
 from nxscli.plot_mpl import (
+    MplManager,
     PlotDataAxesMpl,
     PlotDataCommon,
     PluginAnimationCommonMpl,
     PluginPlotMpl,
-    MplManager
 )
 from nxscli.trigger import DTriggerConfig, ETriggerType, TriggerHandler
 

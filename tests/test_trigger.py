@@ -44,9 +44,11 @@ def test_triggerfromstr():
     assert x.level == 20
 
 
+# initialization logic
 def test_triggerhandle_init():
     with global_lock:
         assert len(TriggerHandler._instances) == 0
+        assert len(TriggerHandler._wait_for_src) == 0
 
         dtc0 = DTriggerConfig(ETriggerType.ALWAYS_OFF)
         th0 = TriggerHandler(0, dtc0)
@@ -67,17 +69,24 @@ def test_triggerhandle_init():
         assert len(th0._instances) == 2
         assert len(th0_1._instances) == 2
 
-        # no source channel registerd - raise
+        # no source channel registerd
         dtcx = DTriggerConfig(ETriggerType.ALWAYS_OFF, srcchan=2)
-        with pytest.raises(AttributeError):
-            _ = TriggerHandler(1, dtcx)
+        thfail = TriggerHandler(1, dtcx)
+
+        # one is waiting instnaces
+        assert len(TriggerHandler._wait_for_src) == 1
+
+        # try get data but we don't have required src channel
+        with pytest.raises(AssertionError):
+            din = [((0,), ()), ((0,), ()), ((0,), ())]
+            _ = thfail.data_triggered(din)
 
         assert th0.chan == 0
         assert th0._src is None
         assert th0._cross == []
 
-        assert len(th0._instances) == 2
-        assert len(th0_1._instances) == 2
+        assert len(th0._instances) == 3
+        assert len(th0_1._instances) == 3
 
         # valid cross-channel source trigger
         dtc1 = DTriggerConfig(ETriggerType.ALWAYS_OFF, srcchan=0)
@@ -94,9 +103,9 @@ def test_triggerhandle_init():
         assert th1 in th1._src._cross
         assert th1._cross == []
 
-        assert len(th0._instances) == 3
-        assert len(th0_1._instances) == 3
-        assert len(th1._instances) == 3
+        assert len(th0._instances) == 4
+        assert len(th0_1._instances) == 4
+        assert len(th1._instances) == 4
 
         # another valid cross-channel source trigger
         dtc2 = DTriggerConfig(ETriggerType.ALWAYS_OFF, srcchan=0)
@@ -106,11 +115,11 @@ def test_triggerhandle_init():
         dtc3 = DTriggerConfig(ETriggerType.ALWAYS_OFF, srcchan=0)
         th3 = TriggerHandler(3, dtc3)
 
-        assert len(th0._instances) == 5
-        assert len(th0_1._instances) == 5
-        assert len(th1._instances) == 5
-        assert len(th2._instances) == 5
-        assert len(th3._instances) == 5
+        assert len(th0._instances) == 6
+        assert len(th0_1._instances) == 6
+        assert len(th1._instances) == 6
+        assert len(th2._instances) == 6
+        assert len(th3._instances) == 6
 
         assert th2._src is not None
         assert th2 in th2._src._cross
@@ -122,9 +131,11 @@ def test_triggerhandle_init():
         TriggerHandler.cls_cleanup()
 
 
+# check if clean up works
 def test_triggerhandle_init2():
     with global_lock:
         assert len(TriggerHandler._instances) == 0
+        assert len(TriggerHandler._wait_for_src) == 0
 
         dtc0 = DTriggerConfig(ETriggerType.ALWAYS_OFF)
         th0 = TriggerHandler(0, dtc0)
@@ -136,9 +147,62 @@ def test_triggerhandle_init2():
         TriggerHandler.cls_cleanup()
 
 
+# cross trigger but no source channel during trigger registration
+def test_triggerhandle_init3():
+    with global_lock:
+        assert len(TriggerHandler._instances) == 0
+        assert len(TriggerHandler._wait_for_src) == 0
+
+        dtc1 = DTriggerConfig(
+            ETriggerType.EDGE_RISING, srcchan=0, hoffset=0, level=0
+        )
+        th1 = TriggerHandler(1, dtc1)
+
+        assert th1.chan == 1
+        assert th1._src is None  # no reference now
+        assert th1._cross == []
+        assert len(th1._instances) == 1
+
+        # one is waiting instnaces
+        assert len(TriggerHandler._wait_for_src) == 1
+
+        # try get data but we don't have required src channel yet
+        with pytest.raises(AssertionError):
+            din = [((0,), ()), ((0,), ()), ((0,), ())]
+            _ = th1.data_triggered(din)
+
+        dtc0 = DTriggerConfig(ETriggerType.ALWAYS_OFF)
+        th0 = TriggerHandler(0, dtc0)
+
+        assert th0.chan == 0
+        assert th0._src is None
+        assert th1 in th0._cross
+        assert len(th0._instances) == 2
+
+        # no waiting instnaces
+        assert len(TriggerHandler._wait_for_src) == 0
+
+        # try get data, now should not fail
+        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        _ = th1.data_triggered(din)
+
+        # wait for source channel and celan up without registered source
+        dtc3 = DTriggerConfig(
+            ETriggerType.EDGE_RISING, srcchan=5, hoffset=0, level=0
+        )
+        th3 = TriggerHandler(3, dtc3)
+
+        assert th3._src is None
+        assert len(TriggerHandler._wait_for_src) == 1
+
+        # clean up
+        TriggerHandler.cls_cleanup()
+
+
 def test_triggerhandle_alwaysoff():
     with global_lock:
         assert len(TriggerHandler._instances) == 0
+        assert len(TriggerHandler._wait_for_src) == 0
 
         # always off
         dtc = DTriggerConfig(ETriggerType.ALWAYS_OFF)
@@ -156,6 +220,7 @@ def test_triggerhandle_alwaysoff():
 def test_triggerhandle_alwayson():
     with global_lock:
         assert len(TriggerHandler._instances) == 0
+        assert len(TriggerHandler._wait_for_src) == 0
 
         # always on
         dtc = DTriggerConfig(ETriggerType.ALWAYS_ON)
@@ -173,6 +238,7 @@ def test_triggerhandle_alwayson():
 def test_triggerhandle_edgerising1():
     with global_lock:
         assert len(TriggerHandler._instances) == 0
+        assert len(TriggerHandler._wait_for_src) == 0
 
         # rising edge on 0
         hoffset = 0
@@ -224,6 +290,7 @@ def test_triggerhandle_edgerising1():
 def test_triggerhandle_edgerising2():
     with global_lock:
         assert len(TriggerHandler._instances) == 0
+        assert len(TriggerHandler._wait_for_src) == 0
 
         # rising edge on 5
         hoffset = 0
@@ -279,6 +346,7 @@ def test_triggerhandle_edgerising2():
 def test_triggerhandle_edgefalling1():
     with global_lock:
         assert len(TriggerHandler._instances) == 0
+        assert len(TriggerHandler._wait_for_src) == 0
 
         # falling edge on 0
         hoffset = 0
@@ -334,6 +402,7 @@ def test_triggerhandle_edgefalling1():
 def test_triggerhandle_edgefalling2():
     with global_lock:
         assert len(TriggerHandler._instances) == 0
+        assert len(TriggerHandler._wait_for_src) == 0
 
         # falling edge on -5
         hoffset = 0
@@ -393,6 +462,7 @@ def test_triggerhandle_edgefalling2():
 def test_triggerhandle_chanxtochany_nohoffset():
     with global_lock:
         assert len(TriggerHandler._instances) == 0
+        assert len(TriggerHandler._wait_for_src) == 0
 
         # chan0 - always off
         dtc0 = DTriggerConfig(ETriggerType.ALWAYS_OFF)
@@ -437,14 +507,14 @@ def test_triggerhandle_chanxtochany_nohoffset():
         dout1 = th1.data_triggered(din1)
         assert dout1 == []
 
-        # th1 triggerd - but th0 is always off
+        # th1 triggered from now - but th0 is always off
         din0 = [((3,), ()), ((4,), ()), ((5,), ())]
         dout0 = th0.data_triggered(din0)
         assert dout0 == []
 
         din1 = [((10,), ()), ((11,), ()), ((12,), ())]
         dout1 = th1.data_triggered(din1)
-        assert dout1 == [((10,), ()), ((11,), ()), ((12,), ())]
+        assert dout1 == []  # no data yet
 
         din0 = [((0,), ()), ((0,), ()), ((0,), ())]
         dout0 = th0.data_triggered(din0)
@@ -470,6 +540,7 @@ def test_triggerhandle_chanxtochany_nohoffset():
 def test_triggerhandle_chanxtochany_hoffset():
     with global_lock:
         assert len(TriggerHandler._instances) == 0
+        assert len(TriggerHandler._wait_for_src) == 0
 
         # chan0 - always off
         dtc0 = DTriggerConfig(ETriggerType.ALWAYS_OFF)
@@ -521,13 +592,7 @@ def test_triggerhandle_chanxtochany_hoffset():
 
         din1 = [((10,), ()), ((11,), ()), ((12,), ())]
         dout1 = th1.data_triggered(din1)
-        assert dout1 == [
-            ((3,), ()),
-            ((2,), ()),
-            ((10,), ()),
-            ((11,), ()),
-            ((12,), ()),
-        ]
+        assert dout1 == []  # no data yet
 
         din0 = [((0,), ()), ((0,), ()), ((0,), ())]
         dout0 = th0.data_triggered(din0)
