@@ -29,6 +29,8 @@ if TYPE_CHECKING:
 class MplManager:
     """Matplotlib global manager."""
 
+    _testctx = False
+
     @staticmethod
     def draw() -> None:  # pragma: no cover
         """Draw an animation."""
@@ -57,13 +59,19 @@ class MplManager:
         else:
             time.sleep(interval)
 
-    @staticmethod
-    def show(block: bool = True) -> None:
+    @classmethod
+    def show(cls, block: bool = True) -> None:
         """Show an animation.
 
         :param block: blocking operation
         """
-        plt.show(block=block)
+        if not cls._testctx:  # pragma: no cover
+            plt.show(block=block)
+
+    @classmethod
+    def testctx(cls, val: bool) -> None:
+        """Configure test context."""
+        cls._testctx = val
 
     @staticmethod
     def mpl_config() -> None:

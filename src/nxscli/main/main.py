@@ -129,6 +129,7 @@ class Trigger(click.ParamType):
                 cfg.append((tmp[0], None))
 
             cfg += tmp[1:]
+            # special case for global configuration
             if chan == self.req_global:
                 chan = -1
 
@@ -226,6 +227,10 @@ def main(ctx: Environment, debug: bool) -> bool:
 
     # configure mplt
     MplManager.mpl_config()
+
+    if ctx.testctx:
+        # test context for mpl
+        MplManager.testctx(True)
 
     ctx.phandler = PluginHandler(g_plugins_default)
     ctx.nxscope = NxscopeHandler()

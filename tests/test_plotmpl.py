@@ -11,6 +11,7 @@ from nxscli.plot_mpl import (
     PlotDataCommon,
     PluginAnimationCommonMpl,
     PluginPlotMpl,
+    MplManager
 )
 from nxscli.trigger import DTriggerConfig, ETriggerType, TriggerHandler
 
@@ -103,6 +104,7 @@ def dummy_stream_unsub(ch, q):
 
 
 def test_pluginplotmpl():
+    MplManager.testctx(True)
     chanlist = [DeviceChannel(0, 2, 2, "chan0")]
     dtc = DTriggerConfig(ETriggerType.ALWAYS_OFF)
     trig = [TriggerHandler(0, dtc)]
@@ -116,4 +118,3 @@ def test_pluginplotmpl():
     # TODO
 
     TriggerHandler.cls_cleanup()
-    del x

@@ -6,7 +6,7 @@ from nxslib.proto.parse import Parser
 
 from nxscli.animation_mpl import IPluginAnimation
 from nxscli.phandler import PluginHandler
-from nxscli.plot_mpl import PluginAnimationCommonMpl
+from nxscli.plot_mpl import MplManager, PluginAnimationCommonMpl
 
 
 class XTestAnimation(PluginAnimationCommonMpl):
@@ -60,6 +60,7 @@ def nxscope():
 
 
 def test_ipluginanimation_start_nochannels(nxscope):
+    MplManager.testctx(True)
     x = XTestPluginAnimation()
     p = PluginHandler()
     p.nxscope_connect(nxscope)
@@ -80,6 +81,7 @@ def test_ipluginanimation_start_nochannels(nxscope):
 
 
 def test_ipluginanimation_start(nxscope):
+    MplManager.testctx(True)
     x = XTestPluginAnimation()
     p = PluginHandler()
     p.nxscope_connect(nxscope)
