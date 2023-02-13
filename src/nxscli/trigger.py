@@ -25,6 +25,19 @@ class ETriggerType(Enum):
 
 
 ###############################################################################
+# Enum: DTriggerState
+###############################################################################
+
+
+@dataclass
+class DTriggerState:
+    """The class representing trigger state."""
+
+    state: bool
+    idx: int
+
+
+###############################################################################
 # Function: trigger_from_str
 ###############################################################################
 
@@ -98,7 +111,7 @@ class TriggerHandler(object):
         self._config = config
         self._cache: list[tuple] = []
         self._chan: int = chan
-        self._trigger = False
+        self._trigger: DTriggerState = DTriggerState(False, 0)
         self._triger_done = False
 
         # trigger source channel reference
@@ -115,7 +128,7 @@ class TriggerHandler(object):
 
         # cross trigger status protected with lock
         self._lock = Lock()
-        self._cross_trigger: tuple[bool, int] = (False, 0)
+        self._cross_trigger: DTriggerState = DTriggerState(False, 0)
 
     def __del__(self) -> None:
         """Clean up."""
@@ -162,15 +175,15 @@ class TriggerHandler(object):
         next(b, None)
         return zip(a, b)
 
-    def _alwaysoff(self, _: list) -> tuple[bool, int]:
+    def _alwaysoff(self, _: list) -> DTriggerState:
         # reset cache
         self._cache = []
-        return False, 0
+        return DTriggerState(False, 0)
 
-    def _alwayson(self, _: list) -> tuple[bool, int]:
-        return True, 0
+    def _alwayson(self, _: list) -> DTriggerState:
+        return DTriggerState(True, 0)
 
-    def _edgerising(self, combined: list, level: float) -> tuple[bool, int]:
+    def _edgerising(self, combined: list, level: float) -> DTriggerState:
         ret = False
         tmp = []
         vect = 0  # only the first item in vect checked for now
@@ -194,9 +207,9 @@ class TriggerHandler(object):
             if ret:
                 break
 
-        return ret, idx
+        return DTriggerState(ret, idx)
 
-    def _edgefalling(self, combined: list, level: float) -> tuple[bool, int]:
+    def _edgefalling(self, combined: list, level: float) -> DTriggerState:
         ret = False
         tmp = []
         vect = 0  # only the first item in vect checked for now
@@ -220,11 +233,11 @@ class TriggerHandler(object):
             if ret:
                 break
 
-        return ret, idx
+        return DTriggerState(ret, idx)
 
     def _is_self_trigger(
         self, combined: list, config: DTriggerConfig
-    ) -> tuple[bool, int]:
+    ) -> DTriggerState:
         if config.ttype is ETriggerType.ALWAYS_OFF:
             return self._alwaysoff(combined)
         elif config.ttype is ETriggerType.ALWAYS_ON:
@@ -240,9 +253,10 @@ class TriggerHandler(object):
         else:
             raise AssertionError
 
-    def _is_triggered(self, combined: list) -> tuple[bool, int]:
-        if self._trigger:
-            return True, 0
+    def _is_triggered(self, combined: list) -> DTriggerState:
+        if self._trigger.state:
+            # make sure that idx is 0
+            return DTriggerState(True, 0)
 
         # cross-channel trigger
         if self._config.srcchan is not None:
@@ -256,23 +270,23 @@ class TriggerHandler(object):
 
     def _cross_channel_handle(self, combined: list) -> None:
         for cross in self._cross:
-            if cross.cross_trigger[0] is True:
+            if cross.cross_trigger.state is True:
                 continue
             # check cross channel requirements for trigger
             trigger = self._is_self_trigger(combined, cross.config)
             # signal if triggered
-            if trigger[0] is True:
+            if trigger.state is True:
                 cross.cross_trigger = trigger
 
     @property
-    def cross_trigger(self) -> tuple[bool, int]:
+    def cross_trigger(self) -> DTriggerState:
         """Get cross tirgger state."""
         with self._lock:
             ret = deepcopy(self._cross_trigger)
         return ret
 
     @cross_trigger.setter
-    def cross_trigger(self, val: tuple[bool, int]) -> None:
+    def cross_trigger(self, val: DTriggerState) -> None:
         """Set cross tirgger state.
 
         :param val: cross triger state
@@ -334,12 +348,13 @@ class TriggerHandler(object):
         :param data: stream data
         """
         combined = self._cache + data
-        self._trigger, idx = self._is_triggered(combined)
+
+        self._trigger = self._is_triggered(combined)
 
         # check all cross-channel triggers
         self._cross_channel_handle(combined)
 
-        if not self._trigger:
+        if not self._trigger.state:
             # not triggered yet
             ret = []
             # update cache
@@ -354,7 +369,7 @@ class TriggerHandler(object):
                 hoffset = 0
 
             # return data with a configured horisontal offset
-            ret = combined[idx - hoffset :]
+            ret = combined[self._trigger.idx - hoffset :]
             # reset cache
             self._cache = []
 
