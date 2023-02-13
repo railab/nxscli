@@ -43,8 +43,11 @@ class PluginHandler:
         self._stream = False
 
     def __del__(self) -> None:
-        """Disconnect nxscope if connected."""
+        """Clean up."""
+        # disconnect nxscope if connected
         self.nxscope_disconnect()
+        # clean up triggers
+        TriggerHandler.cls_cleanup()
 
     def _validate_plugin(self, cls: tuple) -> None:
         assert isinstance(cls, tuple)
