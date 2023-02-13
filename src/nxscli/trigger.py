@@ -85,6 +85,7 @@ class TriggerHandler(object):
     """The class used to handler stream data trigger."""
 
     _instances: weakref.WeakSet = weakref.WeakSet()
+    _wait_for_src: weakref.WeakSet = weakref.WeakSet()
 
     def __new__(cls, *args: Any, **kwargs: Any) -> "TriggerHandler":
         """Create a new instance and store reference in a weak set."""
@@ -104,31 +105,57 @@ class TriggerHandler(object):
         self._src: "TriggerHandler" | None = None
         # connected cross channels
         self._cross: list["TriggerHandler"] = []
+        self._src_configured = False
+        # configure cross trigger
+        self._src_configured = True
+        self._config_crosschan()
 
-        # subscribe to other channel if needed
-        if self._config.srcchan is not None:
-            # get first available channel
-            for x in TriggerHandler._instances:
-                if x.chan == self._config.srcchan:
-                    self._src = x
-                    break
-
-            # not found source channel
-            if not self._src:
-                logger.error(
-                    "not found cross-channel source chan=%d",
-                    self._config.srcchan,
-                )
-                raise AttributeError
-            self._src.subscribe_cross(self)
+        # check pending cross channels
+        self._pending_crosschan()
 
         # cross trigger status protected with lock
         self._lock = Lock()
-        self._cross_trigger = False
+        self._cross_trigger: tuple[bool, int] = (False, 0)
 
     def __del__(self) -> None:
         """Clean up."""
         self.cleanup()
+
+    def _config_crosschan(self) -> None:
+        # subscribe to source channel if needed
+        src = None
+        if self._config.srcchan is not None:
+            # get the first available trigger related to srcchan
+            for x in TriggerHandler._instances:
+                if x.chan == self._config.srcchan:
+                    src = x
+                    break
+
+            if not src:
+                # not found source channel
+                # trigger not configured yet
+                self._src_configured = False
+                # wait for source channel
+                TriggerHandler._wait_for_src.add(self)
+            else:
+                # connect source
+                self.source_set(src)
+                # subscribe to source
+                src.subscribe_cross(self)
+
+    def _pending_crosschan(self) -> None:
+        # check if any instance wait for us
+        # NOTE: there can be many waiting instances
+        tmp = []
+        for inst in TriggerHandler._wait_for_src:
+            if inst.config.srcchan == self.chan:
+                # subscribe us and set source
+                self.subscribe_cross(inst)
+                inst.source_set(self)
+                tmp.append(inst)
+        # remove all handled instnaces from set
+        for inst in tmp:
+            TriggerHandler._wait_for_src.remove(inst)
 
     def _pairwise(self, iterable: list) -> zip:
         (a, b) = itertools.tee(iterable)
@@ -195,12 +222,6 @@ class TriggerHandler(object):
 
         return ret, idx
 
-    def _is_cross_trigger(self, combined: list) -> tuple[bool, int]:
-        if self.cross_trigger:
-            return True, len(self._cache)
-        else:
-            return False, 0
-
     def _is_self_trigger(
         self, combined: list, config: DTriggerConfig
     ) -> tuple[bool, int]:
@@ -225,30 +246,33 @@ class TriggerHandler(object):
 
         # cross-channel trigger
         if self._config.srcchan is not None:
-            return self._is_cross_trigger(combined)
+            # source must be connected
+            if not self._src_configured:
+                raise AssertionError
+            return self.cross_trigger
 
         # self-triggered
         return self._is_self_trigger(combined, self._config)
 
     def _cross_channel_handle(self, combined: list) -> None:
         for cross in self._cross:
-            if cross.cross_trigger is True:
+            if cross.cross_trigger[0] is True:
                 continue
             # check cross channel requirements for trigger
             trigger = self._is_self_trigger(combined, cross.config)
             # signal if triggered
             if trigger[0] is True:
-                cross.cross_trigger = True
+                cross.cross_trigger = trigger
 
     @property
-    def cross_trigger(self) -> bool:
+    def cross_trigger(self) -> tuple[bool, int]:
         """Get cross tirgger state."""
         with self._lock:
             ret = deepcopy(self._cross_trigger)
         return ret
 
     @cross_trigger.setter
-    def cross_trigger(self, val: bool) -> None:
+    def cross_trigger(self, val: tuple[bool, int]) -> None:
         """Set cross tirgger state.
 
         :param val: cross triger state
@@ -276,6 +300,15 @@ class TriggerHandler(object):
         """Clean up instance."""
         if self._src:
             self._src.unsubscribe_cross(self)
+        if self in TriggerHandler._wait_for_src:
+            TriggerHandler._wait_for_src.remove(self)
+
+    def source_set(self, inst: "TriggerHandler") -> None:
+        """Set source instance."""
+        assert inst
+        logger.info("set source trigger = %s for %s", str(inst), str(self))
+        self._src = inst
+        self._src_configured = True
 
     def subscribe_cross(self, inst: "TriggerHandler") -> None:
         """Subscribe as cross-channel trigger.
