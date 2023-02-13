@@ -295,6 +295,8 @@ class TriggerHandler(object):
         """Clean up all instances."""
         for x in cls._instances:
             x.cleanup()
+        # clear set
+        cls._instances.clear()
 
     def cleanup(self) -> None:
         """Clean up instance."""
