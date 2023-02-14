@@ -114,7 +114,7 @@ class Trigger(click.ParamType):
     def convert(self, value: Any, param: Any, ctx: Any) -> dict:
         """Convert trigger argument."""
         # remove white spaces
-        tmp = value.strip()
+        tmp = value.replace(" ", "")
         # split requests
         tmp = tmp.split(self.req_split)
         # get configurations
