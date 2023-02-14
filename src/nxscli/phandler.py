@@ -98,11 +98,11 @@ class PluginHandler:
 
     def nxscope_disconnect(self) -> None:
         """Disconnect from NxScope device."""
-        logger.info("disconnecting from nxs device...")
         if self._nxs:
+            logger.info("disconnecting from nxs device...")
             # connect nxscope device
             self._nxs.disconnect()
-        logger.info("disconnected!")
+            logger.info("disconnected!")
 
     def nxscope_connect(self, nxs: NxscopeHandler) -> None:
         """Connect Nxslib instance.
