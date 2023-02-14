@@ -253,3 +253,20 @@ def test_main_trig_plugin(runner):
     args = ["dummy", "chan", "1,2,3", "pani2", "--trig", "2=off", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
+
+
+def test_main_help(runner):
+    # test context needed
+    Environment.testctx_set(True)
+
+    args = ["dummy", "--help"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+    args = ["dummy", "chan", "--help"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+    args = ["dummy", "trig", "--help"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0

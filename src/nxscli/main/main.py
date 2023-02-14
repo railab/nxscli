@@ -1,6 +1,7 @@
 """Module containint the CLI logic for Nxslib."""
 
 import pprint
+import sys
 from dataclasses import dataclass
 from typing import Any
 
@@ -319,9 +320,6 @@ def dummy(ctx: Environment, writepadding: int) -> bool:
     comm = CommHandler(intf, ctx.parser)
     ctx.nxscope.intf_connect(comm)
 
-    # connect nxscope to phandler
-    ctx.phandler.nxscope_connect(ctx.nxscope)
-
     ctx.interface = True
 
     return True
@@ -350,9 +348,6 @@ def serial(
     # initialize nxslib communication handler
     comm = CommHandler(intf, ctx.parser)
     ctx.nxscope.intf_connect(comm)
-
-    # connect nxscope to phandler
-    ctx.phandler.nxscope_connect(ctx.nxscope)
 
     ctx.interface = True
 
@@ -385,8 +380,6 @@ def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
     """  # noqa: D301
     assert ctx.phandler
     ctx.channels = (channels, divider)
-    # configure channles
-    ctx.phandler.channels_configure(channels, divider)
 
     return True
 
@@ -772,20 +765,29 @@ def cli_on_close(ctx: Environment) -> bool:
     """Handle requested plugins on Click close."""
     assert ctx.phandler
     assert ctx.nxscope
-    if ctx.interface is False:
-        return False
+    # do not show any errors if it was help request
+    if "--help" in sys.argv:  # pragma: no cover
+        return True
 
-    if ctx.needchannels and ctx.channels is None:  # pragma: no cover
-        logger.error("no channels selected")
-        click.secho("ERROR: No channels selected !", err=True, fg="red")
-        ctx.phandler.nxscope_disconnect()
+    if ctx.interface is False:
         return False
 
     if len(ctx.phandler.enabled) == 0:
         logger.error("no plugins selected")
         click.secho("ERROR: No plugins selected !", err=True, fg="red")
-        ctx.phandler.nxscope_disconnect()
         return False
+
+    # connect nxscope to phandler
+    ctx.phandler.nxscope_connect(ctx.nxscope)
+
+    if ctx.needchannels:
+        if ctx.channels is None:  # pragma: no cover
+            logger.error("no channels selected")
+            click.secho("ERROR: No channels selected !", err=True, fg="red")
+            return False
+
+        # configure channles
+        ctx.phandler.channels_configure(ctx.channels[0], ctx.channels[1])
 
     # start plugins
     ctx.phandler.start()
