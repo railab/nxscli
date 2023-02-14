@@ -280,19 +280,21 @@ def main(ctx: Environment, debug: bool) -> bool:
 @click.option("--writepadding", default=0)
 @pass_environment
 def dummy(ctx: Environment, writepadding: int) -> bool:
-    r"""[interface] Connect with a simulated NxScope devicve.
+    """[interface] Connect with a simulated NxScope devicve.
 
+    \b
     Channels data:
       chan0 - vdim = 1, random()
-      chan1 - vdim = 1, saw
-      chan2 - vdim = 1, triangle
+      chan1 - vdim = 1, saw wave
+      chan2 - vdim = 1, triangle wave
       chan3 - vdim = 2, random()
       chan4 - vdim = 3, random()
       chan5 - vdim = 3, static vector = [1.0, 0.0, -1.0]
       chan6 - vdim = 1, 'hello' string
       chan7 - vdim = 3, static vector = [1.0, 0.0, -1.0], meta = 1B int
-      chan7 - vdim = 0, meta = 'hello string', mlen = 16
-    """
+      chan8 - vdim = 0, meta = 'hello string', mlen = 16
+      chan9 - vdim = 3, 3-phase sine wave
+    """  # noqa: D301
     assert ctx.phandler
     assert ctx.parser
     assert ctx.nxscope
