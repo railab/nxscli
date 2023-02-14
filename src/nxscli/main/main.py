@@ -196,8 +196,10 @@ class Divider(click.ParamType):
 ###############################################################################
 
 
-_channels_option_help = "plugin specific channels configuration"
-_trigger_option_help = "plugin specific triggers configuration"
+_channels_option_help = """plugin specific channels configuration,
+                           for details look at 'chan' command"""  # noqa: D301
+_trigger_option_help = """plugin specific triggers configuration,
+                          for details look at 'tirg' command"""  # noqa: D301
 # common plot options
 _plot_options = (
     click.option(
