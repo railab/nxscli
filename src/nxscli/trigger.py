@@ -48,6 +48,7 @@ class DTriggerConfigReq:
 
     ttype: str
     srcchan: int | None
+    vect: int = 0
     params: list | None = None
 
 
@@ -74,7 +75,7 @@ def trigger_from_req(req: DTriggerConfigReq) -> "DTriggerConfig":
         hoffset = int(req.params[0])
         level = float(req.params[1])
         dtc = DTriggerConfig(
-            ETriggerType.EDGE_RISING, req.srcchan, hoffset, level
+            ETriggerType.EDGE_RISING, req.srcchan, req.vect, hoffset, level
         )
     elif req.ttype == "ef":
         # argument 1 horisontal offset
@@ -83,7 +84,7 @@ def trigger_from_req(req: DTriggerConfigReq) -> "DTriggerConfig":
         hoffset = int(req.params[0])
         level = float(req.params[1])
         dtc = DTriggerConfig(
-            ETriggerType.EDGE_FALLING, req.srcchan, hoffset, level
+            ETriggerType.EDGE_FALLING, req.srcchan, req.vect, hoffset, level
         )
     else:
         raise AssertionError
@@ -101,6 +102,7 @@ class DTriggerConfig:
 
     ttype: ETriggerType
     srcchan: int | None = None
+    vect: int = 0
     hoffset: int = 0
     level: float | None = None
 
@@ -199,10 +201,11 @@ class TriggerHandler(object):
     def _alwayson(self, _: list) -> DTriggerState:
         return DTriggerState(True, 0)
 
-    def _edgerising(self, combined: list, level: float) -> DTriggerState:
+    def _edgerising(
+        self, combined: list, vect: int, level: float
+    ) -> DTriggerState:
         ret = False
         tmp = []
-        vect = 0  # only the first item in vect checked for now
         for idx, data in enumerate(combined):
             if data[0][vect] == level:
                 tmp.append(idx)
@@ -225,10 +228,11 @@ class TriggerHandler(object):
 
         return DTriggerState(ret, idx)
 
-    def _edgefalling(self, combined: list, level: float) -> DTriggerState:
+    def _edgefalling(
+        self, combined: list, vect: int, level: float
+    ) -> DTriggerState:
         ret = False
         tmp = []
-        vect = 0  # only the first item in vect checked for now
         for idx, data in enumerate(combined):
             if data[0][vect] == level:
                 tmp.append(idx)
@@ -260,12 +264,10 @@ class TriggerHandler(object):
             return self._alwayson(combined)
         elif config.ttype is ETriggerType.EDGE_RISING:
             assert config.level is not None
-            level = config.level
-            return self._edgerising(combined, level)
+            return self._edgerising(combined, config.vect, config.level)
         elif config.ttype is ETriggerType.EDGE_FALLING:
             assert config.level is not None
-            level = config.level
-            return self._edgefalling(combined, level)
+            return self._edgefalling(combined, config.vect, config.level)
         else:
             raise AssertionError
 

@@ -197,6 +197,35 @@ def test_main_trig(runner):
     # test context needed
     Environment.testctx_set(True)
 
+    args = ["dummy", "chan", "1", "trig", "xxx"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 1
+
+    args = ["dummy", "chan", "1", "trig", "1=er,0,100"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+    args = ["dummy", "chan", "1", "trig", "1=er#2,0,100"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+    args = ["dummy", "chan", "1", "trig", "1=er@2,0,100"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+    args = ["dummy", "chan", "1", "trig", "1=er#1@2,0,100"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+    args = ["dummy", "chan", "1", "trig", "1=er@2#2,0,100"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+
+def test_main_trig_plugin(runner):
+    # test context needed
+    Environment.testctx_set(True)
+
     args = ["dummy", "chan", "1", "trig", "xxx", "pani2", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 1
