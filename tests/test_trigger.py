@@ -377,9 +377,9 @@ def test_triggerhandle_edgefalling1():
         assert dout == []
 
         # triggered
-        din = [((2,), ()), ((1,), ()), ((0,), ())]
+        din = [((2,), ()), ((1,), ()), ((0,), ()), ((-1,), ())]
         dout = th.data_triggered(din)
-        assert dout == [((0,), ())]
+        assert dout == [((0,), ()), ((-1,), ())]
 
         din = [((-1,), ()), ((-2,), ()), ((-3,), ())]
         dout = th.data_triggered(din)

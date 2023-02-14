@@ -205,26 +205,16 @@ class TriggerHandler(object):
         self, combined: list, vect: int, level: float
     ) -> DTriggerState:
         ret = False
-        tmp = []
-        for idx, data in enumerate(combined):
-            if data[0][vect] == level:
-                tmp.append(idx)
-
-        for idx in tmp:
-            if idx > 0:
-                start = idx - 1
-            else:
-                # ignore if this is index 0
-                continue
-
-            ret = False
-            for a, b in self._pairwise(combined[start:]):
-                if a[vect] < b[vect]:
-                    ret = True
-                    break
-            # found a risong edge on a given level
-            if ret:
+        idx = 0
+        for a, b in self._pairwise(combined):
+            if a[0][vect] <= level < b[0][vect]:
+                ret = True
+                idx = idx
                 break
+            idx += 1
+
+        if not ret:
+            idx = 0
 
         return DTriggerState(ret, idx)
 
@@ -232,26 +222,16 @@ class TriggerHandler(object):
         self, combined: list, vect: int, level: float
     ) -> DTriggerState:
         ret = False
-        tmp = []
-        for idx, data in enumerate(combined):
-            if data[0][vect] == level:
-                tmp.append(idx)
-
-        for idx in tmp:
-            if idx > 0:
-                start = idx - 1
-            else:
-                # ignore if this is index 0
-                continue
-
-            ret = False
-            for a, b in self._pairwise(combined[start:]):
-                if a[vect] > b[vect]:
-                    ret = True
-                    break
-            # found a falling edge on a given level
-            if ret:
+        idx = 0
+        for a, b in self._pairwise(combined):
+            if a[0][vect] >= level > b[0][vect]:
+                ret = True
+                idx = idx
                 break
+            idx += 1
+
+        if not ret:
+            idx = 0
 
         return DTriggerState(ret, idx)
 
