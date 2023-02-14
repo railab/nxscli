@@ -804,8 +804,8 @@ def cli_on_close(ctx: Environment) -> bool:
         wait_for_plugins(ret)
 
     print("closing...")
-    ctx.phandler.nxscope_disconnect()
     ctx.phandler.stop()
+    ctx.phandler.nxscope_disconnect()
 
     return True
 
