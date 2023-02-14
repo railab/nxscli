@@ -152,9 +152,15 @@ class Trigger(click.ParamType):
             # special case for global configuration
             if chan == self.req_global:
                 chan = -1
+            else:
+                chan = int(chan)
+
+            # reset cross source if we point to ourself
+            if cross == chan:
+                cross = None
 
             req = DTriggerConfigReq(trg, cross, vect, cfg)
-            ret[int(chan)] = req
+            ret[chan] = req
         return ret
 
 
