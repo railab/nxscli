@@ -226,7 +226,9 @@ class PluginHandler:
 
         return ret
 
-    def trigger_get(self, chid: int, src: dict | None = None) -> DTriggerConfigReq:
+    def trigger_get(
+        self, chid: int, src: dict | None = None
+    ) -> DTriggerConfigReq:
         """Get trigger for a given channel.
 
         :param chid: channel ID
@@ -249,7 +251,6 @@ class PluginHandler:
             else:
                 # default on
                 trg = DTriggerConfigReq("on", None)
-        print("trg=", trg)
         return trg
 
     def data_handler(
@@ -332,7 +333,7 @@ class PluginHandler:
         :param chanlist: a list with plugin channels
         :param triggers: a list with plugin triggers
         """
-        trgs: list[tuple[int, list]] = []
+        trgs: list[tuple[int, DTriggerConfigReq]] = []
         if triggers:
             # plugin specific triggers
             for chan in chanlist:

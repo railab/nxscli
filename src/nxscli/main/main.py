@@ -107,8 +107,9 @@ class Trigger(click.ParamType):
     req_split = ";"
     req_assign = "="
     req_separator = ","
-    req_chan = "#"
+    req_cross = "#"
     req_global = "g"
+    req_vect = "@"
 
     def convert(self, value: Any, param: Any, ctx: Any) -> dict:
         """Convert trigger argument."""
@@ -122,20 +123,37 @@ class Trigger(click.ParamType):
             chan, params = trg.split(self.req_assign)
             tmp = params.split(self.req_separator)
 
-            cfg: list[tuple] = []
-            cross = None
-            if self.req_chan in tmp[0]:  # pragma: no cover
-                trg, cross = tmp[0].split(self.req_chan)
-                cfg.append((trg, int(cross)))
+            # decore trigger cross channel and channel vector
+            vect_idx = tmp[0].find(self.req_vect)
+            cross_idx = tmp[0].find(self.req_cross)
+            if vect_idx != -1 and cross_idx != -1:
+                if vect_idx > cross_idx:
+                    trg = tmp[0][:cross_idx]
+                    cross = int(tmp[0][cross_idx + 1 : vect_idx])
+                    vect = int(tmp[0][vect_idx + 1 :])
+                else:
+                    trg = tmp[0][:vect_idx]
+                    vect = int(tmp[0][vect_idx + 1 : cross_idx])
+                    cross = int(tmp[0][cross_idx + 1 :])
+            elif vect_idx == -1 and cross_idx != -1:
+                trg, cross_s = tmp[0].split(self.req_cross)
+                cross = int(cross_s)
+                vect = 0
+            elif vect_idx != -1 and cross_idx == -1:
+                trg, vect_s = tmp[0].split(self.req_vect)
+                vect = int(vect_s)
+                cross = None
             else:
-                trg, cross = (tmp[0], None)
+                trg = tmp[0]
+                vect = 0
+                cross = None
 
             cfg = tmp[1:]
             # special case for global configuration
             if chan == self.req_global:
                 chan = -1
 
-            req = DTriggerConfigReq(trg, cross, cfg)
+            req = DTriggerConfigReq(trg, cross, vect, cfg)
             ret[int(chan)] = req
         return ret
 
