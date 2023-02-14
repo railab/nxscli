@@ -16,6 +16,7 @@ from nxscli.logger import logger
 from nxscli.pdefault import g_plugins_default
 from nxscli.phandler import PluginHandler
 from nxscli.plot_mpl import MplManager
+from nxscli.trigger import DTriggerConfigReq
 
 ###############################################################################
 # Class: DEnvironmentData
@@ -122,18 +123,20 @@ class Trigger(click.ParamType):
             tmp = params.split(self.req_separator)
 
             cfg: list[tuple] = []
+            cross = None
             if self.req_chan in tmp[0]:  # pragma: no cover
                 trg, cross = tmp[0].split(self.req_chan)
                 cfg.append((trg, int(cross)))
             else:
-                cfg.append((tmp[0], None))
+                trg, cross = (tmp[0], None)
 
-            cfg += tmp[1:]
+            cfg = tmp[1:]
             # special case for global configuration
             if chan == self.req_global:
                 chan = -1
 
-            ret[int(chan)] = cfg
+            req = DTriggerConfigReq(trg, cross, cfg)
+            ret[int(chan)] = req
         return ret
 
 
