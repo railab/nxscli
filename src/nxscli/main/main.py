@@ -192,14 +192,26 @@ class Divider(click.ParamType):
 
 
 ###############################################################################
+# Globals: stirngs
+###############################################################################
+
+
+_channels_option_help = """Plugin specific channels configuration,
+                           for details look at 'chan' command"""  # noqa: D301
+_trigger_option_help = """Plugin specific triggers configuration,
+                          for details look at 'tirg' command"""  # noqa: D301
+_divider_option_help = """Configure divider for a given channels.
+                          Use a single integer to configure all channels with
+                          the same divider value, or use a list of integers
+                          (separated by commas) to directly configure the
+                          channels."""
+
+
+###############################################################################
 # Decorator: plot_options
 ###############################################################################
 
 
-_channels_option_help = """plugin specific channels configuration,
-                           for details look at 'chan' command"""  # noqa: D301
-_trigger_option_help = """plugin specific triggers configuration,
-                          for details look at 'tirg' command"""  # noqa: D301
 # common plot options
 _plot_options = (
     click.option(
@@ -354,15 +366,23 @@ def serial(
 
 @click.command()
 @click.argument("channels", required=True, type=Channels())
-@click.option("--divider", default="0", type=Divider())
+@click.option(
+    "--divider", default="0", type=Divider(), help=_divider_option_help
+)
 @pass_environment
 def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
     """[config] Channels configuration.
 
-    This command configure and enable channels.
-    By default all channels from this command are passed to the plugins,
-    but can be precisely selected with plugin '--channels' option.
-    """
+    This command configure and enable given channels.
+    The channels must be integer separated by commas, eg 'chan 1,2,3'.
+    All availalbe channels can be configured with a single word 'all'.
+
+    By default all channels from this command are passed to all plugins.
+
+    \b
+    You can precisesly configure the channels for a given plugin using
+    the '--chan' option.
+    """  # noqa: D301
     assert ctx.phandler
     ctx.channels = (channels, divider)
     # configure channles
@@ -392,6 +412,9 @@ def trig(ctx: Environment, triggers: dict) -> bool:
 
     If channel is equal to character 'g' then the trigger is considered
     global for all channels.
+
+    You can precisesly configure the triggers for a given plugin using
+    the '--trig' option.
 
     \b
     Supported 'trigger' options:
