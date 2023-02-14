@@ -4,9 +4,10 @@ import pytest  # type: ignore
 
 from nxscli.trigger import (
     DTriggerConfig,
+    DTriggerConfigReq,
     ETriggerType,
     TriggerHandler,
-    trigger_from_str,
+    trigger_from_req,
 )
 
 # we want to run TriggerHandler tests without concurency
@@ -14,30 +15,35 @@ global_lock = Lock()
 
 
 def test_triggerfromstr():
-    x = trigger_from_str([("off", None)])
+    req = DTriggerConfigReq("off", None)
+    x = trigger_from_req(req)
     assert x.ttype == ETriggerType.ALWAYS_OFF
     assert x.srcchan is None
     assert x.hoffset == 0
     assert x.level is None
 
-    x = trigger_from_str([("on", None)])
+    req = DTriggerConfigReq("on", None)
+    x = trigger_from_req(req)
     assert x.ttype == ETriggerType.ALWAYS_ON
     assert x.srcchan is None
     assert x.hoffset == 0
     assert x.level is None
 
-    x = trigger_from_str([("er", None), "100", "10"])
+    req = DTriggerConfigReq("er", None, params=["100", "10"])
+    x = trigger_from_req(req)
     assert x.ttype == ETriggerType.EDGE_RISING
     assert x.hoffset == 100
     assert x.level == 10
 
-    x = trigger_from_str([("ef", None), "200", "20"])
+    req = DTriggerConfigReq("ef", None, params=["200", "20"])
+    x = trigger_from_req(req)
     assert x.ttype == ETriggerType.EDGE_FALLING
     assert x.srcchan is None
     assert x.hoffset == 200
     assert x.level == 20
 
-    x = trigger_from_str([("ef", 1), "200", "20"])
+    req = DTriggerConfigReq("ef", 1, params=["200", "20"])
+    x = trigger_from_req(req)
     assert x.ttype == ETriggerType.EDGE_FALLING
     assert x.srcchan == 1
     assert x.hoffset == 200

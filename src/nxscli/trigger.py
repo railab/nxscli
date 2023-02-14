@@ -38,36 +38,52 @@ class DTriggerState:
 
 
 ###############################################################################
-# Function: trigger_from_str
+# Class: DDTriggerConfigReq
 ###############################################################################
 
 
-def trigger_from_str(strg: list) -> "DTriggerConfig":
+@dataclass
+class DTriggerConfigReq:
+    """The class representing trigger configuration request."""
+
+    ttype: str
+    srcchan: int | None
+    params: list | None = None
+
+
+###############################################################################
+# Function: trigger_from_req
+###############################################################################
+
+
+def trigger_from_req(req: DTriggerConfigReq) -> "DTriggerConfig":
     """Get trigger configuration from string.
 
-    :param strg: trigger configuration in string format
+    :param req: trigger configuration request
     """
-    ttype = strg[0][0]
-    srcchan = strg[0][1]
-    if ttype == "off":
+    if req.ttype == "off":
         # no arguments
         dtc = DTriggerConfig(ETriggerType.ALWAYS_OFF)
-    elif ttype == "on":
+    elif req.ttype == "on":
         # no arguments
         dtc = DTriggerConfig(ETriggerType.ALWAYS_ON)
-    elif ttype == "er":
+    elif req.ttype == "er":
         # argument 1 horisontal offset
         # argument 2 trigger level
-        hoffset = int(strg[1])
-        level = float(strg[2])
-        dtc = DTriggerConfig(ETriggerType.EDGE_RISING, srcchan, hoffset, level)
-    elif ttype == "ef":
-        # argument 1 horisontal offset
-        # argument 2 trigger level
-        hoffset = int(strg[1])
-        level = float(strg[2])
+        assert req.params
+        hoffset = int(req.params[0])
+        level = float(req.params[1])
         dtc = DTriggerConfig(
-            ETriggerType.EDGE_FALLING, srcchan, hoffset, level
+            ETriggerType.EDGE_RISING, req.srcchan, hoffset, level
+        )
+    elif req.ttype == "ef":
+        # argument 1 horisontal offset
+        # argument 2 trigger level
+        assert req.params
+        hoffset = int(req.params[0])
+        level = float(req.params[1])
+        dtc = DTriggerConfig(
+            ETriggerType.EDGE_FALLING, req.srcchan, hoffset, level
         )
     else:
         raise AssertionError

@@ -12,6 +12,7 @@ from nxscli.iplugin import (
     IPluginText,
 )
 from nxscli.phandler import PluginHandler
+from nxscli.trigger import DTriggerConfigReq
 
 
 class MockPlugin1(IPlugin):
@@ -363,20 +364,45 @@ def test_phandler_start_noready(nxscope):
 def test_phandler_trigger():
     p = PluginHandler()
 
-    assert p.trigger_get(0) == [("on", None)]
-    assert p.trigger_get(1) == [("on", None)]
+    # default all on
+    dt = p.trigger_get(0)
+    assert dt.ttype == "on"
+    assert dt.srcchan is None
+    assert dt.params is None
+    dt = p.trigger_get(1)
+    assert dt.ttype == "on"
+    assert dt.srcchan is None
+    assert dt.params is None
 
-    trg = {-1: [("off", None)]}
+    trg = {-1: DTriggerConfigReq("off", None)}
     p.triggers_configure(trg)
-    assert p.trigger_get(0) == [("off", None)]
-    assert p.trigger_get(1) == [("off", None)]
+    dt = p.trigger_get(0)
+    assert dt.ttype == "off"
+    assert dt.srcchan is None
+    assert dt.params is None
+    dt = p.trigger_get(1)
+    assert dt.ttype == "off"
+    assert dt.srcchan is None
+    assert dt.params is None
 
-    trg = {-1: [("on", None)]}
+    trg = {-1: DTriggerConfigReq("on", None)}
     p.triggers_configure(trg)
-    assert p.trigger_get(0) == [("on", None)]
-    assert p.trigger_get(1) == [("on", None)]
+    dt = p.trigger_get(0)
+    assert dt.ttype == "on"
+    assert dt.srcchan is None
+    assert dt.params is None
+    dt = p.trigger_get(1)
+    assert dt.ttype == "on"
+    assert dt.srcchan is None
+    assert dt.params is None
 
-    trg = {0: [("on", None)], 1: [("off", None)]}
+    trg = {0: DTriggerConfigReq("on", None), 1: DTriggerConfigReq("off", None)}
     p.triggers_configure(trg)
-    assert p.trigger_get(0) == [("on", None)]
-    assert p.trigger_get(1) == [("off", None)]
+    dt = p.trigger_get(0)
+    assert dt.ttype == "on"
+    assert dt.srcchan is None
+    assert dt.params is None
+    dt = p.trigger_get(1)
+    assert dt.ttype == "off"
+    assert dt.srcchan is None
+    assert dt.params is None

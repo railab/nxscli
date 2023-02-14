@@ -8,7 +8,7 @@ from nxscli.idata import PluginData, PluginDataCb
 from nxscli.iplugin import IPlugin
 from nxscli.logger import logger
 from nxscli.plot_mpl import PluginPlotMpl
-from nxscli.trigger import TriggerHandler, trigger_from_str
+from nxscli.trigger import DTriggerConfigReq, TriggerHandler, trigger_from_req
 
 if TYPE_CHECKING:
     from nxslib.dev import Device, DeviceChannel
@@ -226,7 +226,7 @@ class PluginHandler:
 
         return ret
 
-    def trigger_get(self, chid: int, src: dict | None = None) -> list:
+    def trigger_get(self, chid: int, src: dict | None = None) -> DTriggerConfigReq:
         """Get trigger for a given channel.
 
         :param chid: channel ID
@@ -248,7 +248,8 @@ class PluginHandler:
                 trg = array[globkey]
             else:
                 # default on
-                trg = [("on", None)]
+                trg = DTriggerConfigReq("on", None)
+        print("trg=", trg)
         return trg
 
     def data_handler(
@@ -346,7 +347,7 @@ class PluginHandler:
         ret = []
         for item in trgs:
             # get trigger configuration
-            dtc = trigger_from_str(item[1])
+            dtc = trigger_from_req(item[1])
             # get trigger
             trig = TriggerHandler(item[0], dtc)
             ret.append(trig)
