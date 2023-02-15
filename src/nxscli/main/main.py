@@ -798,10 +798,8 @@ def cli_on_close(ctx: Environment) -> bool:
     # plugins loop
     ret = plugin_loop(ctx)
 
-    # wait for plugins only if not test
-    if not ctx.testctx:
-        # wait until all figers closed
-        wait_for_plugins(ret)
+    # wait until all figers closed
+    wait_for_plugins(ret)
 
     print("closing...")
     ctx.phandler.stop()
