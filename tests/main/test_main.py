@@ -1,13 +1,93 @@
+from unittest.mock import Mock
+
 import pytest  # type: ignore
 from click.testing import CliRunner
 
 import nxscli
-from nxscli.main.main import Environment, main
+from nxscli.main.main import main
+
+
+class FigureMock:  # pragma: no cover
+    def __init__(self):
+        self.canvas = Mock()
+        self.number = 0
+
+    def delaxes(self, ax):
+        pass
+
+    def add_subplot(self, row, col, i):
+        return AxesMock()
+
+
+class AxesMock:  # pragma: no cover
+    def __init__(self):
+        pass
+
+    def plot(self, x, y, fmt=None):
+        return (Mock(),)
+
+    def get_xlim(self):
+        pass
+
+    def get_ylim(self):
+        pass
+
+    def set_xlim(self, a, b):
+        pass
+
+    def set_ylim(self, a, b):
+        pass
+
+    def get_title(self):
+        pass
+
+    def set_title(self, a1):
+        pass
+
+    def get_xaxis(self):
+        pass
+
+    def grid(self, a1):
+        pass
+
+
+class MplManagerMock:  # pragma: no cover
+    @staticmethod
+    def draw():
+        pass
+
+    @staticmethod
+    def fig_is_open():
+        pass
+
+    @staticmethod
+    def pause(interval):
+        pass
+
+    @classmethod
+    def show(cls, block):
+        pass
+
+    @staticmethod
+    def mpl_config():
+        pass
+
+    @staticmethod
+    def figure(dpi: float = 100.0):
+        return FigureMock()
+
+    def func_animation(**kwargs):
+        return Mock()
+
+    @staticmethod
+    def close(fig):
+        pass
 
 
 @pytest.fixture
 def runner(mocker):
-    mocker.patch.object(nxscli.main.main, 'wait_for_plugins', autospec=True)
+    mocker.patch.object(nxscli.main.main, "wait_for_plugins", autospec=True)
+    mocker.patch.object(nxscli.plot_mpl, "MplManager", MplManagerMock)
     return CliRunner()
 
 
@@ -22,27 +102,18 @@ def test_main_dummy(runner):
 
 
 def test_main_pdevinfo(runner):
-    # test context not needed here
-    Environment.testctx_set(False)
-
     args = ["dummy", "pdevinfo"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
 
 def test_main_chan_nointf(runner):
-    # test context not needed here
-    Environment.testctx_set(False)
-
     args = ["chan", "0"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
 
 
 def test_main_chan(runner):
-    # test context not needed here
-    Environment.testctx_set(False)
-
     args = ["chan", "1000"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
@@ -81,9 +152,6 @@ def test_main_chan(runner):
 
 
 def test_main_pcap(runner):
-    # test context needed
-    Environment.testctx_set(True)
-
     args = ["chan", "1", "pcap", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
@@ -102,9 +170,6 @@ def test_main_pcap(runner):
 
 
 def test_main_pcsv(runner):
-    # test context needed
-    Environment.testctx_set(True)
-
     args = ["chan", "1", "pcsv", "1", "./test"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
@@ -130,9 +195,6 @@ def test_main_pcsv(runner):
 
 
 def test_main_pnpsave(runner):
-    # test context needed
-    Environment.testctx_set(True)
-
     args = ["chan", "1", "pnpsave", "1", "./test"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
@@ -158,9 +220,6 @@ def test_main_pnpsave(runner):
 
 
 def test_main_pani1(runner):
-    # test context needed
-    Environment.testctx_set(True)
-
     args = ["chan", "1", "pani1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
@@ -175,9 +234,6 @@ def test_main_pani1(runner):
 
 
 def test_main_pani2(runner):
-    # test context needed
-    Environment.testctx_set(True)
-
     args = ["chan", "1", "pani2", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 2
@@ -196,9 +252,6 @@ def test_main_pani2(runner):
 
 
 def test_main_trig(runner):
-    # test context needed
-    Environment.testctx_set(True)
-
     args = ["dummy", "chan", "1", "trig", "xxx"]
     result = runner.invoke(main, args)
     assert result.exit_code == 1
@@ -225,9 +278,6 @@ def test_main_trig(runner):
 
 
 def test_main_trig_plugin(runner):
-    # test context needed
-    Environment.testctx_set(True)
-
     args = ["dummy", "chan", "1", "trig", "xxx", "pani2", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 1
@@ -258,9 +308,6 @@ def test_main_trig_plugin(runner):
 
 
 def test_main_help(runner):
-    # test context needed
-    Environment.testctx_set(True)
-
     args = ["dummy", "--help"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
