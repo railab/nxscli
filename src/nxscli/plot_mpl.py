@@ -3,7 +3,7 @@
 import queue
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Generator, Any
+from typing import TYPE_CHECKING, Any, Generator
 
 import matplotlib.pyplot as plt  # type: ignore
 from matplotlib import _pylab_helpers  # type: ignore
