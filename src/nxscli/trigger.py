@@ -319,7 +319,7 @@ class TriggerHandler(object):
                 self._src.unsubscribe_cross(self)
             if self in TriggerHandler._wait_for_src:
                 TriggerHandler._wait_for_src.remove(self)
-        else: # pragma: no cover
+        else:  # pragma: no cover
             pass
         if remove_self:
             if self in self._instances:
