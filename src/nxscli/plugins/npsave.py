@@ -17,14 +17,15 @@ if TYPE_CHECKING:
 ###############################################################################
 
 
-class PluginNpsave(IPluginFile, ThreadCommon):
+class PluginNpsave(IPluginFile):
     """Plugin that capture data to Numpy file."""
 
     def __init__(self) -> None:
         """Intiialize a Numpy capture plugin."""
         IPluginFile.__init__(self)
-        ThreadCommon.__init__(
-            self, self._start_thread, self._thread_init, self._thread_final
+
+        self._thread = ThreadCommon(
+            self._start_thread, self._thread_init, self._thread_final
         )
 
         self._samples: int
@@ -87,7 +88,7 @@ class PluginNpsave(IPluginFile, ThreadCommon):
 
         # break loop if done
         if self._is_done(self._datalen):
-            self._stop_set()
+            self._thread._stop_set()
 
     @property
     def stream(self) -> bool:
@@ -96,7 +97,7 @@ class PluginNpsave(IPluginFile, ThreadCommon):
 
     def stop(self) -> None:
         """Stop capture plugin."""
-        self.thread_stop()
+        self._thread.thread_stop()
 
     def data_wait(self, timeout: float = 0.0) -> bool:
         """Return True if data are ready.
@@ -129,7 +130,7 @@ class PluginNpsave(IPluginFile, ThreadCommon):
         if not self._data.qdlist:  # pragma: no cover
             return False
 
-        self.thread_start()
+        self._thread.thread_start()
 
         return True
 

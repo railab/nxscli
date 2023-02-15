@@ -17,14 +17,15 @@ if TYPE_CHECKING:
 ###############################################################################
 
 
-class PluginCapture(IPluginPlotStatic, ThreadCommon):
+class PluginCapture(IPluginPlotStatic):
     """Plugin that plot static captured data."""
 
     def __init__(self) -> None:
         """Intiialize a capture plot plugin."""
         IPluginPlotStatic.__init__(self)
-        ThreadCommon.__init__(
-            self, self._start_thread, self._thread_init, self._thread_final
+
+        self._thread = ThreadCommon(
+            self._start_thread, self._thread_init, self._thread_final
         )
 
         self._samples: int
@@ -80,7 +81,7 @@ class PluginCapture(IPluginPlotStatic, ThreadCommon):
 
         # break loop if done
         if self._is_done(self._datalen):
-            self._stop_set()
+            self._thread._stop_set()
 
     @property
     def stream(self) -> bool:
@@ -89,7 +90,7 @@ class PluginCapture(IPluginPlotStatic, ThreadCommon):
 
     def stop(self) -> None:
         """Stop capture plugin."""
-        self.thread_stop()
+        self._thread.thread_stop()
 
     def data_wait(self, timeout: float = 0.0) -> bool:
         """Return True if data are ready.
@@ -131,7 +132,7 @@ class PluginCapture(IPluginPlotStatic, ThreadCommon):
             else:  # pragma: no cover
                 pass
 
-        self.thread_start()
+        self._thread.thread_start()
 
         return True
 

@@ -18,14 +18,15 @@ if TYPE_CHECKING:
 ###############################################################################
 
 
-class PluginCsv(IPluginFile, ThreadCommon):
+class PluginCsv(IPluginFile):
     """Plugin that capture data to CSV files."""
 
     def __init__(self) -> None:
         """Initialize a CSV plugin."""
         IPluginFile.__init__(self)
-        ThreadCommon.__init__(
-            self, self._start_thread, self._thread_init, self._thread_final
+
+        self._thread = ThreadCommon(
+            self._start_thread, self._thread_init, self._thread_final
         )
 
         self._samples: int
@@ -114,7 +115,7 @@ class PluginCsv(IPluginFile, ThreadCommon):
 
         # break loop if done
         if self._is_done(self._datalen):
-            self._stop_set()
+            self._thread._stop_set()
 
     @property
     def stream(self) -> bool:
@@ -123,7 +124,7 @@ class PluginCsv(IPluginFile, ThreadCommon):
 
     def stop(self) -> None:
         """Stop CSV plugin."""
-        self.thread_stop()
+        self._thread.thread_stop()
 
     def data_wait(self, timeout: float = 0.0) -> bool:
         """Return True if data are ready.
@@ -157,7 +158,7 @@ class PluginCsv(IPluginFile, ThreadCommon):
         if not self._data.qdlist:  # pragma: no cover
             return False
 
-        self.thread_start()
+        self._thread.thread_start()
 
         return True
 
