@@ -48,21 +48,9 @@ class DEnvironmentData:
 class Environment(DEnvironmentData):
     """A class with application environmet."""
 
-    _testctx = False
-
     def __init__(self) -> None:
         """Initialize environmet."""
         super().__init__()
-
-    @property
-    def testctx(self) -> bool:
-        """Return True if we are in the test context."""
-        return self._testctx
-
-    @classmethod
-    def testctx_set(cls: type["Environment"], val: bool) -> None:
-        """Set the test context - workaroud for a plugins busy-waiting."""
-        cls._testctx = val
 
 
 ###############################################################################
@@ -269,10 +257,6 @@ def main(ctx: Environment, debug: bool) -> bool:
 
     # configure mplt
     MplManager.mpl_config()
-
-    if ctx.testctx:
-        # test context for mpl
-        MplManager.testctx(True)
 
     ctx.phandler = PluginHandler(g_plugins_default)
     ctx.nxscope = NxscopeHandler()

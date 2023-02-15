@@ -3,7 +3,7 @@
 import queue
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, Generator, Any
 
 import matplotlib.pyplot as plt  # type: ignore
 from matplotlib import _pylab_helpers  # type: ignore
@@ -29,15 +29,13 @@ if TYPE_CHECKING:
 class MplManager:
     """Matplotlib global manager."""
 
-    _testctx = False
-
     @staticmethod
     def draw() -> None:  # pragma: no cover
         """Draw an animation."""
         plt.draw()
 
     @staticmethod
-    def fig_is_open() -> list:
+    def fig_is_open() -> list:  # pragma: no cover
         """Return a list of opened figures."""
         return plt.get_fignums()
 
@@ -59,19 +57,13 @@ class MplManager:
         else:
             time.sleep(interval)
 
-    @classmethod
-    def show(cls, block: bool = True) -> None:
+    @staticmethod
+    def show(block: bool = True) -> None:
         """Show an animation.
 
         :param block: blocking operation
         """
-        if not cls._testctx:  # pragma: no cover
-            plt.show(block=block)
-
-    @classmethod
-    def testctx(cls, val: bool) -> None:
-        """Configure test context."""
-        cls._testctx = val
+        plt.show(block=block)
 
     @staticmethod
     def mpl_config() -> None:
@@ -85,6 +77,14 @@ class MplManager:
         :param dpi: figure DPI
         """
         return plt.figure(dpi=dpi)
+
+    @staticmethod
+    def func_animation(**kwargs: Any) -> Any:
+        """Create animation.
+
+        :param kwargs: animation arugments
+        """
+        return FuncAnimation(**kwargs)
 
     @staticmethod
     def close(fig: "Figure") -> None:
@@ -437,11 +437,11 @@ class PluginAnimationCommonMpl:
         update = partial(self._animation_update_cmn, pdata=self._pdata)
         frames = partial(self._animation_frames, qdata=self._qdata)
         init = partial(self._animation_init, pdata=self._pdata)
-        self._ani = FuncAnimation(
-            fig,
-            update,
-            frames,
-            init,
+        self._ani = MplManager.func_animation(
+            fig=fig,
+            func=update,
+            frames=frames,
+            init_func=init,
             interval=1,
             blit=True,
             cache_frame_data=False,
