@@ -6,7 +6,6 @@ from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
 from threading import Lock
-from typing import Any
 
 from nxscli.logger import logger
 
@@ -118,10 +117,12 @@ class TriggerHandler(object):
     _instances: weakref.WeakSet = weakref.WeakSet()
     _wait_for_src: weakref.WeakSet = weakref.WeakSet()
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> "TriggerHandler":
+    def __new__(cls, chan: int, config: DTriggerConfig) -> "TriggerHandler":
         """Create a new instance and store reference in a weak set."""
         instance = object.__new__(cls)
         cls._instances.add(instance)
+        # create additional flag that helps during instance cleanup
+        object.__setattr__(instance, "_initdone", False)
         return instance
 
     def __init__(self, chan: int, config: DTriggerConfig) -> None:
@@ -147,6 +148,7 @@ class TriggerHandler(object):
         # cross trigger status protected with lock
         self._lock = Lock()
         self._cross_trigger: DTriggerState = DTriggerState(False, 0)
+        self._initdone = True
 
     def __del__(self) -> None:
         """Clean up."""
@@ -306,16 +308,22 @@ class TriggerHandler(object):
     def cls_cleanup(cls: type["TriggerHandler"]) -> None:
         """Clean up all instances."""
         for x in cls._instances:
-            x.cleanup()
+            x.cleanup(remove_self=False)
         # clear set
         cls._instances.clear()
 
-    def cleanup(self) -> None:
+    def cleanup(self, remove_self: bool = True) -> None:
         """Clean up instance."""
-        if self._src:
-            self._src.unsubscribe_cross(self)
-        if self in TriggerHandler._wait_for_src:
-            TriggerHandler._wait_for_src.remove(self)
+        if self._initdone:
+            if self._src:
+                self._src.unsubscribe_cross(self)
+            if self in TriggerHandler._wait_for_src:
+                TriggerHandler._wait_for_src.remove(self)
+        else: # pragma: no cover
+            pass
+        if remove_self:
+            if self in self._instances:
+                self._instances.remove(self)
 
     def source_set(self, inst: "TriggerHandler") -> None:
         """Set source instance."""
