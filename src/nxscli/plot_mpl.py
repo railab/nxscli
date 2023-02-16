@@ -66,9 +66,10 @@ class MplManager:
         plt.show(block=block)
 
     @staticmethod
-    def mpl_config() -> None:
+    def mpl_config(style: list) -> None:
         """Configure matplotlib."""
-        plt.style.use(["ggplot", "fast"])
+        logger.info("plt.style %s", str(style))
+        plt.style.use(style)
 
     @staticmethod
     def figure(dpi: float = 100.0) -> "Figure":
