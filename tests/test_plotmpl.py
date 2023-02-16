@@ -61,7 +61,7 @@ def test_plotdataaxesmpl():
     with pytest.raises(TypeError):
         x = PlotDataAxesMpl(axes, chan)
 
-    chan = DeviceChannel(0, 2, 2, "chan0")
+    chan = DeviceChannel(chan=0, _type=2, vdim=2, name="chan0")
     x = PlotDataAxesMpl(axes, chan)
 
     assert x.ax is axes
@@ -79,10 +79,16 @@ def test_plotdataaxesmpl():
     x.xaxis_disable()
     x.xaxis_set_ticks([])
 
+    x = PlotDataAxesMpl(axes, chan, fmt=None)
+    assert x._fmt == ["", ""]
+
+    x = PlotDataAxesMpl(axes, chan, fmt=["o", "b"])
+    assert x._fmt == ["o", "b"]
+
 
 def test_pluginanimationcommonmpl():
     q = queue.Queue()
-    chan = DeviceChannel(0, 2, 2, "chan0")
+    chan = DeviceChannel(chan=0, _type=2, vdim=2, name="chan0")
     fig = Figure()
     axes = Axes(fig, (1, 1, 2, 6))
     pdata = PlotDataAxesMpl(axes, chan)
@@ -103,15 +109,35 @@ def dummy_stream_unsub(ch, q):
 
 
 def test_pluginplotmpl():
-    chanlist = [DeviceChannel(0, 2, 2, "chan0")]
+    chanlist = [
+        DeviceChannel(chan=0, _type=1, vdim=2, name="chan0"),  # not numerical
+        DeviceChannel(chan=1, _type=2, vdim=1, name="chan1"),
+        DeviceChannel(chan=2, _type=2, vdim=2, name="chan2"),
+    ]
     dtc = DTriggerConfig(ETriggerType.ALWAYS_OFF)
-    trig = [TriggerHandler(0, dtc)]
+    trig = [TriggerHandler(1, dtc), TriggerHandler(2, dtc)]
     cb = PluginDataCb(dummy_stream_sub, dummy_stream_unsub)
     x = PluginPlotMpl(chanlist, trig, cb)
 
     assert x.fig is not None
     assert x.ani == []
     assert len(x.plist) > 0
+    assert len(x._chanlist) == 2  # one channel not numerical
+    assert x._fmt == [None, None]
+
+    # test fmt configuration
+    x = PluginPlotMpl(chanlist, trig, cb, fmt="o")
+    assert x._fmt == [["o"], ["o", "o"]]
+
+    x = PluginPlotMpl(chanlist, trig, cb, fmt=[["o"], ["b", "b"]])
+    assert x._fmt == [["o"], ["b", "b"]]
+
+    # invalid vector fmt for chan 2
+    with pytest.raises(AssertionError):
+        x = PluginPlotMpl(chanlist, trig, cb, fmt=["o", "b"])
+    # invalid channels fmt
+    with pytest.raises(AssertionError):
+        x = PluginPlotMpl(chanlist, trig, cb, fmt=["o", "b", "c"])
 
     # TODO
 
