@@ -54,14 +54,41 @@ class Environment(DEnvironmentData):
         super().__init__()
 
 
-def get_list_from_str(value: str, char: str = ",") -> list[Any]:
+###############################################################################
+# Function: get_list_from_str
+###############################################################################
+
+
+def get_list_from_str(value: str, char: str = ",") -> list[str]:
     """Get list of values from string argument."""
     if not len(value):
         return []
     # remove white spaces
     tmp = value.replace(" ", "")
-    # separate strings
+    # one separator
     return tmp.split(char)
+
+
+###############################################################################
+# Function: get_list_from_str2
+###############################################################################
+
+
+def get_list_from_str2(
+    value: str, char1: str = ",", char2: str = ";"
+) -> list[list[str]]:
+    """Get list of values from string argument."""
+    if not len(value):
+        return []
+    # remove white spaces
+    tmp = value.replace(" ", "")
+
+    # two separators, start from the second one
+    ch2 = tmp.split(char2)
+    ch1 = []
+    for ch in ch2:
+        ch1.append(ch.split(char1))
+    return ch1
 
 
 ###############################################################################
@@ -83,8 +110,8 @@ class Channels(click.ParamType):
             return lint
 
         lstr = get_list_from_str(value)
-        for chan in lstr:
-            chan = int(chan)
+        for ch in lstr:
+            chan = int(ch)
             if chan < 0 or chan > 255:
                 raise click.BadParameter(
                     "channel id must be in range [0, 255]"
@@ -113,11 +140,11 @@ class Trigger(click.ParamType):
 
     def convert(self, value: Any, param: Any, ctx: Any) -> dict:
         """Convert trigger argument."""
-        tmp = get_list_from_str(value, char=self.req_split)
+        tmp = get_list_from_str(value, self.req_split)
         # get configurations
         ret = {}
         for trg in tmp:
-            chan, params = trg.split(self.req_assign)
+            schan, params = trg.split(self.req_assign)
             tmp = params.split(self.req_separator)
 
             # decore trigger cross channel and channel vector
@@ -147,10 +174,10 @@ class Trigger(click.ParamType):
 
             cfg = tmp[1:]
             # special case for global configuration
-            if chan == self.req_global:
+            if schan == self.req_global:
                 chan = -1
             else:
-                chan = int(chan)
+                chan = int(schan)
 
             # reset cross source if we point to ourself
             if cross == chan:
@@ -171,12 +198,12 @@ class Divider(click.ParamType):
 
     name = "divider"
 
-    def convert(self, value: Any, param: Any, ctx: Any) -> list[int]:
+    def convert(self, value: Any, param: Any, ctx: Any) -> list[int] | int:
         """Convert divider argument."""
         lstr = get_list_from_str(value)
         lint = []
-        for div in lstr:
-            div = int(div)
+        for d in lstr:
+            div = int(d)
             if div < 0 or div > 255:
                 raise click.BadParameter("divnel id must be in range [0, 255]")
             lint.append(div)
@@ -194,13 +221,39 @@ class Divider(click.ParamType):
 
 
 class StringList(click.ParamType):
-    """Parse divider argument."""
+    """Parse a string list argument."""
 
     name = "stringlist"
 
+    def __init__(self, ch1: str = ",") -> None:
+        """Initialize parser."""
+        super().__init__()
+        self._ch1 = ch1
+
     def convert(self, value: Any, param: Any, ctx: Any) -> list[str]:
-        """Convert s string list argument."""
-        return get_list_from_str(value)
+        """Convert a string list argument."""
+        return get_list_from_str(value, self._ch1)
+
+
+###############################################################################
+# Class: StringList2
+###############################################################################
+
+
+class StringList2(click.ParamType):
+    """Parse a string list argument (2 separators)."""
+
+    name = "stringlist2"
+
+    def __init__(self, ch1: str = ",", ch2: str = ";") -> None:
+        """Initialize parser."""
+        super().__init__()
+        self._ch1 = ch1
+        self._ch2 = ch2
+
+    def convert(self, value: Any, param: Any, ctx: Any) -> list[list[str]]:
+        """Convert a string list argument."""
+        return get_list_from_str2(value, self._ch1, self._ch2)
 
 
 ###############################################################################
@@ -217,6 +270,12 @@ _divider_option_help = """Configure divider for a given channels.
                           the same divider value, or use a list of integers
                           (separated by commas) to directly configure the
                           channels."""
+_fmt_option_help = """Plugin specific Matplotlib format string configuration.
+                      Channels separated by a semicolon (;),
+                      vectors separated by a commas (?).
+                      Example: 'r?g?b; -r?; r?b'
+                      Defalut: Matplotlib default.
+                      """  # noqa: D301
 
 
 ###############################################################################
@@ -239,7 +298,12 @@ _plot_options = (
         help=_trigger_option_help,
     ),
     click.option("--dpi", type=int, default=100),
-    click.option("--fmt", default=""),
+    click.option(
+        "--fmt",
+        default="",
+        type=StringList2(ch1="?"),
+        help=_fmt_option_help,
+    ),
     click.option("--write", type=click.Path(resolve_path=False), default=""),
 )
 
@@ -474,7 +538,7 @@ def pani1(
     chan: list[int],
     trig: dict,
     dpi: float,
-    fmt: str,
+    fmt: list[list[str]],
     write: str,
 ) -> bool:
     """[plugin] Animation plot without a length limit."""
@@ -503,7 +567,7 @@ def pani2(
     chan: list[int],
     trig: dict,
     dpi: float,
-    fmt: str,
+    fmt: list[list[str]],
     write: str,
 ) -> bool:
     """[plugin] Animation plot with a lenght limit."""
@@ -542,7 +606,7 @@ def pcap(
     chan: list[int],
     trig: dict,
     dpi: float,
-    fmt: str,
+    fmt: list[list[str]],
     write: str,
 ) -> bool:
     """[plugin] Static plot for a given number of samples.

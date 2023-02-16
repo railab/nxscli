@@ -4,7 +4,7 @@ import pytest  # type: ignore
 from click.testing import CliRunner
 
 import nxscli
-from nxscli.main.main import main
+from nxscli.main.main import get_list_from_str, get_list_from_str2, main
 
 
 class FigureMock:  # pragma: no cover
@@ -23,7 +23,7 @@ class AxesMock:  # pragma: no cover
     def __init__(self):
         pass
 
-    def plot(self, x, y, fmt=None):
+    def plot(self, arg1, arg2=None, arg3=None):
         return (Mock(),)
 
     def get_xlim(self):
@@ -82,6 +82,17 @@ class MplManagerMock:  # pragma: no cover
     @staticmethod
     def close(fig):
         pass
+
+
+def test_get_list_from_str():
+    assert get_list_from_str("") == []
+    assert get_list_from_str("a,b") == ["a", "b"]
+    assert get_list_from_str("a+a", char="+") == ["a", "a"]
+    assert get_list_from_str("ala,ala,bala") == ["ala", "ala", "bala"]
+
+    assert get_list_from_str2("") == []
+    assert get_list_from_str2("a,b,c,d") == [["a", "b", "c", "d"]]
+    assert get_list_from_str2("a,b;c,d") == [["a", "b"], ["c", "d"]]
 
 
 @pytest.fixture

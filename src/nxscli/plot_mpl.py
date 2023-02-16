@@ -201,7 +201,7 @@ class PlotDataAxesMpl(PlotDataCommon):
         self,
         ax: "Axes",
         channel: DeviceChannel,
-        fmt: str = "",
+        fmt: list[str] | None = None,
     ):
         """Initialize matplotlib specific plot data.
 
@@ -216,18 +216,28 @@ class PlotDataAxesMpl(PlotDataCommon):
             raise TypeError
 
         self._ax = ax
-        self._fmt = fmt
 
-        # TODO: typing
-        self._lns = []
-        for _ in range(channel.vdim):
-            (line,) = self._ax.plot([], [], fmt)
-            self._lns.append(line)
+        if not fmt:
+            # extend for all vectors
+            self._fmt = ["" for _ in range(channel.vdim)]
+        else:
+            # we have to configure each vector individualy
+            assert (
+                len(fmt) == channel.vdim
+            ), "fmt must match vectors in configured channel"
+            self._fmt = fmt
+
+        # we need lines for animations
+        self._lns: list["Line2D"] = []
+        for i in range(channel.vdim):
+            lines = self._ax.plot([], [], self._fmt[i])
+            self._lns.append(lines[0])
 
         # set grid
         self.grid_set(True)
 
-        if len(channel.name) > 0:
+        # set plot title if channel name available
+        if len(channel.name) > 0:  # pragma: no cover
             self.plot_title = channel.name
 
     def __str__(self) -> str:
@@ -291,8 +301,8 @@ class PlotDataAxesMpl(PlotDataCommon):
     def plot(self) -> None:
         """Plot all data."""
         assert self._ax
-        for i in self._ydata:
-            self._ax.plot(i, self._fmt)
+        for i, data in enumerate(self._ydata):
+            self._ax.plot(data, self._fmt[i])
 
     def xaxis_disable(self) -> None:
         """Disable x axis ticks."""
@@ -547,7 +557,7 @@ class PluginPlotMpl(PluginData):
         trig: list["TriggerHandler"],
         cb: PluginDataCb,
         dpi: float = 100.0,
-        fmt: str = "",
+        fmt: list[str] | None = None,
     ):
         """Intiialize a plot handler.
 
@@ -571,7 +581,23 @@ class PluginPlotMpl(PluginData):
         self._fig = MplManager.figure(dpi)
         self._ax: list[Axes] = []
         self._ani: list[PluginAnimationCommonMpl] = []
-        self._fmt = fmt
+
+        self._fmt: list[Any]
+        if not fmt:
+            # defaul configuration for all
+            self._fmt = [None for _ in range(len(self._chanlist))]
+        elif len(self._chanlist) != 1 and len(fmt) == 1:
+            # the same format for all channels - extend fmt for all channels
+            self._fmt = [
+                [fmt[0]] * self._chanlist[i].vdim
+                for i in range(len(self._chanlist))
+            ]
+        else:
+            # individual fmt for all channels
+            assert len(fmt) == len(
+                self._chanlist
+            ), "fmt must be specified for all configured channels"
+            self._fmt = fmt
 
         # add subplots
         self._add_subplots(newchanlist)
@@ -586,8 +612,14 @@ class PluginPlotMpl(PluginData):
     def _plist_init(self) -> list[PlotDataAxesMpl]:
         ret = []
         for i, channel in enumerate(self._chanlist):
+            logger.info(
+                "intialize PlotDataAxesMpl chan=%d vdim=%d fmt=%s",
+                channel.chan,
+                channel.vdim,
+                self._fmt[i],
+            )
             # initialize plot
-            pdata = PlotDataAxesMpl(self._ax[i], channel, fmt=self._fmt)
+            pdata = PlotDataAxesMpl(self._ax[i], channel, fmt=self._fmt[i])
             # add plot to list
             ret.append(pdata)
         return ret

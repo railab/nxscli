@@ -274,7 +274,7 @@ class PluginHandler:
         chanlist: list["DeviceChannel"],
         trig: list[TriggerHandler],
         dpi: float = 100.0,
-        fmt: str = "",
+        fmt: list[str] | None = None,
     ) -> PluginPlotMpl:
         """Prepare plot handler.
 
