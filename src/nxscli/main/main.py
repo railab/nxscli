@@ -38,6 +38,7 @@ class DEnvironmentData:
     channels: tuple | None = None
     phandler: PluginHandler | None = None
     triggers: dict | None = None
+    mplstyle: list[str] | None = None
 
 
 ###############################################################################
@@ -51,6 +52,16 @@ class Environment(DEnvironmentData):
     def __init__(self) -> None:
         """Initialize environmet."""
         super().__init__()
+
+
+def get_list_from_str(value: str, char: str = ",") -> list[Any]:
+    """Get list of values from string argument."""
+    if not len(value):
+        return []
+    # remove white spaces
+    tmp = value.replace(" ", "")
+    # separate strings
+    return tmp.split(char)
 
 
 ###############################################################################
@@ -71,7 +82,7 @@ class Channels(click.ParamType):
             lint.append(-1)
             return lint
 
-        lstr = value.split(",")
+        lstr = get_list_from_str(value)
         for chan in lstr:
             chan = int(chan)
             if chan < 0 or chan > 255:
@@ -102,10 +113,7 @@ class Trigger(click.ParamType):
 
     def convert(self, value: Any, param: Any, ctx: Any) -> dict:
         """Convert trigger argument."""
-        # remove white spaces
-        tmp = value.replace(" ", "")
-        # split requests
-        tmp = tmp.split(self.req_split)
+        tmp = get_list_from_str(value, char=self.req_split)
         # get configurations
         ret = {}
         for trg in tmp:
@@ -165,7 +173,7 @@ class Divider(click.ParamType):
 
     def convert(self, value: Any, param: Any, ctx: Any) -> list[int]:
         """Convert divider argument."""
-        lstr = value.split(",")
+        lstr = get_list_from_str(value)
         lint = []
         for div in lstr:
             div = int(div)
@@ -178,6 +186,21 @@ class Divider(click.ParamType):
             return lint[0]
         # else return list
         return lint
+
+
+###############################################################################
+# Class: StringList
+###############################################################################
+
+
+class StringList(click.ParamType):
+    """Parse divider argument."""
+
+    name = "stringlist"
+
+    def convert(self, value: Any, param: Any, ctx: Any) -> list[str]:
+        """Convert s string list argument."""
+        return get_list_from_str(value)
 
 
 ###############################################################################
@@ -244,10 +267,19 @@ pass_environment = click.make_pass_decorator(Environment, ensure=True)
 
 @click.group()
 @click.option(
-    "--debug/--no-debug", default=False, is_flag=True, envvar="NXSCLI_DEBUG"
+    "--debug/--no-debug",
+    default=False,
+    is_flag=True,
+    envvar="NXSCLI_DEBUG",
+)
+@click.option(
+    "--mplstyle",
+    default="ggplot,fast",
+    type=StringList(),
+    help="Configure Matplotlib style, default: ggplot, fast",
 )
 @pass_environment
-def main(ctx: Environment, debug: bool) -> bool:
+def main(ctx: Environment, debug: bool, mplstyle: list[str]) -> bool:
     """Nxscli - CLI to the Nxslib."""
     ctx.debug = debug
     if debug:  # pragma: no cover
@@ -255,15 +287,13 @@ def main(ctx: Environment, debug: bool) -> bool:
     else:
         logger.setLevel("INFO")
 
-    # configure mplt
-    MplManager.mpl_config()
-
     ctx.phandler = PluginHandler(g_plugins_default)
     ctx.nxscope = NxscopeHandler()
     parse = Parser()
     ctx.parser = parse
     ctx.plugins = []
     ctx.triggers = {}
+    ctx.mplstyle = mplstyle
 
     click.get_current_context().call_on_close(cli_on_close)
 
@@ -772,6 +802,10 @@ def cli_on_close(ctx: Environment) -> bool:
 
         # configure channles
         ctx.phandler.channels_configure(ctx.channels[0], ctx.channels[1])
+
+    # configure mplt
+    assert ctx.mplstyle
+    MplManager.mpl_config(ctx.mplstyle)
 
     # start plugins
     ctx.phandler.start()
