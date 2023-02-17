@@ -47,7 +47,7 @@ class PluginThread(ABC):
 
         # break loop if done
         if self._is_done(self._datalen):
-            self._thread._stop_set()
+            self._thread.stop_set()
 
     def _init_common(self) -> None:
         self._init()
