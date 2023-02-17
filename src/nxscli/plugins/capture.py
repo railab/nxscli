@@ -1,14 +1,13 @@
 """Module containing capture plugin."""
 
-import threading
 from typing import TYPE_CHECKING
-
-from nxslib.thread import ThreadCommon
 
 from nxscli.iplugin import IPluginPlotStatic
 from nxscli.logger import logger
+from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:
+    from nxscli.idata import PluginQueueData
     from nxscli.plot_mpl import PluginPlotMpl
 
 
@@ -17,90 +16,37 @@ if TYPE_CHECKING:
 ###############################################################################
 
 
-class PluginCapture(IPluginPlotStatic):
+class PluginCapture(PluginThread, IPluginPlotStatic):
     """Plugin that plot static captured data."""
 
     def __init__(self) -> None:
         """Intiialize a capture plot plugin."""
         IPluginPlotStatic.__init__(self)
+        PluginThread.__init__(self)
 
-        self._thread = ThreadCommon(
-            self._start_thread, self._thread_init, self._thread_final
-        )
-
-        self._samples: int
         self._plot: "PluginPlotMpl"
         self._write: str
-        self._ready = threading.Event()
-        self._nostop = False
-        self._datalen: list[int] = []
 
-    def _is_done(self, datalen: list[int]) -> bool:
-        if not self._nostop:
-            # check if capture done
-            done = True
-            for x in datalen:
-                if x < self._samples:
-                    done = False
-        else:  # pragma: no cover
-            done = False
-        return done
-
-    def _thread_init(self) -> None:
+    def _init(self) -> None:
         assert self._phandler
 
-        self._datalen = [0 for _ in range(len(self._plot.qdlist))]
-
-    def _thread_final(self) -> None:
+    def _final(self) -> None:
         logger.info("plot capture DONE")
 
-        self._ready.set()
+    def _handle_samples(
+        self, data: list, pdata: "PluginQueueData", j: int
+    ) -> None:
+        # store data
+        ydata: list[list] = [[] for v in range(pdata.vdim)]
+        for sample in data:
+            for i in range(pdata.vdim):
+                # TODO: metadata not supported for now
+                ydata[i].append(sample[0][i])
 
-    def _start_thread(self) -> None:
-        # get samples
-        for j, pdata in enumerate(self._plot.qdlist):
-            # get data from queue
-            data = pdata.queue_get(block=True, timeout=1)
-
-            if not self._nostop:  # pragma: no cover
-                # ignore data if capture done for channel
-                if self._datalen[j] >= self._samples:
-                    continue
-
-            # store data
-            ydata: list[list] = [[] for v in range(pdata.vdim)]
-            for sample in data:
-                for i in range(pdata.vdim):
-                    # TODO: metadata not supported for now
-                    ydata[i].append(sample[0][i])
-
-            # extend ydata
-            self._plot.plist[j].ydata_extend(ydata)
-            # get data len
-            self._datalen[j] = len(self._plot.plist[j].ydata[0])
-
-        # break loop if done
-        if self._is_done(self._datalen):
-            self._thread._stop_set()
-
-    @property
-    def stream(self) -> bool:
-        """Return True if this plugin needs stream."""
-        return True
-
-    def stop(self) -> None:
-        """Stop capture plugin."""
-        self._thread.thread_stop()
-
-    def data_wait(self, timeout: float = 0.0) -> bool:
-        """Return True if data are ready.
-
-        :param timeout: data wait timeout
-        """
-        if self._nostop:  # pragma: no cover
-            return True
-        else:
-            return self._ready.wait(timeout)
+        # extend ydata
+        self._plot.plist[j].ydata_extend(ydata)
+        # get data len
+        self._datalen[j] = len(self._plot.plist[j].ydata[0])
 
     def start(self, kwargs: dict) -> bool:
         """Start capture plugin.
@@ -132,7 +78,7 @@ class PluginCapture(IPluginPlotStatic):
             else:  # pragma: no cover
                 pass
 
-        self._thread.thread_start()
+        self.thread_start(self._plot)
 
         return True
 
