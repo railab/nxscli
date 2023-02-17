@@ -7,6 +7,8 @@ from nxscli.logger import logger
 from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:
+    from nxslib.nxscope import DNxscopeStream
+
     from nxscli.idata import PluginQueueData
     from nxscli.plot_mpl import PluginPlotMpl
 
@@ -34,14 +36,14 @@ class PluginCapture(PluginThread, IPluginPlotStatic):
         logger.info("plot capture DONE")
 
     def _handle_samples(
-        self, data: list, pdata: "PluginQueueData", j: int
+        self, data: list["DNxscopeStream"], pdata: "PluginQueueData", j: int
     ) -> None:
         # store data
         ydata: list[list] = [[] for v in range(pdata.vdim)]
         for sample in data:
             for i in range(pdata.vdim):
                 # TODO: metadata not supported for now
-                ydata[i].append(sample[0][i])
+                ydata[i].append(sample.data[i])
 
         # extend ydata
         self._plot.plist[j].ydata_extend(ydata)

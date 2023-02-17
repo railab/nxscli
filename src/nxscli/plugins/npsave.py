@@ -9,6 +9,8 @@ from nxscli.logger import logger
 from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:
+    from nxslib.nxscope import DNxscopeStream
+
     from nxscli.idata import PluginData, PluginQueueData
 
 ###############################################################################
@@ -44,13 +46,13 @@ class PluginNpsave(PluginThread, IPluginFile):
             np.save(chanpath, npdata)
 
     def _handle_samples(
-        self, data: list, pdata: "PluginQueueData", j: int
+        self, data: list["DNxscopeStream"], pdata: "PluginQueueData", j: int
     ) -> None:
         # store data
         for sample in data:
             for i in range(pdata.vdim):
                 # TODO: metadata not supported for now
-                self._npdata[j][i].append(sample[0][i])
+                self._npdata[j][i].append(sample.data[i])
 
         # get data len
         self._datalen[j] = len(self._npdata[j][0])

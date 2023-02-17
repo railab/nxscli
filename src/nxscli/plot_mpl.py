@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes  # type: ignore
     from matplotlib.figure import Figure  # type: ignore
     from matplotlib.lines import Line2D  # type: ignore
+    from nxslib.nxscope import DNxscopeStream
 
     from nxscli.trigger import TriggerHandler
 
@@ -386,7 +387,7 @@ class PluginAnimationCommonMpl:
 
         # limit to 100 samples per frame
         for _ in range(100):
-            data = []
+            data: list["DNxscopeStream"] = []
             try:
                 # this must be non-blocking for queue.Empty exception
                 data = qdata.queue_get(block=False)
@@ -396,7 +397,7 @@ class PluginAnimationCommonMpl:
             # print("qsize=", qdata._queue.qsize())
             for sample in data:
                 for i in range(self._qdata.vdim):
-                    ydata[i].append(sample[0][i])
+                    ydata[i].append(sample.data[i])
                     xdata[i].append(self._cnt)
                 self._cnt += 1
 
