@@ -778,6 +778,48 @@ def pnpmem(
 
 
 ###############################################################################
+# Function: pnone
+###############################################################################
+
+
+@click.command()
+@click.argument("samples", type=int, required=True)
+@click.option(
+    "--chan", default=None, type=Channels(), help=_channels_option_help
+)
+@click.option(
+    "--trig", default=None, type=Trigger(), help=_trigger_option_help
+)
+@pass_environment
+def pnone(
+    ctx: Environment,
+    samples: int,
+    chan: list[int],
+    trig: dict,
+) -> bool:
+    """[plugin] Dummy capture plugin.
+
+    If SAMPLES argument is set to 0 then we capture data until enter is press.
+    """
+    # wait for enter if samples set to 0
+    assert ctx.phandler
+    if samples == 0:  # pragma: no cover
+        ctx.waitenter = True
+
+    ctx.phandler.enable(
+        "none",
+        samples=samples,
+        channels=chan,
+        trig=trig,
+        nostop=ctx.waitenter,
+    )
+
+    ctx.needchannels = True
+
+    return True
+
+
+###############################################################################
 # Function: pdevinfo
 ###############################################################################
 
@@ -819,13 +861,13 @@ def handle_plugin(plugin: type[IPlugin]) -> tuple:
         devinfo_print(info)
         return ()
 
-    elif plugin.ptype is EPluginType.PLOT:
+    elif plugin.ptype is EPluginType.STATIC:
         plot = plugin.result()
         for pdata in plot.plist:
             # plot samples
             pdata.plot()
         MplManager.show(block=False)
-        return (EPluginType.PLOT, plot)
+        return (EPluginType.STATIC, plot)
 
     elif plugin.ptype is EPluginType.ANIMATION:
         plot = plugin.result()
@@ -834,6 +876,9 @@ def handle_plugin(plugin: type[IPlugin]) -> tuple:
 
     elif plugin.ptype is EPluginType.FILE:
         print("TODO: file handler ?")
+        return ()
+
+    elif plugin.ptype is EPluginType.NONE:
         return ()
 
     else:
@@ -956,6 +1001,7 @@ def click_final_init() -> None:
         pcsv,
         pnpsave,
         pnpmem,
+        pnone,
         pdevinfo,
     ]
     groups = [dummy, serial]

@@ -6,6 +6,7 @@ from nxscli.plugins.animation2 import PluginAnimation2
 from nxscli.plugins.capture import PluginCapture
 from nxscli.plugins.csv import PluginCsv
 from nxscli.plugins.devinfo import PluginDevinfo
+from nxscli.plugins.none import PluginNone
 from nxscli.plugins.npmem import PluginNpmem
 from nxscli.plugins.npsave import PluginNpsave
 
@@ -17,4 +18,5 @@ g_plugins_default = [
     ("csv", PluginCsv),
     ("npsave", PluginNpsave),
     ("npmem", PluginNpmem),
+    ("none", PluginNone),
 ]

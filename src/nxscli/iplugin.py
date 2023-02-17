@@ -15,10 +15,11 @@ if TYPE_CHECKING:
 class EPluginType(Enum):
     """Nxscli plugin types."""
 
-    TEXT = 1
-    PLOT = 2
-    ANIMATION = 3
-    FILE = 4
+    NONE = 1
+    TEXT = 2
+    STATIC = 3
+    ANIMATION = 4
+    FILE = 5
 
 
 ###############################################################################
@@ -94,6 +95,19 @@ class IPlugin(ABC):
 
 
 ###############################################################################
+# Class: IPluginNone
+###############################################################################
+
+
+class IPluginNone(IPlugin):
+    """None-type plugin."""
+
+    def __init__(self) -> None:
+        """Initialize none-type plugin."""
+        super().__init__(EPluginType.NONE)
+
+
+###############################################################################
 # Class: IPluginText
 ###############################################################################
 
@@ -116,7 +130,7 @@ class IPluginPlotStatic(IPlugin):
 
     def __init__(self) -> None:
         """Initialize static-plot-type plugin."""
-        super().__init__(EPluginType.PLOT)
+        super().__init__(EPluginType.STATIC)
 
 
 ###############################################################################
