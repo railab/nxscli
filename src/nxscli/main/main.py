@@ -371,8 +371,16 @@ def main(ctx: Environment, debug: bool, mplstyle: list[str]) -> bool:
 
 @main.group(chain=True)
 @click.option("--writepadding", default=0)
+@click.option(
+    "--streamsleep", type=float, default=0.001, help="dummy dev parameter"
+)
+@click.option(
+    "--samplesnum", type=int, default=100, help="dummy dev parameter"
+)
 @pass_environment
-def dummy(ctx: Environment, writepadding: int) -> bool:
+def dummy(
+    ctx: Environment, writepadding: int, streamsleep: float, samplesnum: int
+) -> bool:
     """[interface] Connect with a simulated NxScope devicve.
 
     \b
@@ -391,8 +399,11 @@ def dummy(ctx: Environment, writepadding: int) -> bool:
     assert ctx.phandler
     assert ctx.parser
     assert ctx.nxscope
-    intf = DummyDev()
-    intf.write_padding = writepadding
+    intf = DummyDev(
+        rxpadding=writepadding,
+        stream_sleep=streamsleep,
+        stream_snum=samplesnum,
+    )
 
     # initialize nxslib communication handler
     comm = CommHandler(intf, ctx.parser)
