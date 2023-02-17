@@ -8,6 +8,8 @@ from nxscli.logger import logger
 from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:
+    from nxslib.nxscope import DNxscopeStream
+
     from nxscli.idata import PluginData, PluginQueueData
 
 
@@ -46,12 +48,12 @@ class PluginCsv(PluginThread, IPluginFile):
 
         return csvwriters
 
-    def _sample_row_get(self, sample: tuple) -> tuple:
+    def _sample_row_get(self, sample: "DNxscopeStream") -> tuple:
         # covert to string
         if self._meta_string:
-            return (sample[0], bytes(list(sample[1])).decode())
+            return (sample.data, bytes(list(sample.meta)).decode())
         else:
-            return sample
+            return sample.data, sample.meta
 
     def _init(self) -> None:
         assert self._phandler
@@ -66,7 +68,7 @@ class PluginCsv(PluginThread, IPluginFile):
         logger.info("csv capture DONE")
 
     def _handle_samples(
-        self, data: list, pdata: "PluginQueueData", j: int
+        self, data: list["DNxscopeStream"], pdata: "PluginQueueData", j: int
     ) -> None:
         # store data
         for sample in data:

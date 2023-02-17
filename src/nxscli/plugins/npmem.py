@@ -9,6 +9,8 @@ from nxscli.logger import logger
 from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:
+    from nxslib.nxscope import DNxscopeStream
+
     from nxscli.idata import PluginData, PluginQueueData
 
 ###############################################################################
@@ -55,12 +57,12 @@ class PluginNpmem(PluginThread, IPluginFile):
         # no API to close memmap
 
     def _handle_samples(
-        self, data: list, pdata: "PluginQueueData", j: int
+        self, data: list["DNxscopeStream"], pdata: "PluginQueueData", j: int
     ) -> None:
         for sample in data:
             for i in range(pdata.vdim):
                 # TODO: metadata not supported for now
-                self._npdata[j][i].append(sample[0][i])
+                self._npdata[j][i].append(sample.data[i])
 
         # put data on mememap
         if len(self._npdata[j][0]) >= self._npshape:

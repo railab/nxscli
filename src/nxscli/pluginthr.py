@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 from nxslib.thread import ThreadCommon
 
 if TYPE_CHECKING:
+    from nxslib.nxscope import DNxscopeStream
+
     from nxscli.idata import PluginData, PluginQueueData
 
 
@@ -93,7 +95,7 @@ class PluginThread(ABC):
 
     @abstractmethod
     def _handle_samples(
-        self, data: list, pdata: "PluginQueueData", j: int
+        self, data: list["DNxscopeStream"], pdata: "PluginQueueData", j: int
     ) -> None:
         """Handle samples from queue and update datalen."""
 
