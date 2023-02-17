@@ -703,7 +703,7 @@ def pcsv(
 def pnpsave(
     ctx: Environment, samples: int, path: str, chan: list[int], trig: dict
 ) -> bool:
-    """[plugin] Store samples in Nump files.
+    """[plugin] Store samples in Numpy files.
 
     Each configured channel will be stored in a separate file.
     If SAMPLES argument is set to 0 then we capture data until enter is press.
@@ -718,6 +718,56 @@ def pnpsave(
         samples=samples,
         path=path,
         channels=chan,
+        trig=trig,
+        nostop=ctx.waitenter,
+    )
+
+    ctx.needchannels = True
+
+    return True
+
+
+###############################################################################
+# Function: pnpmem
+###############################################################################
+
+
+@click.command()
+@click.argument("samples", type=int, required=True)
+@click.argument("path", type=click.Path(resolve_path=False), required=True)
+@click.argument("shape", type=int, required=True)
+@click.option(
+    "--chan", default=None, type=Channels(), help=_channels_option_help
+)
+@click.option(
+    "--trig", default=None, type=Trigger(), help=_trigger_option_help
+)
+@pass_environment
+def pnpmem(
+    ctx: Environment,
+    samples: int,
+    path: str,
+    shape: int,
+    chan: list[int],
+    trig: dict,
+) -> bool:
+    """[plugin] Store samples in Numpy memmap files.
+
+    Each configured channel will be written to a separate file.
+    If SAMPLES argument is set to 0 then we capture data until enter is press.
+    The 'shape' argument defines the second dimension of the memmap array.
+    """
+    # wait for enter if samples set to 0
+    assert ctx.phandler
+    if samples == 0:  # pragma: no cover
+        ctx.waitenter = True
+
+    ctx.phandler.enable(
+        "npmem",
+        samples=samples,
+        path=path,
+        channels=chan,
+        shape=shape,
         trig=trig,
         nostop=ctx.waitenter,
     )
@@ -897,7 +947,17 @@ def cli_on_close(ctx: Environment) -> bool:
 
 def click_final_init() -> None:
     """Handle final Click initialization."""
-    commands = [chan, trig, pani1, pani2, pcap, pcsv, pnpsave, pdevinfo]
+    commands = [
+        chan,
+        trig,
+        pani1,
+        pani2,
+        pcap,
+        pcsv,
+        pnpsave,
+        pnpmem,
+        pdevinfo,
+    ]
     groups = [dummy, serial]
 
     # add commands to interfaces

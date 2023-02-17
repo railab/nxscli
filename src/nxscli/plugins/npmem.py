@@ -1,4 +1,4 @@
-"""Module containing Numpy capture plugin."""
+"""Module containing Numpy memmap plugin."""
 
 from typing import TYPE_CHECKING
 
@@ -12,12 +12,12 @@ if TYPE_CHECKING:
     from nxscli.idata import PluginData, PluginQueueData
 
 ###############################################################################
-# Class: PluginNpsave
+# Class: PluginNpmem
 ###############################################################################
 
 
-class PluginNpsave(PluginThread, IPluginFile):
-    """Plugin that capture data to Numpy file."""
+class PluginNpmem(PluginThread, IPluginFile):
+    """Plugin that capture data to Numpy memmap files."""
 
     def __init__(self) -> None:
         """Intiialize a Numpy capture plugin."""
@@ -26,6 +26,9 @@ class PluginNpsave(PluginThread, IPluginFile):
 
         self._data: "PluginData"
         self._path: str
+        self._npfiles: list = []
+
+        self._npshape: int
         self._npdata: list = []
 
     def _init(self) -> None:
@@ -35,25 +38,44 @@ class PluginNpsave(PluginThread, IPluginFile):
         for i, pdata in enumerate(self._data.qdlist):
             self._npdata[i] = [[] for v in range(pdata.vdim)]
 
-    def _final(self) -> None:
-        logger.info("numpy save captures DONE")
+        for pdata in self._data.qdlist:
+            chanpath = self._path + "_chan" + str(pdata.chan) + ".dat"
+            # TODO: get channel type
+            npf = np.memmap(
+                chanpath,
+                dtype="float32",
+                mode="w+",
+                shape=(pdata.vdim, self._npshape),
+            )
+            self._npfiles.append(npf)
 
-        for i, pdata in enumerate(self._data.qdlist):
-            chanpath = self._path + "_chan" + str(pdata.chan) + ".npy"
-            npdata = np.array(self._npdata[i])
-            np.save(chanpath, npdata)
+    def _final(self) -> None:
+        logger.info("numpy memmap captures DONE")
+
+        # no API to close memmap
 
     def _handle_samples(
         self, data: list, pdata: "PluginQueueData", j: int
     ) -> None:
-        # store data
         for sample in data:
             for i in range(pdata.vdim):
                 # TODO: metadata not supported for now
                 self._npdata[j][i].append(sample[0][i])
 
-        # get data len
-        self._datalen[j] = len(self._npdata[j][0])
+        # put data on mememap
+        if len(self._npdata[j][0]) >= self._npshape:
+            for i in range(pdata.vdim):
+                # store remaining data
+                tmp = self._npdata[j][i][: self._npshape]
+                # get data with a proper shape
+                self._npdata[j][i] = self._npdata[j][i][self._npshape :]
+
+            # update memmap data
+            self._npfiles[j][:] = tmp
+            self._npfiles[j].flush()
+
+            # get data len
+            self._datalen[j] += self._npshape
 
     def start(self, kwargs: dict) -> bool:
         """Start capture plugin.
@@ -67,6 +89,7 @@ class PluginNpsave(PluginThread, IPluginFile):
         self._samples = kwargs["samples"]
         self._path = kwargs["path"]
         self._nostop = kwargs["nostop"]
+        self._npshape = kwargs["shape"]
 
         chanlist = self._phandler.chanlist_plugin(kwargs["channels"])
         trig = self._phandler.triggers_plugin(chanlist, kwargs["trig"])
