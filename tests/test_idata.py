@@ -13,8 +13,7 @@ def dummy_stream_sub(ch):
     return g_queue
 
 
-def dummy_stream_unsub(ch, q):
-    assert ch == 0
+def dummy_stream_unsub(q):
     assert q == g_queue
 
 
