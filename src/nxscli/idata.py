@@ -22,7 +22,7 @@ class PluginDataCb:
     """Plugin data callbacks."""
 
     stream_sub: "Callable[[int], queue.Queue]"
-    stream_unsub: "Callable[[int, queue.Queue], None]"
+    stream_unsub: "Callable[[queue.Queue], None]"
 
 
 ###############################################################################
@@ -146,7 +146,7 @@ class PluginData:
     def _queue_deinit(self) -> None:
         """Deinitialize queue."""
         for i, pdata in enumerate(self._qdlist):
-            self._cb.stream_unsub(pdata.chan, pdata.queue)
+            self._cb.stream_unsub(pdata.queue)
             self._qdlist.pop(i)
 
         # clean up triggers

@@ -104,7 +104,7 @@ def dummy_stream_sub(ch):
     pass
 
 
-def dummy_stream_unsub(ch, q):
+def dummy_stream_unsub(q):
     pass
 
 
