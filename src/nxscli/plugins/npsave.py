@@ -1,6 +1,6 @@
 """Module containing Numpy capture plugin."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -28,7 +28,7 @@ class PluginNpsave(PluginThread, IPluginFile):
 
         self._data: "PluginData"
         self._path: str
-        self._npdata: list = []
+        self._npdata: list[Any] = []
 
     def _init(self) -> None:
         assert self._phandler
@@ -57,7 +57,7 @@ class PluginNpsave(PluginThread, IPluginFile):
         # get data len
         self._datalen[j] = len(self._npdata[j][0])
 
-    def start(self, kwargs: dict) -> bool:
+    def start(self, kwargs: Any) -> bool:
         """Start capture plugin.
 
         :param kwargs: implementation specific arguments

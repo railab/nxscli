@@ -6,6 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
 from threading import Lock
+from typing import Any
 
 from nxscli.logger import logger
 
@@ -48,7 +49,7 @@ class DTriggerConfigReq:
     ttype: str
     srcchan: int | None
     vect: int = 0
-    params: list | None = None
+    params: list[Any] | None = None
 
 
 ###############################################################################
@@ -114,8 +115,8 @@ class DTriggerConfig:
 class TriggerHandler(object):
     """The class used to handler stream data trigger."""
 
-    _instances: weakref.WeakSet = weakref.WeakSet()
-    _wait_for_src: weakref.WeakSet = weakref.WeakSet()
+    _instances: weakref.WeakSet["TriggerHandler"] = weakref.WeakSet()
+    _wait_for_src: weakref.WeakSet["TriggerHandler"] = weakref.WeakSet()
 
     def __new__(cls, chan: int, config: DTriggerConfig) -> "TriggerHandler":
         """Create a new instance and store reference in a weak set."""
@@ -128,7 +129,7 @@ class TriggerHandler(object):
     def __init__(self, chan: int, config: DTriggerConfig) -> None:
         """Initialize a stream data trigger handler."""
         self._config = config
-        self._cache: list[tuple] = []
+        self._cache: list[Any] = []
         self._chan: int = chan
         self._trigger: DTriggerState = DTriggerState(False, 0)
         self._triger_done = False
@@ -190,21 +191,21 @@ class TriggerHandler(object):
         for inst in tmp:
             TriggerHandler._wait_for_src.remove(inst)
 
-    def _pairwise(self, iterable: list) -> zip:
+    def _pairwise(self, iterable: list[Any]) -> Any:
         (a, b) = itertools.tee(iterable)
         next(b, None)
         return zip(a, b)
 
-    def _alwaysoff(self, _: list) -> DTriggerState:
+    def _alwaysoff(self, _: list[Any]) -> DTriggerState:
         # reset cache
         self._cache = []
         return DTriggerState(False, 0)
 
-    def _alwayson(self, _: list) -> DTriggerState:
+    def _alwayson(self, _: list[Any]) -> DTriggerState:
         return DTriggerState(True, 0)
 
     def _edgerising(
-        self, combined: list, vect: int, level: float
+        self, combined: list[Any], vect: int, level: float
     ) -> DTriggerState:
         ret = False
         idx = 0
@@ -221,7 +222,7 @@ class TriggerHandler(object):
         return DTriggerState(ret, idx)
 
     def _edgefalling(
-        self, combined: list, vect: int, level: float
+        self, combined: list[Any], vect: int, level: float
     ) -> DTriggerState:
         ret = False
         idx = 0
@@ -238,7 +239,7 @@ class TriggerHandler(object):
         return DTriggerState(ret, idx)
 
     def _is_self_trigger(
-        self, combined: list, config: DTriggerConfig
+        self, combined: list[Any], config: DTriggerConfig
     ) -> DTriggerState:
         if config.ttype is ETriggerType.ALWAYS_OFF:
             return self._alwaysoff(combined)
@@ -253,7 +254,7 @@ class TriggerHandler(object):
         else:
             raise AssertionError
 
-    def _is_triggered(self, combined: list) -> DTriggerState:
+    def _is_triggered(self, combined: list[Any]) -> DTriggerState:
         if self._trigger.state:
             # make sure that idx is 0
             return DTriggerState(True, 0)
@@ -268,7 +269,7 @@ class TriggerHandler(object):
         # self-triggered
         return self._is_self_trigger(combined, self._config)
 
-    def _cross_channel_handle(self, combined: list) -> None:
+    def _cross_channel_handle(self, combined: list[Any]) -> None:
         for cross in self._cross:
             if cross.cross_trigger.state is True:
                 continue
@@ -348,7 +349,7 @@ class TriggerHandler(object):
             if cross is inst:  # pragma: no cover
                 self._cross.pop(i)
 
-    def data_triggered(self, data: list) -> list:
+    def data_triggered(self, data: list[Any]) -> list[Any]:
         """Get triggered data.
 
         :param data: stream data

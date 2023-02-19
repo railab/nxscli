@@ -6,9 +6,9 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Generator
 
 import matplotlib.pyplot as plt  # type: ignore
-from matplotlib import _pylab_helpers  # type: ignore
+from matplotlib import _pylab_helpers
 from matplotlib.animation import FuncAnimation  # type: ignore
-from matplotlib.animation import FFMpegWriter, PillowWriter  # type: ignore
+from matplotlib.animation import FFMpegWriter, PillowWriter
 from nxslib.dev import DeviceChannel
 
 from nxscli.idata import PluginData, PluginDataCb, PluginQueueData
@@ -36,7 +36,7 @@ class MplManager:
         plt.draw()
 
     @staticmethod
-    def fig_is_open() -> list:  # pragma: no cover
+    def fig_is_open() -> Any:  # pragma: no cover
         """Return a list of opened figures."""
         return plt.get_fignums()
 
@@ -67,7 +67,7 @@ class MplManager:
         plt.show(block=block)
 
     @staticmethod
-    def mpl_config(style: list) -> None:
+    def mpl_config(style: list[str]) -> None:
         """Configure matplotlib."""
         logger.info("plt.style %s", str(style))
         plt.style.use(style)
@@ -113,8 +113,8 @@ class PlotDataCommon:
         """
         assert isinstance(channel, DeviceChannel)
 
-        self._xdata: list = []
-        self._ydata: list = []
+        self._xdata: list[Any] = []
+        self._ydata: list[Any] = []
         self._vdim = channel.data.vdim
         self._chan = channel.data.chan
         for _ in range(self._vdim):
@@ -129,12 +129,12 @@ class PlotDataCommon:
         return self._chan
 
     @property
-    def xdata(self) -> list[list]:
+    def xdata(self) -> list[list[Any]]:
         """Get X data."""
         return self._xdata
 
     @property
-    def ydata(self) -> list[list]:
+    def ydata(self) -> list[list[Any]]:
         """Get Y data."""
         return self._ydata
 
@@ -151,7 +151,7 @@ class PlotDataCommon:
         """
         self._samples_max = smax
 
-    def xdata_extend(self, data: list[list]) -> None:
+    def xdata_extend(self, data: list[list[Any]]) -> None:
         """Extend X data.
 
         :param data: X data to extend
@@ -159,7 +159,7 @@ class PlotDataCommon:
         for i, xdata in enumerate(self._xdata):
             xdata.extend(data[i])
 
-    def ydata_extend(self, data: list[list]) -> None:
+    def ydata_extend(self, data: list[list[Any]]) -> None:
         """Extend Y data.
 
         :param data: Y data to extend
@@ -167,7 +167,7 @@ class PlotDataCommon:
         for i, ydata in enumerate(self._ydata):
             ydata.extend(data[i])
 
-    def xdata_extend_max(self, data: list[list]) -> None:
+    def xdata_extend_max(self, data: list[list[Any]]) -> None:
         """Extend X data and saturate to a configured number of samples.
 
         :param data: X data to extend
@@ -178,7 +178,7 @@ class PlotDataCommon:
             if remove > 0:
                 self._xdata[i] = self._xdata[i][remove:]
 
-    def ydata_extend_max(self, data: list[list]) -> None:
+    def ydata_extend_max(self, data: list[list[Any]]) -> None:
         """Extend Y data and saturate to a configured number of samples.
 
         :param data: Y data to extend
@@ -257,19 +257,19 @@ class PlotDataAxesMpl(PlotDataCommon):
         return self._lns
 
     @property
-    def xlim(self) -> list:
+    def xlim(self) -> Any:
         """Get pot X limits."""
         assert self._ax
         return self._ax.get_xlim()
 
     @property
-    def ylim(self) -> list:
+    def ylim(self) -> Any:
         """Get pot Y limits."""
         assert self._ax
         return self._ax.get_ylim()
 
     @property
-    def plot_title(self) -> str:
+    def plot_title(self) -> Any:
         """Get the plot title."""
         assert self._ax
         return self._ax.get_title()
@@ -283,7 +283,7 @@ class PlotDataAxesMpl(PlotDataCommon):
         assert self._ax
         self._ax.set_title(title)
 
-    def set_xlim(self, xlim: tuple) -> None:
+    def set_xlim(self, xlim: tuple[Any, Any]) -> None:
         """Set plot X limits.
 
         :param xlim: set X limits
@@ -291,7 +291,7 @@ class PlotDataAxesMpl(PlotDataCommon):
         assert self._ax
         self._ax.set_xlim(*xlim)
 
-    def set_ylim(self, ylim: tuple) -> None:
+    def set_ylim(self, ylim: tuple[Any, Any]) -> None:
         """Set plot Y limits.
 
         :param ylim: set Y limits
@@ -309,7 +309,7 @@ class PlotDataAxesMpl(PlotDataCommon):
         """Disable x axis ticks."""
         self.xaxis_set_ticks([])
 
-    def xaxis_set_ticks(self, ticks: list) -> None:
+    def xaxis_set_ticks(self, ticks: list[Any]) -> None:
         """Set ticks for X axis.
 
         :param ticks: set ticks for X axis
@@ -377,9 +377,9 @@ class PluginAnimationCommonMpl:
 
     def _animation_frames(
         self, qdata: PluginQueueData
-    ) -> Generator:  # pragma: no cover
-        ydata: list[list] = []
-        xdata: list[list] = []
+    ) -> Generator[Any, None, None]:  # pragma: no cover
+        ydata: list[list[Any]] = []
+        xdata: list[list[Any]] = []
 
         for _ in range(self._qdata.vdim):
             ydata.append([])
@@ -404,7 +404,7 @@ class PluginAnimationCommonMpl:
         yield xdata, ydata
 
     def _animation_update(
-        self, frame: list, pdata: PlotDataAxesMpl
+        self, frame: list[Any], pdata: PlotDataAxesMpl
     ) -> list["Line2D"] | None:
         pass  # pragma: no cover
 
@@ -425,7 +425,7 @@ class PluginAnimationCommonMpl:
         del self._ani
 
     def _animation_update_cmn(
-        self, frame: list, pdata: PlotDataAxesMpl
+        self, frame: list[Any], pdata: PlotDataAxesMpl
     ) -> list["Line2D"]:  # pragma: no cover
         """Update animation common logic."""
         # no data
@@ -464,7 +464,7 @@ class PluginAnimationCommonMpl:
         self._pdata.xaxis_disable()
 
     def yscale_extend(
-        self, frame: list, pdata: PlotDataAxesMpl, scale: float = 1.1
+        self, frame: list[Any], pdata: PlotDataAxesMpl, scale: float = 1.1
     ) -> None:  # pragma: no cover
         """Extend yscale if needed with a given scale factor.
 
@@ -501,7 +501,7 @@ class PluginAnimationCommonMpl:
             pdata.ax.figure.canvas.draw()
 
     def xscale_extend(
-        self, frame: list, pdata: PlotDataAxesMpl, scale: float = 2.0
+        self, frame: list[Any], pdata: PlotDataAxesMpl, scale: float = 2.0
     ) -> None:  # pragma: no cover
         """Exten x axis if needed with a agiven scale factor.
 
@@ -526,7 +526,7 @@ class PluginAnimationCommonMpl:
             pdata.ax.figure.canvas.draw()
 
     def xscale_saturate(
-        self, _: list, pdata: PlotDataAxesMpl
+        self, _: list[Any], pdata: PlotDataAxesMpl
     ) -> None:  # pragma: no cover
         """Saturate x axis.
 

@@ -76,7 +76,7 @@ class IPlugin(ABC):
         """Interface method."""
 
     @abstractmethod
-    def start(self, kwargs: dict) -> bool:
+    def start(self, kwargs: Any) -> bool:
         """Interface method.
 
         :param kwargs: plugin specific arguments

@@ -1,7 +1,7 @@
 """Module containing CSV plugin."""
 
 import csv
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from nxscli.iplugin import IPluginFile
 from nxscli.logger import logger
@@ -29,9 +29,9 @@ class PluginCsv(PluginThread, IPluginFile):
         self._data: "PluginData"
         self._path: str
         self._meta_string = False
-        self._csvwriters: list = []
+        self._csvwriters: list[Any] = []
 
-    def _csvwriters_open(self) -> list:
+    def _csvwriters_open(self) -> list[Any]:
         csvwriters = []
         for pdata in self._data.qdlist:
             chanpath = self._path + "_chan" + str(pdata.chan) + ".csv"
@@ -48,7 +48,7 @@ class PluginCsv(PluginThread, IPluginFile):
 
         return csvwriters
 
-    def _sample_row_get(self, sample: "DNxscopeStream") -> tuple:
+    def _sample_row_get(self, sample: "DNxscopeStream") -> tuple[Any, Any]:
         # covert to string
         if self._meta_string:
             return (sample.data, bytes(list(sample.meta)).decode())
@@ -83,7 +83,7 @@ class PluginCsv(PluginThread, IPluginFile):
             # one sample
             self._datalen[j] += 1
 
-    def start(self, kwargs: dict) -> bool:
+    def start(self, kwargs: Any) -> bool:
         """Start CSV plugin.
 
         :param kwargs: implementation specific arguments

@@ -1,6 +1,6 @@
 """Module containing Numpy capture plugin."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from nxscli.iplugin import IPluginNone
 from nxscli.logger import logger
@@ -39,7 +39,7 @@ class PluginNone(PluginThread, IPluginNone):
             # get data len
             self._datalen[j] += 1
 
-    def start(self, kwargs: dict) -> bool:
+    def start(self, kwargs: Any) -> bool:
         """Start none plugin.
 
         :param kwargs: implementation specific arguments

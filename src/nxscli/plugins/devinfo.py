@@ -32,7 +32,7 @@ class PluginDevinfo(IPluginText):
         """
         return True
 
-    def start(self, _: dict) -> bool:
+    def start(self, _: Any) -> bool:
         """Start devinfo plugin."""
         assert self._phandler
         assert self._phandler.dev
@@ -57,12 +57,12 @@ class PluginDevinfo(IPluginText):
 
             tmp.append(chinfo)
 
-        ret["channels"] = tmp  # type: ignore
+        ret["channels"] = tmp
 
         self._return = ret
 
         return True
 
-    def result(self) -> dict | None:
+    def result(self) -> dict[str, str] | None:
         """Get devinfo plugin result."""
         return self._return

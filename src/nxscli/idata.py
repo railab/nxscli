@@ -2,7 +2,7 @@
 
 import queue
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 class PluginDataCb:
     """Plugin data callbacks."""
 
-    stream_sub: "Callable[[int], queue.Queue]"
-    stream_unsub: "Callable[[queue.Queue], None]"
+    stream_sub: "Callable[[int], queue.Queue[Any]]"
+    stream_unsub: "Callable[[queue.Queue[Any]], None]"
 
 
 ###############################################################################
@@ -35,7 +35,7 @@ class PluginQueueData:
 
     def __init__(
         self,
-        que: queue.Queue,
+        que: queue.Queue[Any],
         channel: "DeviceChannel",
         trig: "TriggerHandler",
     ):
@@ -60,7 +60,7 @@ class PluginQueueData:
         return _str
 
     @property
-    def queue(self) -> queue.Queue:
+    def queue(self) -> queue.Queue[Any]:
         """Get queue handler."""
         return self._queue
 
