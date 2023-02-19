@@ -165,8 +165,6 @@ def test_phandler_connect(nxscope):
 
     # nxs not connected
     with pytest.raises(AssertionError):
-        _ = p.chanlist
-    with pytest.raises(AssertionError):
         _ = p.dev
     with pytest.raises(AssertionError):
         _ = p.stream_start()
@@ -185,8 +183,12 @@ def test_phandler_connect(nxscope):
     p.nxscope_connect(nxscope)
 
     # nxscope should be connected
-    assert p.chanlist is not None
     assert p.dev is not None
+
+    # chanlist
+    p.channels_configure([])
+    p.channels_configure([-1], 1)
+    p.channels_configure([1, 2], [1, 2], writenow=True)
 
 
 def test_phandler_enable():
