@@ -1,6 +1,6 @@
 """Module containing capture plugin."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from nxscli.iplugin import IPluginPlotStatic
 from nxscli.logger import logger
@@ -39,7 +39,7 @@ class PluginCapture(PluginThread, IPluginPlotStatic):
         self, data: list["DNxscopeStream"], pdata: "PluginQueueData", j: int
     ) -> None:
         # store data
-        ydata: list[list] = [[] for v in range(pdata.vdim)]
+        ydata: list[list[Any]] = [[] for v in range(pdata.vdim)]
         for sample in data:
             for i in range(pdata.vdim):
                 # TODO: metadata not supported for now
@@ -50,7 +50,7 @@ class PluginCapture(PluginThread, IPluginPlotStatic):
         # get data len
         self._datalen[j] = len(self._plot.plist[j].ydata[0])
 
-    def start(self, kwargs: dict) -> bool:
+    def start(self, kwargs: Any) -> bool:
         """Start capture plugin.
 
         :param kwargs: implementation specific arguments

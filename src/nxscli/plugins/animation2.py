@@ -1,6 +1,6 @@
 """Module containing animation2 plugin."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from nxscli.animation_mpl import IPluginAnimation
 from nxscli.plot_mpl import PlotDataAxesMpl, PluginAnimationCommonMpl
@@ -48,12 +48,12 @@ class Animation2(PluginAnimationCommonMpl):
             self.xaxis_disable()
 
     def _animation_update(
-        self, frame: list, pdata: PlotDataAxesMpl
+        self, frame: list[Any], pdata: PlotDataAxesMpl
     ) -> "Line2D":  # pragma: no cover
         return self._animation_update_priv(frame, pdata)
 
     def _animation_update_staticx(
-        self, frame: list, pdata: PlotDataAxesMpl
+        self, frame: list[Any], pdata: PlotDataAxesMpl
     ) -> "Line2D":  # pragma: no cover
         """Update an animation with static X ticks."""
         # update sample
@@ -72,7 +72,7 @@ class Animation2(PluginAnimationCommonMpl):
         return pdata.lns
 
     def _animation_update_dynamicx(
-        self, frame: list, pdata: PlotDataAxesMpl
+        self, frame: list[Any], pdata: PlotDataAxesMpl
     ) -> "Line2D":  # pragma: no cover
         """Update an animation with dynamic X ticks."""
         xdata = frame[0]
@@ -117,7 +117,7 @@ class PluginAnimation2(IPluginAnimation):
         fig: "Figure",
         pdata: PlotDataAxesMpl,
         qdata: "PluginQueueData",
-        kwargs: dict,
+        kwargs: Any,
     ) -> PluginAnimationCommonMpl:
         """Start an animation2 plugin."""
         maxsamples = kwargs["maxsamples"]

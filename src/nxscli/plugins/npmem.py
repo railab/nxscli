@@ -1,6 +1,6 @@
 """Module containing Numpy memmap plugin."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -28,10 +28,10 @@ class PluginNpmem(PluginThread, IPluginFile):
 
         self._data: "PluginData"
         self._path: str
-        self._npfiles: list = []
+        self._npfiles: list[Any] = []
 
         self._npshape: int
-        self._npdata: list = []
+        self._npdata: list[Any] = []
 
     def _init(self) -> None:
         assert self._phandler
@@ -79,7 +79,7 @@ class PluginNpmem(PluginThread, IPluginFile):
             # get data len
             self._datalen[j] += self._npshape
 
-    def start(self, kwargs: dict) -> bool:
+    def start(self, kwargs: Any) -> bool:
         """Start capture plugin.
 
         :param kwargs: implementation specific arguments

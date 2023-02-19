@@ -32,12 +32,11 @@ class DEnvironmentData:
     waitenter: bool = False
     nxscope: NxscopeHandler | None = None
     parser: Parser | None = None
-    plugins: list | None = None
     interface: bool = False
     needchannels: bool = False
-    channels: tuple | None = None
+    channels: tuple[list[int], Any] | None = None
     phandler: PluginHandler | None = None
-    triggers: dict | None = None
+    triggers: dict[int, DTriggerConfigReq] | None = None
     mplstyle: list[str] | None = None
 
 
@@ -138,7 +137,9 @@ class Trigger(click.ParamType):
     req_global = "g"
     req_vect = "@"
 
-    def convert(self, value: Any, param: Any, ctx: Any) -> dict:
+    def convert(
+        self, value: Any, param: Any, ctx: Any
+    ) -> dict[int, DTriggerConfigReq]:
         """Convert trigger argument."""
         tmp = get_list_from_str(value, self.req_split)
         # get configurations
@@ -355,7 +356,6 @@ def main(ctx: Environment, debug: bool, mplstyle: list[str]) -> bool:
     ctx.nxscope = NxscopeHandler()
     parse = Parser()
     ctx.parser = parse
-    ctx.plugins = []
     ctx.triggers = {}
     ctx.mplstyle = mplstyle
 
@@ -481,7 +481,7 @@ def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
 @click.command()
 @click.argument("triggers", type=Trigger())
 @pass_environment
-def trig(ctx: Environment, triggers: dict) -> bool:
+def trig(ctx: Environment, triggers: dict[int, DTriggerConfigReq]) -> bool:
     """[config] Triggers configuration.
 
     This command configure software tirggers.
@@ -547,7 +547,7 @@ def trig(ctx: Environment, triggers: dict) -> bool:
 def pani1(
     ctx: Environment,
     chan: list[int],
-    trig: dict,
+    trig: dict[int, DTriggerConfigReq],
     dpi: float,
     fmt: list[list[str]],
     write: str,
@@ -576,7 +576,7 @@ def pani2(
     ctx: Environment,
     maxsamples: int,
     chan: list[int],
-    trig: dict,
+    trig: dict[int, DTriggerConfigReq],
     dpi: float,
     fmt: list[list[str]],
     write: str,
@@ -615,7 +615,7 @@ def pcap(
     ctx: Environment,
     samples: int,
     chan: list[int],
-    trig: dict,
+    trig: dict[int, DTriggerConfigReq],
     dpi: float,
     fmt: list[list[str]],
     write: str,
@@ -668,7 +668,7 @@ def pcsv(
     samples: int,
     path: str,
     chan: list[int],
-    trig: dict,
+    trig: dict[int, DTriggerConfigReq],
     metastr: bool,
 ) -> bool:
     """[plugin] Store samples in CSV files.
@@ -712,7 +712,11 @@ def pcsv(
 )
 @pass_environment
 def pnpsave(
-    ctx: Environment, samples: int, path: str, chan: list[int], trig: dict
+    ctx: Environment,
+    samples: int,
+    path: str,
+    chan: list[int],
+    trig: dict[int, DTriggerConfigReq],
 ) -> bool:
     """[plugin] Store samples in Numpy files.
 
@@ -760,7 +764,7 @@ def pnpmem(
     path: str,
     shape: int,
     chan: list[int],
-    trig: dict,
+    trig: dict[int, DTriggerConfigReq],
 ) -> bool:
     """[plugin] Store samples in Numpy memmap files.
 
@@ -806,7 +810,7 @@ def pnone(
     ctx: Environment,
     samples: int,
     chan: list[int],
-    trig: dict,
+    trig: dict[int, DTriggerConfigReq],
 ) -> bool:
     """[plugin] Dummy capture plugin.
 
@@ -850,7 +854,7 @@ def pdevinfo(ctx: Environment) -> bool:
 ###############################################################################
 
 
-def devinfo_print(info: dict) -> None:
+def devinfo_print(info: dict[str, str]) -> None:
     """Print device information."""
     print("\nDevice common:\n")
     pprint.pprint(info["cmn"])
@@ -864,15 +868,15 @@ def devinfo_print(info: dict) -> None:
 ###############################################################################
 
 
-def handle_plugin(plugin: type[IPlugin]) -> tuple:
+def handle_plugin(plugin: IPlugin) -> tuple[EPluginType, Any] | None:
     """Handle a given plugin."""
-    if plugin.ptype is EPluginType.TEXT:
+    if plugin.ptype == EPluginType.TEXT:
         # REVISIT: only devinfo supported for now
         info = plugin.result()
         devinfo_print(info)
-        return ()
+        return None
 
-    elif plugin.ptype is EPluginType.STATIC:
+    elif plugin.ptype == EPluginType.STATIC:
         plot = plugin.result()
         for pdata in plot.plist:
             # plot samples
@@ -880,17 +884,17 @@ def handle_plugin(plugin: type[IPlugin]) -> tuple:
         MplManager.show(block=False)
         return (EPluginType.STATIC, plot)
 
-    elif plugin.ptype is EPluginType.ANIMATION:
+    elif plugin.ptype == EPluginType.ANIMATION:
         plot = plugin.result()
         MplManager.show(block=False)
         return (EPluginType.ANIMATION, plot)
 
-    elif plugin.ptype is EPluginType.FILE:
+    elif plugin.ptype == EPluginType.FILE:
         print("TODO: file handler ?")
-        return ()
+        return None
 
-    elif plugin.ptype is EPluginType.NONE:
-        return ()
+    elif plugin.ptype == EPluginType.NONE:
+        return None
 
     else:
         raise AssertionError
@@ -901,7 +905,7 @@ def handle_plugin(plugin: type[IPlugin]) -> tuple:
 ###############################################################################
 
 
-def plugin_loop(ctx: Environment) -> list:
+def plugin_loop(ctx: Environment) -> list[Any]:
     """Plugin loop."""
     assert ctx.phandler
     ret: list[Any] = []
@@ -926,7 +930,7 @@ def plugin_loop(ctx: Environment) -> list:
 ###############################################################################
 
 
-def wait_for_plugins(ret: list) -> None:
+def wait_for_plugins(ret: list[Any]) -> None:
     """Wait for plugins."""
     while True:  # pragma: no cover
         fig_open = False

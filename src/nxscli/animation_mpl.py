@@ -1,7 +1,7 @@
 """Module containing the common matplotlib animation plugin logic."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from nxscli.iplugin import IPluginPlotDynamic
 from nxscli.logger import logger
@@ -37,7 +37,7 @@ class IPluginAnimation(IPluginPlotDynamic):
         fig: "Figure",
         pdata: "PlotDataAxesMpl",
         qdata: "PluginQueueData",
-        kwargs: dict,
+        kwargs: Any,
     ) -> "PluginAnimationCommonMpl":
         """Abstract method.
 
@@ -73,7 +73,7 @@ class IPluginAnimation(IPluginPlotDynamic):
         """
         return True
 
-    def start(self, kwargs: dict) -> bool:
+    def start(self, kwargs: Any) -> bool:
         """Start animation plugin.
 
         :param kwargs: implementation specific arguments

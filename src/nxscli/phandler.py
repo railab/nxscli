@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class PluginHandler:
     """A class implementing a plugins handler."""
 
-    def __init__(self, plugins: list | None = None):
+    def __init__(self, plugins: list[tuple[str, type[IPlugin]]] | None = None):
         """Initialize a plugin handler.
 
         :param plugins: a list with plugins
@@ -32,12 +32,11 @@ class PluginHandler:
 
         if plugins:
             for cls in plugins:
-                self._validate_plugin(cls)
                 self._plugins[cls[0]] = cls[1]
 
-        self._enabled: list = []
-        self._started: list = []
-        self._triggers: dict = {}
+        self._enabled: list[tuple[int, type[IPlugin], Any]] = []
+        self._started: list[tuple[IPlugin, Any]] = []
+        self._triggers: dict[int, DTriggerConfigReq] = {}
 
         self._chanlist: list["DeviceChannel"] = []
 
@@ -50,11 +49,6 @@ class PluginHandler:
         self.nxscope_disconnect()
         # clean up triggers
         TriggerHandler.cls_cleanup()
-
-    def _validate_plugin(self, cls: tuple) -> None:
-        assert isinstance(cls, tuple)
-        assert isinstance(cls[0], str)
-        assert callable(cls[1])
 
     def _chanlist_gen(self, channels: list[int]) -> list["DeviceChannel"]:
         assert self._nxs
@@ -113,7 +107,7 @@ class PluginHandler:
         return list(self._plugins.keys())
 
     @property
-    def plugins(self) -> dict[str, IPlugin]:
+    def plugins(self) -> dict[str, type[IPlugin]]:
         """Get loaded plugins."""
         return self._plugins
 
@@ -129,7 +123,7 @@ class PluginHandler:
         return self._stream
 
     @property
-    def enabled(self) -> list:
+    def enabled(self) -> list[tuple[int, type[IPlugin], Any]]:
         """Get enabled plugins."""
         return self._enabled
 
@@ -164,15 +158,14 @@ class PluginHandler:
         self._nxs.connect()
         logger.info("connected!")
 
-    def plugin_add(self, cls: tuple) -> None:
+    def plugin_add(self, cls: tuple[str, type[IPlugin]]) -> None:
         """Add plugin.
 
         :param cls: tuple with plugin data
         """
-        self._validate_plugin(cls)
         self._plugins[cls[0]] = cls[1]
 
-    def plugin_get(self, name: str) -> IPlugin:
+    def plugin_get(self, name: str) -> type[IPlugin]:
         """Get plugin by name.
 
         :param name: plugin name
@@ -186,7 +179,7 @@ class PluginHandler:
         :param kwargs: implementation specific arguments
         """
         pid = len(self._enabled)
-        plugin = [pid, self._plugins[name], kwargs]
+        plugin = (pid, self._plugins[name], kwargs)
         logger.info("enable %s", str(plugin))
         self._enabled.append(plugin)
         return pid
@@ -215,7 +208,7 @@ class PluginHandler:
             pid, cls, args = plg
 
             # create instance
-            plugin = cls()
+            plugin = cls()  # type: ignore
             assert isinstance(plugin, IPlugin)
 
             # we need data stream
@@ -226,7 +219,7 @@ class PluginHandler:
             if not plugin.start(args):  # pragma: no cover
                 logger.error("failed to start plugin %s", str(plugin))
             else:
-                self._started.append([plugin, args])
+                self._started.append((plugin, args))
             logger.info("started %s", str(plugin))
 
         # start stream if needed
@@ -241,7 +234,7 @@ class PluginHandler:
         for plg, _ in self._started:
             plg.stop()
 
-    def ready(self) -> list:
+    def ready(self) -> list[IPlugin]:
         """Wait for results from enabled plugins."""
         ret = []
         for plg in self._started:
@@ -252,7 +245,7 @@ class PluginHandler:
 
         return ret
 
-    def poll(self) -> list | None:
+    def poll(self) -> list[IPlugin] | None:
         """Pool for results from enabled plugins."""
         nothandled = 0
         for plg in self._started:
@@ -275,7 +268,7 @@ class PluginHandler:
         return ret
 
     def trigger_get(
-        self, chid: int, src: dict | None = None
+        self, chid: int, src: dict[int, DTriggerConfigReq] | None = None
     ) -> DTriggerConfigReq:
         """Get trigger for a given channel.
 
@@ -392,7 +385,9 @@ class PluginHandler:
             # write channels configuration
             self._nxs.channels_write()
 
-    def triggers_configure(self, triggers: dict) -> None:
+    def triggers_configure(
+        self, triggers: dict[int, DTriggerConfigReq]
+    ) -> None:
         """Configure triggers.
 
         :param triggers: dict with triggers configuration
@@ -400,7 +395,9 @@ class PluginHandler:
         self._triggers = triggers
 
     def triggers_plugin(
-        self, chanlist: list["DeviceChannel"], triggers: dict | None
+        self,
+        chanlist: list["DeviceChannel"],
+        triggers: dict[int, DTriggerConfigReq] | None,
     ) -> list[TriggerHandler]:
         """Prepare triggers list for a plugin.
 

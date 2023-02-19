@@ -1,6 +1,6 @@
 """Module containing animation1 plugin."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from nxscli.animation_mpl import IPluginAnimation
 from nxscli.plot_mpl import PlotDataAxesMpl, PluginAnimationCommonMpl
@@ -36,7 +36,7 @@ class Animation1(PluginAnimationCommonMpl):
         PluginAnimationCommonMpl.__init__(self, fig, pdata, qdata, write)
 
     def _animation_update(
-        self, frame: list, pdata: PlotDataAxesMpl
+        self, frame: list[Any], pdata: PlotDataAxesMpl
     ) -> "Line2D":  # pragma: no cover
         """Update an animation with dynamic scaling."""
         # update sample
@@ -75,7 +75,7 @@ class PluginAnimation1(IPluginAnimation):
         fig: "Figure",
         pdata: PlotDataAxesMpl,
         qdata: "PluginQueueData",
-        kwargs: dict,
+        kwargs: Any,
     ) -> PluginAnimationCommonMpl:
         """Start an animation1 plugin."""
         return Animation1(fig, pdata, qdata, kwargs["write"])
