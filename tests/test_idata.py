@@ -26,10 +26,10 @@ def test_pluginqueuedata():
 
     assert isinstance(str(qdata), str)
     assert qdata.queue == q
-    assert qdata.chan == chan.chan
-    assert qdata.is_numerical == chan.is_numerical
-    assert qdata.vdim == chan.vdim
-    assert qdata.mlen == chan.mlen
+    assert qdata.chan == chan.data.chan
+    assert qdata.is_numerical == chan.data.is_numerical
+    assert qdata.vdim == chan.data.vdim
+    assert qdata.mlen == chan.data.mlen
 
     # no data on queue
     ret = qdata.queue_get(block=False)

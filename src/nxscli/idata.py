@@ -51,7 +51,12 @@ class PluginQueueData:
 
     def __str__(self) -> str:
         """Format string representation."""
-        _str = "PluginQueueData" + "(channel=" + str(self._channel.chan) + ")"
+        _str = (
+            "PluginQueueData"
+            + "(channel="
+            + str(self._channel.data.chan)
+            + ")"
+        )
         return _str
 
     @property
@@ -62,22 +67,22 @@ class PluginQueueData:
     @property
     def chan(self) -> int:
         """Get channel number."""
-        return self._channel.chan
+        return self._channel.data.chan
 
     @property
     def is_numerical(self) -> bool:
         """Return true if this channel is numerical."""
-        return self._channel.is_numerical
+        return self._channel.data.is_numerical
 
     @property
     def vdim(self) -> int:
         """Return stream data dimension."""
-        return self._channel.vdim
+        return self._channel.data.vdim
 
     @property
     def mlen(self) -> int:
         """Return stream metadata dimension."""
-        return self._channel.mlen
+        return self._channel.data.mlen
 
     def queue_get(
         self, block: bool, timeout: float = 1.0
@@ -136,7 +141,7 @@ class PluginData:
         ret = []
         for i, channel in enumerate(self._chanlist):
             # get queue with data
-            que = self._cb.stream_sub(channel.chan)
+            que = self._cb.stream_sub(channel.data.chan)
             # initialize queue handler
             pdata = PluginQueueData(que, channel, self._trig[i])
             # add hanler to a list
