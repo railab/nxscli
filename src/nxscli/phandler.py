@@ -62,7 +62,7 @@ class PluginHandler:
         assert isinstance(channels, list)
         # convert special keys for all channels
         if channels and channels[0] == -1:  # pragma: no cover
-            chanlist = list(range(self.dev.chmax))
+            chanlist = list(range(self.dev.data.chmax))
         else:
             assert all(isinstance(x, int) for x in channels)
             chanlist = channels
@@ -81,26 +81,26 @@ class PluginHandler:
         assert self._nxs
         for channel in self._chanlist:
             # ignore not valid channels
-            if not channel.is_valid:  # pragma: no cover
+            if not channel.data.is_valid:  # pragma: no cover
                 logger.info(
-                    "NOTE: channel %d not valid - ignore", channel.chan
+                    "NOTE: channel %d not valid - ignore", channel.data.chan
                 )
                 continue
 
             # enable channel
-            self._nxs.ch_enable(channel.chan)
+            self._nxs.ch_enable(channel.data.chan)
 
     def _chanlist_div(self, div: int | list[int]) -> None:
         assert self._nxs
         if isinstance(div, int):
             for channel in self._chanlist:
-                self._nxs.ch_divider(channel.chan, div)
+                self._nxs.ch_divider(channel.data.chan, div)
         else:
             assert isinstance(div, list)
             # divider list configuration must cover all configured channels
             assert len(div) == len(self._chanlist)
             for i, channel in enumerate(self._chanlist):
-                self._nxs.ch_divider(channel.chan, div[i])
+                self._nxs.ch_divider(channel.data.chan, div[i])
 
     @property
     def chanlist(self) -> list["DeviceChannel"]:
@@ -346,7 +346,7 @@ class PluginHandler:
         if channels and channels[0] != -1:
             # plugin specific channels configuration
             for chan in self.chanlist:
-                if chan.chan in channels:
+                if chan.data.chan in channels:
                     chanlist.append(chan)
                 else:  # pragma: no cover
                     pass
@@ -411,13 +411,13 @@ class PluginHandler:
         if triggers:
             # plugin specific triggers
             for chan in chanlist:
-                tcfg = self.trigger_get(chan.chan, triggers)
-                trgs.append((chan.chan, tcfg))
+                tcfg = self.trigger_get(chan.data.chan, triggers)
+                trgs.append((chan.data.chan, tcfg))
         else:
             # global configured triggers
             for chan in chanlist:
-                tcfg = self.trigger_get(chan.chan)
-                trgs.append((chan.chan, tcfg))
+                tcfg = self.trigger_get(chan.data.chan)
+                trgs.append((chan.data.chan, tcfg))
 
         ret = []
         for item in trgs:

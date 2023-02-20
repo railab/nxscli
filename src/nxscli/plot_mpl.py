@@ -115,8 +115,8 @@ class PlotDataCommon:
 
         self._xdata: list = []
         self._ydata: list = []
-        self._vdim = channel.vdim
-        self._chan = channel.chan
+        self._vdim = channel.data.vdim
+        self._chan = channel.data.chan
         for _ in range(self._vdim):
             self._xdata.append([])
             self._ydata.append([])
@@ -213,24 +213,24 @@ class PlotDataAxesMpl(PlotDataCommon):
         PlotDataCommon.__init__(self, channel)
 
         # initialize axis only if numerical channel
-        if not channel.is_numerical:
+        if not channel.data.is_numerical:
             raise TypeError
 
         self._ax = ax
 
         if not fmt:
             # extend for all vectors
-            self._fmt = ["" for _ in range(channel.vdim)]
+            self._fmt = ["" for _ in range(channel.data.vdim)]
         else:
             # we have to configure each vector individualy
             assert (
-                len(fmt) == channel.vdim
+                len(fmt) == channel.data.vdim
             ), "fmt must match vectors in configured channel"
             self._fmt = fmt
 
         # we need lines for animations
         self._lns: list["Line2D"] = []
-        for i in range(channel.vdim):
+        for i in range(channel.data.vdim):
             lines = self._ax.plot([], [], self._fmt[i])
             self._lns.append(lines[0])
 
@@ -238,8 +238,8 @@ class PlotDataAxesMpl(PlotDataCommon):
         self.grid_set(True)
 
         # set plot title if channel name available
-        if len(channel.name) > 0:  # pragma: no cover
-            self.plot_title = channel.name
+        if len(channel.data.name) > 0:  # pragma: no cover
+            self.plot_title = channel.data.name
 
     def __str__(self) -> str:
         """Format string representation."""
@@ -570,11 +570,11 @@ class PluginPlotMpl(PluginData):
         newchanlist = []
         for chan in chanlist:
             # get only numerical channels
-            if chan.is_numerical:
+            if chan.data.is_numerical:
                 newchanlist.append(chan)
             else:  # pragma: no cover
                 logger.info(
-                    "NOTE: channel %d not numerical - ignore", chan.chan
+                    "NOTE: channel %d not numerical - ignore", chan.data.chan
                 )
 
         super().__init__(newchanlist, trig, cb)
@@ -590,7 +590,7 @@ class PluginPlotMpl(PluginData):
         elif len(self._chanlist) != 1 and len(fmt) == 1:
             # the same format for all channels - extend fmt for all channels
             self._fmt = [
-                [fmt[0]] * self._chanlist[i].vdim
+                [fmt[0]] * self._chanlist[i].data.vdim
                 for i in range(len(self._chanlist))
             ]
         else:
@@ -615,8 +615,8 @@ class PluginPlotMpl(PluginData):
         for i, channel in enumerate(self._chanlist):
             logger.info(
                 "intialize PlotDataAxesMpl chan=%d vdim=%d fmt=%s",
-                channel.chan,
-                channel.vdim,
+                channel.data.chan,
+                channel.data.vdim,
                 self._fmt[i],
             )
             # initialize plot
@@ -639,8 +639,8 @@ class PluginPlotMpl(PluginData):
         # show plots only for numerical channels
         chanlist = []
         for chan in channels:
-            if chan.is_numerical:
-                chanlist.append(chan.chan)
+            if chan.data.is_numerical:
+                chanlist.append(chan.data.chan)
             else:  # pragma: no cover
                 pass
 

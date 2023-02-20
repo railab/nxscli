@@ -41,19 +41,19 @@ class PluginDevinfo(IPluginText):
 
         ret: Any = {}
         ret["cmn"] = {}
-        ret["cmn"]["chmax"] = dev.chmax
-        ret["cmn"]["flags"] = dev.flags
-        ret["cmn"]["rxpadding"] = dev.rxpadding
+        ret["cmn"]["chmax"] = dev.data.chmax
+        ret["cmn"]["flags"] = dev.data.flags
+        ret["cmn"]["rxpadding"] = dev.data.rxpadding
 
         tmp = []
-        for chid in range(dev.chmax):
+        for chid in range(dev.data.chmax):
             chinfo = dev.channel_get(chid)
             assert chinfo
             chan: Any = {}
-            chan["chan"] = chinfo.chan
-            chan["type"] = chinfo._type
-            chan["vdim"] = chinfo.vdim
-            chan["name"] = chinfo.name
+            chan["chan"] = chinfo.data.chan
+            chan["type"] = chinfo.data._type
+            chan["vdim"] = chinfo.data.vdim
+            chan["name"] = chinfo.data.name
 
             tmp.append(chinfo)
 
