@@ -47,16 +47,7 @@ def test_nxsclipdata_init():
     cb = PluginDataCb(dummy_stream_sub, dummy_stream_unsub)
 
     with pytest.raises(AssertionError):
-        PluginData(None, None, None)
-
-    with pytest.raises(AssertionError):
-        PluginData(channels, None, None)
-
-    with pytest.raises(AssertionError):
-        PluginData(channels, [], cb)
-
-    with pytest.raises(AssertionError):
-        PluginData(channels, trig, None)
+        gdata = PluginData(channels, [], cb)
 
     gdata = PluginData(channels, trig, cb)
 

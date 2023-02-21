@@ -16,9 +16,6 @@ from nxscli.trigger import DTriggerConfig, ETriggerType, TriggerHandler
 
 
 def test_plotdatacommon():
-    with pytest.raises(AssertionError):
-        x = PlotDataCommon("xxx")
-
     chan = DeviceChannel(0, 1, 2, "chan0")
     x = PlotDataCommon(chan)
 

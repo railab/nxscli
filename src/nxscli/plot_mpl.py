@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt  # type: ignore
 from matplotlib import _pylab_helpers
 from matplotlib.animation import FuncAnimation  # type: ignore
 from matplotlib.animation import FFMpegWriter, PillowWriter
-from nxslib.dev import DeviceChannel
 
 from nxscli.idata import PluginData, PluginDataCb, PluginQueueData
 from nxscli.logger import logger
@@ -18,6 +17,7 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes  # type: ignore
     from matplotlib.figure import Figure  # type: ignore
     from matplotlib.lines import Line2D  # type: ignore
+    from nxslib.dev import DeviceChannel
     from nxslib.nxscope import DNxscopeStream
 
     from nxscli.trigger import TriggerHandler
@@ -106,13 +106,11 @@ class MplManager:
 class PlotDataCommon:
     """A class implementing common plot data."""
 
-    def __init__(self, channel: DeviceChannel):
+    def __init__(self, channel: "DeviceChannel"):
         """Initialize common plot data.
 
         :param channel: channel instance
         """
-        assert isinstance(channel, DeviceChannel)
-
         self._xdata: list[Any] = []
         self._ydata: list[Any] = []
         self._vdim = channel.data.vdim
@@ -201,7 +199,7 @@ class PlotDataAxesMpl(PlotDataCommon):
     def __init__(
         self,
         ax: "Axes",
-        channel: DeviceChannel,
+        channel: "DeviceChannel",
         fmt: list[str] | None = None,
     ):
         """Initialize matplotlib specific plot data.
@@ -554,7 +552,7 @@ class PluginPlotMpl(PluginData):
 
     def __init__(
         self,
-        chanlist: list[DeviceChannel],
+        chanlist: list["DeviceChannel"],
         trig: list["TriggerHandler"],
         cb: PluginDataCb,
         dpi: float = 100.0,
@@ -625,7 +623,7 @@ class PluginPlotMpl(PluginData):
             ret.append(pdata)
         return ret
 
-    def _add_subplots(self, channels: list[DeviceChannel]) -> None:
+    def _add_subplots(self, channels: list["DeviceChannel"]) -> None:
         """Create subplots from channels list."""
         # remove all current axes
         for ax in self._ax:  # pragma: no cover

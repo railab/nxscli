@@ -120,7 +120,6 @@ class PluginData:
         :param chanlist: a list with plugin channels
         :param cb: plugin callback to nxslib
         """
-        assert isinstance(cb, PluginDataCb)
         assert len(chanlist) == len(trig)
 
         self._chanlist = chanlist
