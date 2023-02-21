@@ -110,6 +110,7 @@ class Channels(click.ParamType):
 
         lstr = get_list_from_str(value)
         for ch in lstr:
+            assert ch.isnumeric(), "channel id must be a valid integer"
             chan = int(ch)
             if chan < 0 or chan > 255:
                 raise click.BadParameter(
@@ -204,6 +205,7 @@ class Divider(click.ParamType):
         lstr = get_list_from_str(value)
         lint = []
         for d in lstr:
+            assert d.isnumeric(), "divider must be a valid integer"
             div = int(d)
             if div < 0 or div > 255:
                 raise click.BadParameter("divnel id must be in range [0, 255]")
@@ -963,22 +965,21 @@ def cli_on_close(ctx: Environment) -> bool:
         return False
 
     if len(ctx.phandler.enabled) == 0:
-        logger.error("no plugins selected")
         click.secho("ERROR: No plugins selected !", err=True, fg="red")
         ctx.phandler.cleanup()
         return False
 
-    # connect nxscope to phandler
-    ctx.phandler.nxscope_connect(ctx.nxscope)
-
     if ctx.needchannels:
         if ctx.channels is None:  # pragma: no cover
-            logger.error("no channels selected")
             click.secho("ERROR: No channels selected !", err=True, fg="red")
             ctx.phandler.cleanup()
             return False
 
-        # configure channles
+    # connect nxscope to phandler
+    ctx.phandler.nxscope_connect(ctx.nxscope)
+
+    # configure channles after connected to nxscope
+    if ctx.needchannels and ctx.channels:
         ctx.phandler.channels_configure(ctx.channels[0], ctx.channels[1])
 
     # configure mplt
