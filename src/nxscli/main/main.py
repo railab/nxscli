@@ -339,14 +339,8 @@ pass_environment = click.make_pass_decorator(Environment, ensure=True)
     is_flag=True,
     envvar="NXSCLI_DEBUG",
 )
-@click.option(
-    "--mplstyle",
-    default="ggplot,fast",
-    type=StringList(),
-    help="Configure Matplotlib style, default: ggplot, fast",
-)
 @pass_environment
-def main(ctx: Environment, debug: bool, mplstyle: list[str]) -> bool:
+def main(ctx: Environment, debug: bool) -> bool:
     """Nxscli - CLI to the Nxslib."""
     ctx.debug = debug
     if debug:  # pragma: no cover
@@ -359,7 +353,6 @@ def main(ctx: Environment, debug: bool, mplstyle: list[str]) -> bool:
     parse = Parser()
     ctx.parser = parse
     ctx.triggers = {}
-    ctx.mplstyle = mplstyle
 
     click.get_current_context().call_on_close(cli_on_close)
 
@@ -441,6 +434,26 @@ def serial(
     ctx.nxscope.intf_connect(comm)
 
     ctx.interface = True
+
+    return True
+
+
+###############################################################################
+# Function: mpl
+###############################################################################
+
+
+@click.command()
+@click.option(
+    "--mplstyle",
+    default="ggplot,fast",
+    type=StringList(),
+    help="Configure Matplotlib style, default: ggplot, fast",
+)
+@pass_environment
+def mpl(ctx: Environment, mplstyle: list[str]) -> bool:
+    """[config] Matplotlib configuration."""  # noqa: D301
+    ctx.mplstyle = mplstyle
 
     return True
 
@@ -983,7 +996,8 @@ def cli_on_close(ctx: Environment) -> bool:
         ctx.phandler.channels_configure(ctx.channels[0], ctx.channels[1])
 
     # configure mplt
-    assert ctx.mplstyle
+    if not ctx.mplstyle:  # pragma: no cover
+        ctx.mplstyle = ["ggplot", "fast"]
     MplManager.mpl_config(ctx.mplstyle)
 
     # start plugins
@@ -1014,6 +1028,7 @@ def cli_on_close(ctx: Environment) -> bool:
 def click_final_init() -> None:
     """Handle final Click initialization."""
     commands = [
+        mpl,
         chan,
         trig,
         pani1,

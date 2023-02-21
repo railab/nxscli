@@ -45,6 +45,12 @@ def test_main_chan_nointf(runner):
     assert result.exit_code == 2
 
 
+def test_main_mpl(runner):
+    args = ["dummy", "mpl"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+
 def test_main_chan(runner):
     args = ["chan", "1000"]
     result = runner.invoke(main, args)
