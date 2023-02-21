@@ -402,7 +402,7 @@ class PluginAnimationCommonMpl:
         yield xdata, ydata
 
     def _animation_update(
-        self, frame: list[Any], pdata: PlotDataAxesMpl
+        self, frame: tuple[list[Any], list[Any]], pdata: PlotDataAxesMpl
     ) -> list["Line2D"] | None:
         pass  # pragma: no cover
 
@@ -423,7 +423,7 @@ class PluginAnimationCommonMpl:
         del self._ani
 
     def _animation_update_cmn(
-        self, frame: list[Any], pdata: PlotDataAxesMpl
+        self, frame: tuple[list[Any], list[Any]], pdata: PlotDataAxesMpl
     ) -> list["Line2D"]:  # pragma: no cover
         """Update animation common logic."""
         # no data
