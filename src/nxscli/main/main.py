@@ -122,6 +122,26 @@ class Channels(click.ParamType):
 
 
 ###############################################################################
+# Class: Samples
+###############################################################################
+
+
+class Samples(click.ParamType):
+    """Parse samples argument."""
+
+    name = "samples"
+
+    def convert(self, value: Any, param: Any, ctx: Any) -> int:
+        """Convert samples argument."""
+        if value.isnumeric():
+            return int(value)
+        elif value == "i":  # pragma: no cover
+            return -1
+        else:  # pragma: no cover
+            raise click.BadParameter("samples must be a valid integer or 'i'")
+
+
+###############################################################################
 # Class: Trigger
 ###############################################################################
 
@@ -623,7 +643,7 @@ def pani2(
 
 
 @click.command()
-@click.argument("samples", type=int, required=True)
+@click.argument("samples", type=Samples(), required=True)
 @plot_options
 @pass_environment
 def pcap(
@@ -637,9 +657,10 @@ def pcap(
 ) -> bool:
     """[plugin] Static plot for a given number of samples.
 
-    If SAMPLES argument is set to 0 then we capture data until enter is press.
-    """
-    # wait for enter if samples set to 0
+    If SAMPLES argument is set to 'i' then we capture data until enter
+    is press.
+    """  # noqa: D301
+    # wait for enter if samples set to 'i'
     assert ctx.phandler
     if samples == 0:  # pragma: no cover
         ctx.waitenter = True
@@ -666,7 +687,7 @@ def pcap(
 
 
 @click.command()
-@click.argument("samples", type=int, required=True)
+@click.argument("samples", type=Samples(), required=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @click.option(
     "--chan", default=None, type=Channels(), help=_channels_option_help
@@ -689,9 +710,10 @@ def pcsv(
     """[plugin] Store samples in CSV files.
 
     Each configured channel will be stored in a separate file.
-    If SAMPLES argument is set to 0 then we capture data until enter is press.
-    """
-    # wait for enter if samples set to 0
+    If SAMPLES argument is set to 'i' then we capture data until enter
+    is press.
+    """  # noqa: D301
+    # wait for enter if samples set to 'i'
     assert ctx.phandler
     if samples == 0:  # pragma: no cover
         ctx.waitenter = True
@@ -717,7 +739,7 @@ def pcsv(
 
 
 @click.command()
-@click.argument("samples", type=int, required=True)
+@click.argument("samples", type=Samples(), required=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @click.option(
     "--chan", default=None, type=Channels(), help=_channels_option_help
@@ -736,9 +758,10 @@ def pnpsave(
     """[plugin] Store samples in Numpy files.
 
     Each configured channel will be stored in a separate file.
-    If SAMPLES argument is set to 0 then we capture data until enter is press.
-    """
-    # wait for enter if samples set to 0
+    If SAMPLES argument is set to 'i' then we capture data until enter
+    is press.
+    """  # noqa: D301
+    # wait for enter if samples set to 'i'
     assert ctx.phandler
     if samples == 0:  # pragma: no cover
         ctx.waitenter = True
@@ -763,7 +786,7 @@ def pnpsave(
 
 
 @click.command()
-@click.argument("samples", type=int, required=True)
+@click.argument("samples", type=Samples(), required=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @click.argument("shape", type=int, required=True)
 @click.option(
@@ -784,10 +807,13 @@ def pnpmem(
     """[plugin] Store samples in Numpy memmap files.
 
     Each configured channel will be written to a separate file.
-    If SAMPLES argument is set to 0 then we capture data until enter is press.
+
+    If SAMPLES argument is set to 'i' then we capture data until enter
+    is press.
+
     The 'shape' argument defines the second dimension of the memmap array.
-    """
-    # wait for enter if samples set to 0
+    """  # noqa: D301
+    # wait for enter if samples set to 'i'
     assert ctx.phandler
     if samples == 0:  # pragma: no cover
         ctx.waitenter = True
@@ -813,7 +839,7 @@ def pnpmem(
 
 
 @click.command()
-@click.argument("samples", type=int, required=True)
+@click.argument("samples", type=Samples(), required=True)
 @click.option(
     "--chan", default=None, type=Channels(), help=_channels_option_help
 )
@@ -829,9 +855,10 @@ def pnone(
 ) -> bool:
     """[plugin] Dummy capture plugin.
 
-    If SAMPLES argument is set to 0 then we capture data until enter is press.
-    """
-    # wait for enter if samples set to 0
+    If SAMPLES argument is set to 'i' then we capture data until enter
+    is press.
+    """  # noqa: D301
+    # wait for enter if samples set to 'i'
     assert ctx.phandler
     if samples == 0:  # pragma: no cover
         ctx.waitenter = True
