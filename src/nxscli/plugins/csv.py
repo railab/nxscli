@@ -3,14 +3,13 @@
 import csv
 from typing import TYPE_CHECKING, Any
 
+from nxscli.idata import PluginData, PluginQueueData
 from nxscli.iplugin import IPluginFile
 from nxscli.logger import logger
 from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:
     from nxslib.nxscope import DNxscopeStream
-
-    from nxscli.idata import PluginData, PluginQueueData
 
 
 ###############################################################################
@@ -100,7 +99,8 @@ class PluginCsv(PluginThread, IPluginFile):
         chanlist = self._phandler.chanlist_plugin(kwargs["channels"])
         trig = self._phandler.triggers_plugin(chanlist, kwargs["trig"])
 
-        self._data = self._phandler.data_handler(chanlist, trig)
+        cb = self._phandler.cb_get()
+        self._data = PluginData(chanlist, trig, cb)
 
         if not self._data.qdlist:  # pragma: no cover
             return False

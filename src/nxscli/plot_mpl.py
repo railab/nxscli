@@ -565,6 +565,7 @@ class PluginPlotMpl(PluginData):
         :param dpi: figure DPI
         :param fmt: plot format
         """
+        logger.info("prepare plot %s", str(chanlist))
         newchanlist = []
         for chan in chanlist:
             # get only numerical channels
@@ -574,6 +575,7 @@ class PluginPlotMpl(PluginData):
                 logger.info(
                     "NOTE: channel %d not numerical - ignore", chan.data.chan
                 )
+        assert len(newchanlist) == len(trig)
 
         super().__init__(newchanlist, trig, cb)
 
