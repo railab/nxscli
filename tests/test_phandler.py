@@ -104,6 +104,7 @@ def test_phandler_init():
     p = PluginHandler([])
     assert isinstance(p, PluginHandler)
     assert p.names == []
+    p.cleanup()
 
     # valid data
     plugins = [("plugin1", MockPlugin1), ("plugin2", MockPlugin2)]
@@ -122,6 +123,9 @@ def test_phandler_init():
     assert isinstance(p.plugins["plugin1"](), MockPlugin1)
     assert isinstance(p.plugins["plugin2"](), MockPlugin2)
     assert isinstance(p.plugins["plugin3"](), MockPlugin3)
+
+    # clean up
+    p.cleanup()
 
 
 @pytest.fixture
@@ -164,6 +168,9 @@ def test_phandler_connect(nxscope):
     p.channels_configure([])
     p.channels_configure([-1], 1)
     p.channels_configure([1, 2], [1, 2], writenow=True)
+
+    # clean up
+    p.cleanup()
 
 
 def test_phandler_enable():
@@ -235,6 +242,9 @@ def test_phandler_enable():
     with pytest.raises(AttributeError):
         p.disable(pid3)
 
+    # clean up
+    p.cleanup()
+
 
 def test_phandler_start_ready(nxscope):
     plugins = [
@@ -261,6 +271,9 @@ def test_phandler_start_ready(nxscope):
 
     # stop plugins
     p.stop()
+
+    # clean up
+    p.cleanup()
 
 
 def test_phandler_start_poll(nxscope):
@@ -294,6 +307,9 @@ def test_phandler_start_poll(nxscope):
     # stop plugins
     p.stop()
 
+    # clean up
+    p.cleanup()
+
 
 def test_phandler_start_nostream(nxscope):
     plugins = [("plugin1", MockPlugin1)]
@@ -312,6 +328,9 @@ def test_phandler_start_nostream(nxscope):
 
     # stop plugins
     p.stop()
+
+    # clean up
+    p.cleanup()
 
 
 def test_phandler_start_noready(nxscope):
@@ -336,6 +355,9 @@ def test_phandler_start_noready(nxscope):
 
     # stop plugins
     p.stop()
+
+    # clean up
+    p.cleanup()
 
 
 def test_phandler_trigger():
@@ -383,3 +405,6 @@ def test_phandler_trigger():
     assert dt.ttype == "off"
     assert dt.srcchan is None
     assert dt.params is None
+
+    # clean up
+    p.cleanup()

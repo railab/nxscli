@@ -45,8 +45,11 @@ def test_ipluginanimation_init():
     assert x.stream is True
     assert x.data_wait() is True
 
-    phandler = PluginHandler()
-    x.connect_phandler(phandler)
+    p = PluginHandler()
+    x.connect_phandler(p)
+
+    # clean up
+    p.cleanup()
 
 
 @pytest.fixture
@@ -78,6 +81,9 @@ def test_ipluginanimation_start_nochannels(nxscope):
     # stop
     x.stop()
 
+    # clean up
+    p.cleanup()
+
 
 def test_ipluginanimation_start(nxscope):
     x = XTestPluginAnimation()
@@ -106,3 +112,6 @@ def test_ipluginanimation_start(nxscope):
 
     # stop
     x.stop()
+
+    # clean up
+    p.cleanup()

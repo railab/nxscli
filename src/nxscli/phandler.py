@@ -43,12 +43,12 @@ class PluginHandler:
         # stream flags
         self._stream = False
 
+        self._cleanup_done = False
+
     def __del__(self) -> None:
-        """Clean up."""
-        # disconnect nxscope if connected
-        self.nxscope_disconnect()
-        # clean up triggers
-        TriggerHandler.cls_cleanup()
+        """Raise assertion if not cleaned."""
+        if not self._cleanup_done:
+            raise AssertionError("PluginHandler not cleaned")
 
     def _chanlist_gen(self, channels: list[int]) -> list["DeviceChannel"]:
         assert self._nxs
@@ -126,6 +126,14 @@ class PluginHandler:
     def enabled(self) -> list[tuple[int, type[IPlugin], Any]]:
         """Get enabled plugins."""
         return self._enabled
+
+    def cleanup(self) -> None:
+        """Clean up - must be called after instance use."""
+        # disconnect nxscope if connected
+        self.nxscope_disconnect()
+        # clean up triggers
+        TriggerHandler.cls_cleanup()
+        self._cleanup_done = True
 
     def stream_start(self) -> None:
         """Start stream."""
