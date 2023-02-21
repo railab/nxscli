@@ -955,14 +955,17 @@ def cli_on_close(ctx: Environment) -> bool:
     assert ctx.nxscope
     # do not show any errors if it was help request
     if "--help" in sys.argv:  # pragma: no cover
+        ctx.phandler.cleanup()
         return True
 
     if ctx.interface is False:
+        ctx.phandler.cleanup()
         return False
 
     if len(ctx.phandler.enabled) == 0:
         logger.error("no plugins selected")
         click.secho("ERROR: No plugins selected !", err=True, fg="red")
+        ctx.phandler.cleanup()
         return False
 
     # connect nxscope to phandler
@@ -972,6 +975,7 @@ def cli_on_close(ctx: Environment) -> bool:
         if ctx.channels is None:  # pragma: no cover
             logger.error("no channels selected")
             click.secho("ERROR: No channels selected !", err=True, fg="red")
+            ctx.phandler.cleanup()
             return False
 
         # configure channles
@@ -996,6 +1000,7 @@ def cli_on_close(ctx: Environment) -> bool:
     print("closing...")
     ctx.phandler.stop()
     ctx.phandler.nxscope_disconnect()
+    ctx.phandler.cleanup()
 
     return True
 
