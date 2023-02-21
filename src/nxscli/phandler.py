@@ -2,9 +2,8 @@
 
 from typing import TYPE_CHECKING, Any
 
-from nxscli.idata import PluginData, PluginDataCb
+from nxscli.idata import PluginDataCb
 from nxscli.logger import logger
-from nxscli.plot_mpl import PluginPlotMpl
 from nxscli.trigger import DTriggerConfigReq, TriggerHandler, trigger_from_req
 
 if TYPE_CHECKING:
@@ -133,6 +132,11 @@ class PluginHandler:
         # clean up triggers
         TriggerHandler.cls_cleanup()
         self._cleanup_done = True
+
+    def cb_get(self) -> PluginDataCb:
+        """Get callbacks for plugins."""
+        assert self._nxs
+        return PluginDataCb(self._nxs.stream_sub, self._nxs.stream_unsub)
 
     def stream_start(self) -> None:
         """Start stream."""
@@ -298,42 +302,6 @@ class PluginHandler:
                 # default on
                 trg = DTriggerConfigReq("on", None)
         return trg
-
-    def data_handler(
-        self, chanlist: list["DeviceChannel"], trig: list[TriggerHandler]
-    ) -> PluginData:
-        """Prepare data handler.
-
-        :param chanlist: a list with plugin channels
-        """
-        assert self._nxs
-        assert len(chanlist) == len(trig)
-
-        logger.info("prepare data %s", str(chanlist))
-
-        cb = PluginDataCb(self._nxs.stream_sub, self._nxs.stream_unsub)
-        return PluginData(chanlist, trig, cb)
-
-    def plot_handler(
-        self,
-        chanlist: list["DeviceChannel"],
-        trig: list[TriggerHandler],
-        dpi: float = 100.0,
-        fmt: list[str] | None = None,
-    ) -> PluginPlotMpl:
-        """Prepare plot handler.
-
-        :param chanlist: a list with plugin channels
-        :param dpi: figure DPI
-        :param fmt: plot format
-        """
-        assert self._nxs
-        assert len(chanlist) == len(trig)
-
-        logger.info("prepare plot %s", str(chanlist))
-
-        cb = PluginDataCb(self._nxs.stream_sub, self._nxs.stream_unsub)
-        return PluginPlotMpl(chanlist, trig, cb, dpi, fmt)
 
     def chanlist_plugin(self, channels: list[int]) -> list["DeviceChannel"]:
         """Prepare channels list for a plugin.

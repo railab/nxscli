@@ -5,16 +5,16 @@ from typing import TYPE_CHECKING, Any
 
 from nxscli.iplugin import IPluginPlotDynamic
 from nxscli.logger import logger
+from nxscli.plot_mpl import (
+    PlotDataAxesMpl,
+    PluginAnimationCommonMpl,
+    PluginPlotMpl,
+)
 
 if TYPE_CHECKING:
     from matplotlib.figure import Figure  # type: ignore
 
     from nxscli.idata import PluginQueueData
-    from nxscli.plot_mpl import (
-        PlotDataAxesMpl,
-        PluginAnimationCommonMpl,
-        PluginPlotMpl,
-    )
 
 
 ###############################################################################
@@ -85,10 +85,10 @@ class IPluginAnimation(IPluginPlotDynamic):
         chanlist = self._phandler.chanlist_plugin(kwargs["channels"])
         trig = self._phandler.triggers_plugin(chanlist, kwargs["trig"])
 
-        self._plot = self._phandler.plot_handler(
-            chanlist, trig, dpi=kwargs["dpi"], fmt=kwargs["fmt"]
+        cb = self._phandler.cb_get()
+        self._plot = PluginPlotMpl(
+            chanlist, trig, cb, dpi=kwargs["dpi"], fmt=kwargs["fmt"]
         )
-        assert self._plot
 
         # clear previous animations
         self.clear()

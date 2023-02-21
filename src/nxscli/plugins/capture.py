@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING, Any
 
 from nxscli.iplugin import IPluginPlotStatic
 from nxscli.logger import logger
+from nxscli.plot_mpl import PluginPlotMpl
 from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:
     from nxslib.nxscope import DNxscopeStream
 
     from nxscli.idata import PluginQueueData
-    from nxscli.plot_mpl import PluginPlotMpl
 
 
 ###############################################################################
@@ -66,8 +66,9 @@ class PluginCapture(PluginThread, IPluginPlotStatic):
         chanlist = self._phandler.chanlist_plugin(kwargs["channels"])
         trig = self._phandler.triggers_plugin(chanlist, kwargs["trig"])
 
-        self._plot = self._phandler.plot_handler(
-            chanlist, trig, dpi=kwargs["dpi"], fmt=kwargs["fmt"]
+        cb = self._phandler.cb_get()
+        self._plot = PluginPlotMpl(
+            chanlist, trig, cb, dpi=kwargs["dpi"], fmt=kwargs["fmt"]
         )
 
         if not self._plot.qdlist or not self._plot.plist:  # pragma: no cover

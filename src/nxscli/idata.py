@@ -4,6 +4,8 @@ import queue
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from nxscli.logger import logger
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -120,6 +122,7 @@ class PluginData:
         :param chanlist: a list with plugin channels
         :param cb: plugin callback to nxslib
         """
+        logger.info("prepare data %s", str(chanlist))
         assert len(chanlist) == len(trig)
 
         self._chanlist = chanlist

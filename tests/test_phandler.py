@@ -150,8 +150,6 @@ def test_phandler_connect(nxscope):
     with pytest.raises(AssertionError):
         _ = p.stream_stop()
     with pytest.raises(AssertionError):
-        _ = p.data_handler([], [])
-    with pytest.raises(AssertionError):
         _ = p.channels_configure([])
 
     # connect nxslib instance
