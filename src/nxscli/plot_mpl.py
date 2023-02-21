@@ -64,7 +64,7 @@ class MplManager:
 
         :param block: blocking operation
         """
-        plt.show(block=block)
+        plt.show(block=block)  # pragma: no cover
 
     @staticmethod
     def mpl_config(style: list[str]) -> None:
