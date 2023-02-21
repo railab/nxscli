@@ -1,87 +1,8 @@
-from unittest.mock import Mock
-
 import pytest  # type: ignore
 from click.testing import CliRunner
 
 import nxscli
 from nxscli.main.main import get_list_from_str, get_list_from_str2, main
-
-
-class FigureMock:  # pragma: no cover
-    def __init__(self):
-        self.canvas = Mock()
-        self.number = 0
-
-    def delaxes(self, ax):
-        pass
-
-    def add_subplot(self, row, col, i):
-        return AxesMock()
-
-
-class AxesMock:  # pragma: no cover
-    def __init__(self):
-        pass
-
-    def plot(self, arg1, arg2=None, arg3=None):
-        return (Mock(),)
-
-    def get_xlim(self):
-        pass
-
-    def get_ylim(self):
-        pass
-
-    def set_xlim(self, a, b):
-        pass
-
-    def set_ylim(self, a, b):
-        pass
-
-    def get_title(self):
-        pass
-
-    def set_title(self, a1):
-        pass
-
-    def get_xaxis(self):
-        pass
-
-    def grid(self, a1):
-        pass
-
-
-class MplManagerMock:  # pragma: no cover
-    @staticmethod
-    def draw():
-        pass
-
-    @staticmethod
-    def fig_is_open():
-        pass
-
-    @staticmethod
-    def pause(interval):
-        pass
-
-    @classmethod
-    def show(cls, block):
-        pass
-
-    @staticmethod
-    def mpl_config():
-        pass
-
-    @staticmethod
-    def figure(dpi: float = 100.0):
-        return FigureMock()
-
-    def func_animation(**kwargs):
-        return Mock()
-
-    @staticmethod
-    def close(fig):
-        pass
 
 
 def test_get_list_from_str():
@@ -98,7 +19,7 @@ def test_get_list_from_str():
 @pytest.fixture
 def runner(mocker):
     mocker.patch.object(nxscli.main.main, "wait_for_plugins", autospec=True)
-    mocker.patch.object(nxscli.plot_mpl, "MplManager", MplManagerMock)
+    mocker.patch.object(nxscli.plot_mpl.MplManager, "show", autospec=True)
     return CliRunner()
 
 
