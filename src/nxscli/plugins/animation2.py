@@ -48,12 +48,12 @@ class Animation2(PluginAnimationCommonMpl):
             self.xaxis_disable()
 
     def _animation_update(
-        self, frame: list[Any], pdata: PlotDataAxesMpl
+        self, frame: tuple[list[Any], list[Any]], pdata: PlotDataAxesMpl
     ) -> "Line2D":  # pragma: no cover
         return self._animation_update_priv(frame, pdata)
 
     def _animation_update_staticx(
-        self, frame: list[Any], pdata: PlotDataAxesMpl
+        self, frame: tuple[list[Any], list[Any]], pdata: PlotDataAxesMpl
     ) -> "Line2D":  # pragma: no cover
         """Update an animation with static X ticks."""
         # update sample
@@ -72,7 +72,7 @@ class Animation2(PluginAnimationCommonMpl):
         return pdata.lns
 
     def _animation_update_dynamicx(
-        self, frame: list[Any], pdata: PlotDataAxesMpl
+        self, frame: tuple[list[Any], list[Any]], pdata: PlotDataAxesMpl
     ) -> "Line2D":  # pragma: no cover
         """Update an animation with dynamic X ticks."""
         xdata = frame[0]

@@ -36,7 +36,7 @@ class Animation1(PluginAnimationCommonMpl):
         PluginAnimationCommonMpl.__init__(self, fig, pdata, qdata, write)
 
     def _animation_update(
-        self, frame: list[Any], pdata: PlotDataAxesMpl
+        self, frame: tuple[list[Any], list[Any]], pdata: PlotDataAxesMpl
     ) -> "Line2D":  # pragma: no cover
         """Update an animation with dynamic scaling."""
         # update sample
