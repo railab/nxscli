@@ -2,16 +2,16 @@
 
 from typing import TYPE_CHECKING, Any
 
-from nxslib.nxscope import NxscopeHandler
-
 from nxscli.idata import PluginData, PluginDataCb
-from nxscli.iplugin import IPlugin
 from nxscli.logger import logger
 from nxscli.plot_mpl import PluginPlotMpl
 from nxscli.trigger import DTriggerConfigReq, TriggerHandler, trigger_from_req
 
 if TYPE_CHECKING:
     from nxslib.dev import Device, DeviceChannel
+    from nxslib.nxscope import NxscopeHandler
+
+    from nxscli.iplugin import IPlugin
 
 
 ###############################################################################
@@ -22,20 +22,22 @@ if TYPE_CHECKING:
 class PluginHandler:
     """A class implementing a plugins handler."""
 
-    def __init__(self, plugins: list[tuple[str, type[IPlugin]]] | None = None):
+    def __init__(
+        self, plugins: list[tuple[str, type["IPlugin"]]] | None = None
+    ):
         """Initialize a plugin handler.
 
         :param plugins: a list with plugins
         """
-        self._nxs: NxscopeHandler | None = None
+        self._nxs: "NxscopeHandler" | None = None
         self._plugins = {}
 
         if plugins:
             for cls in plugins:
                 self._plugins[cls[0]] = cls[1]
 
-        self._enabled: list[tuple[int, type[IPlugin], Any]] = []
-        self._started: list[tuple[IPlugin, Any]] = []
+        self._enabled: list[tuple[int, type["IPlugin"], Any]] = []
+        self._started: list[tuple["IPlugin", Any]] = []
         self._triggers: dict[int, DTriggerConfigReq] = {}
 
         self._chanlist: list["DeviceChannel"] = []
@@ -53,7 +55,6 @@ class PluginHandler:
     def _chanlist_gen(self, channels: list[int]) -> list["DeviceChannel"]:
         assert self._nxs
         assert self.dev
-        assert isinstance(channels, list)
         # convert special keys for all channels
         if channels and channels[0] == -1:  # pragma: no cover
             chanlist = list(range(self.dev.data.chmax))
@@ -64,7 +65,6 @@ class PluginHandler:
         # get channels data
         ret = []
         for chan in chanlist:
-            assert isinstance(chan, int)
             channel = self._nxs.dev_channel_get(chan)
             assert channel
             ret.append(channel)
@@ -90,7 +90,6 @@ class PluginHandler:
             for channel in self._chanlist:
                 self._nxs.ch_divider(channel.data.chan, div)
         else:
-            assert isinstance(div, list)
             # divider list configuration must cover all configured channels
             assert len(div) == len(self._chanlist)
             for i, channel in enumerate(self._chanlist):
@@ -107,7 +106,7 @@ class PluginHandler:
         return list(self._plugins.keys())
 
     @property
-    def plugins(self) -> dict[str, type[IPlugin]]:
+    def plugins(self) -> dict[str, type["IPlugin"]]:
         """Get loaded plugins."""
         return self._plugins
 
@@ -123,7 +122,7 @@ class PluginHandler:
         return self._stream
 
     @property
-    def enabled(self) -> list[tuple[int, type[IPlugin], Any]]:
+    def enabled(self) -> list[tuple[int, type["IPlugin"], Any]]:
         """Get enabled plugins."""
         return self._enabled
 
@@ -154,26 +153,25 @@ class PluginHandler:
             logger.info("disconnected!")
             self._nxs = None
 
-    def nxscope_connect(self, nxs: NxscopeHandler) -> None:
+    def nxscope_connect(self, nxs: "NxscopeHandler") -> None:
         """Connect Nxslib instance.
 
         :param nxs: Nxscope handler
         """
-        assert isinstance(nxs, NxscopeHandler)
         self._nxs = nxs
         logger.info("connecting to nxs device...")
         # connect nxscope device
         self._nxs.connect()
         logger.info("connected!")
 
-    def plugin_add(self, cls: tuple[str, type[IPlugin]]) -> None:
+    def plugin_add(self, cls: tuple[str, type["IPlugin"]]) -> None:
         """Add plugin.
 
         :param cls: tuple with plugin data
         """
         self._plugins[cls[0]] = cls[1]
 
-    def plugin_get(self, name: str) -> type[IPlugin]:
+    def plugin_get(self, name: str) -> type["IPlugin"]:
         """Get plugin by name.
 
         :param name: plugin name
@@ -217,7 +215,6 @@ class PluginHandler:
 
             # create instance
             plugin = cls()  # type: ignore
-            assert isinstance(plugin, IPlugin)
 
             # we need data stream
             if plugin.stream is True:
@@ -242,7 +239,7 @@ class PluginHandler:
         for plg, _ in self._started:
             plg.stop()
 
-    def ready(self) -> list[IPlugin]:
+    def ready(self) -> list["IPlugin"]:
         """Wait for results from enabled plugins."""
         ret = []
         for plg in self._started:
@@ -253,7 +250,7 @@ class PluginHandler:
 
         return ret
 
-    def poll(self) -> list[IPlugin] | None:
+    def poll(self) -> list["IPlugin"] | None:
         """Pool for results from enabled plugins."""
         nothandled = 0
         for plg in self._started:
