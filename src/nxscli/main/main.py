@@ -465,15 +465,15 @@ def serial(
 
 @click.command()
 @click.option(
-    "--mplstyle",
+    "--style",
     default="ggplot,fast",
     type=StringList(),
     help="Configure Matplotlib style, default: ggplot, fast",
 )
 @pass_environment
-def mpl(ctx: Environment, mplstyle: list[str]) -> bool:
+def mpl(ctx: Environment, style: list[str]) -> bool:
     """[config] Matplotlib configuration."""  # noqa: D301
-    ctx.mplstyle = mplstyle
+    ctx.mplstyle = style
 
     return True
 
