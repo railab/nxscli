@@ -17,13 +17,9 @@ from nxscli.main.environment import Environment, pass_environment
 from nxscli.main.types import (
     Channels,
     Divider,
-    Samples,
     StringList,
     Trigger,
-    channels_option_help,
     divider_option_help,
-    plot_options,
-    trigger_option_help,
 )
 from nxscli.pdefault import g_plugins_default
 from nxscli.phandler import PluginHandler
@@ -258,318 +254,6 @@ def trig(ctx: Environment, triggers: dict[int, "DTriggerConfigReq"]) -> bool:
 
 
 ###############################################################################
-# Function: pani1
-###############################################################################
-
-
-@click.command()
-@plot_options
-@pass_environment
-def pani1(
-    ctx: Environment,
-    chan: list[int],
-    trig: dict[int, "DTriggerConfigReq"],
-    dpi: float,
-    fmt: list[list[str]],
-    write: str,
-) -> bool:
-    """[plugin] Animation plot without a length limit."""
-    assert ctx.phandler
-    ctx.phandler.enable(
-        "animation1", channels=chan, trig=trig, dpi=dpi, fmt=fmt, write=write
-    )
-
-    ctx.needchannels = True
-
-    return True
-
-
-###############################################################################
-# Function: pani2
-###############################################################################
-
-
-@click.command()
-@click.argument("maxsamples", type=int, required=True)
-@plot_options
-@pass_environment
-def pani2(
-    ctx: Environment,
-    maxsamples: int,
-    chan: list[int],
-    trig: dict[int, "DTriggerConfigReq"],
-    dpi: float,
-    fmt: list[list[str]],
-    write: str,
-) -> bool:
-    """[plugin] Animation plot with a lenght limit."""
-    assert ctx.phandler
-    if maxsamples == 0:  # pragma: no cover
-        click.secho("ERROR: Missing argument MAXSAMPLES", err=True, fg="red")
-        return False
-
-    ctx.phandler.enable(
-        "animation2",
-        maxsamples=maxsamples,
-        channels=chan,
-        trig=trig,
-        dpi=dpi,
-        fmt=fmt,
-        write=write,
-    )
-
-    ctx.needchannels = True
-
-    return True
-
-
-###############################################################################
-# Function: pcap
-###############################################################################
-
-
-@click.command()
-@click.argument("samples", type=Samples(), required=True)
-@plot_options
-@pass_environment
-def pcap(
-    ctx: Environment,
-    samples: int,
-    chan: list[int],
-    trig: dict[int, "DTriggerConfigReq"],
-    dpi: float,
-    fmt: list[list[str]],
-    write: str,
-) -> bool:
-    """[plugin] Static plot for a given number of samples.
-
-    If SAMPLES argument is set to 'i' then we capture data until enter
-    is press.
-    """  # noqa: D301
-    # wait for enter if samples set to 'i'
-    assert ctx.phandler
-    if samples == 0:  # pragma: no cover
-        ctx.waitenter = True
-
-    ctx.phandler.enable(
-        "capture",
-        samples=samples,
-        channels=chan,
-        trig=trig,
-        dpi=dpi,
-        fmt=fmt,
-        write=write,
-        nostop=ctx.waitenter,
-    )
-
-    ctx.needchannels = True
-
-    return True
-
-
-###############################################################################
-# Function: pcsv
-###############################################################################
-
-
-@click.command()
-@click.argument("samples", type=Samples(), required=True)
-@click.argument("path", type=click.Path(resolve_path=False), required=True)
-@click.option(
-    "--chan", default=None, type=Channels(), help=channels_option_help
-)
-@click.option("--trig", default=None, type=Trigger(), help=trigger_option_help)
-@click.option(
-    "--metastr", default=False, is_flag=True, help="store metadata as string"
-)
-@pass_environment
-def pcsv(
-    ctx: Environment,
-    samples: int,
-    path: str,
-    chan: list[int],
-    trig: dict[int, "DTriggerConfigReq"],
-    metastr: bool,
-) -> bool:
-    """[plugin] Store samples in CSV files.
-
-    Each configured channel will be stored in a separate file.
-    If SAMPLES argument is set to 'i' then we capture data until enter
-    is press.
-    """  # noqa: D301
-    # wait for enter if samples set to 'i'
-    assert ctx.phandler
-    if samples == 0:  # pragma: no cover
-        ctx.waitenter = True
-
-    ctx.phandler.enable(
-        "csv",
-        samples=samples,
-        path=path,
-        channels=chan,
-        trig=trig,
-        metastr=metastr,
-        nostop=ctx.waitenter,
-    )
-
-    ctx.needchannels = True
-
-    return True
-
-
-###############################################################################
-# Function: pnpsave
-###############################################################################
-
-
-@click.command()
-@click.argument("samples", type=Samples(), required=True)
-@click.argument("path", type=click.Path(resolve_path=False), required=True)
-@click.option(
-    "--chan", default=None, type=Channels(), help=channels_option_help
-)
-@click.option("--trig", default=None, type=Trigger(), help=trigger_option_help)
-@pass_environment
-def pnpsave(
-    ctx: Environment,
-    samples: int,
-    path: str,
-    chan: list[int],
-    trig: dict[int, "DTriggerConfigReq"],
-) -> bool:
-    """[plugin] Store samples in Numpy files.
-
-    Each configured channel will be stored in a separate file.
-    If SAMPLES argument is set to 'i' then we capture data until enter
-    is press.
-    """  # noqa: D301
-    # wait for enter if samples set to 'i'
-    assert ctx.phandler
-    if samples == 0:  # pragma: no cover
-        ctx.waitenter = True
-
-    ctx.phandler.enable(
-        "npsave",
-        samples=samples,
-        path=path,
-        channels=chan,
-        trig=trig,
-        nostop=ctx.waitenter,
-    )
-
-    ctx.needchannels = True
-
-    return True
-
-
-###############################################################################
-# Function: pnpmem
-###############################################################################
-
-
-@click.command()
-@click.argument("samples", type=Samples(), required=True)
-@click.argument("path", type=click.Path(resolve_path=False), required=True)
-@click.argument("shape", type=int, required=True)
-@click.option(
-    "--chan", default=None, type=Channels(), help=channels_option_help
-)
-@click.option("--trig", default=None, type=Trigger(), help=trigger_option_help)
-@pass_environment
-def pnpmem(
-    ctx: Environment,
-    samples: int,
-    path: str,
-    shape: int,
-    chan: list[int],
-    trig: dict[int, "DTriggerConfigReq"],
-) -> bool:
-    """[plugin] Store samples in Numpy memmap files.
-
-    Each configured channel will be written to a separate file.
-
-    If SAMPLES argument is set to 'i' then we capture data until enter
-    is press.
-
-    The 'shape' argument defines the second dimension of the memmap array.
-    """  # noqa: D301
-    # wait for enter if samples set to 'i'
-    assert ctx.phandler
-    if samples == 0:  # pragma: no cover
-        ctx.waitenter = True
-
-    ctx.phandler.enable(
-        "npmem",
-        samples=samples,
-        path=path,
-        channels=chan,
-        shape=shape,
-        trig=trig,
-        nostop=ctx.waitenter,
-    )
-
-    ctx.needchannels = True
-
-    return True
-
-
-###############################################################################
-# Function: pnone
-###############################################################################
-
-
-@click.command()
-@click.argument("samples", type=Samples(), required=True)
-@click.option(
-    "--chan", default=None, type=Channels(), help=channels_option_help
-)
-@click.option("--trig", default=None, type=Trigger(), help=trigger_option_help)
-@pass_environment
-def pnone(
-    ctx: Environment,
-    samples: int,
-    chan: list[int],
-    trig: dict[int, "DTriggerConfigReq"],
-) -> bool:
-    """[plugin] Dummy capture plugin.
-
-    If SAMPLES argument is set to 'i' then we capture data until enter
-    is press.
-    """  # noqa: D301
-    # wait for enter if samples set to 'i'
-    assert ctx.phandler
-    if samples == 0:  # pragma: no cover
-        ctx.waitenter = True
-
-    ctx.phandler.enable(
-        "none",
-        samples=samples,
-        channels=chan,
-        trig=trig,
-        nostop=ctx.waitenter,
-    )
-
-    ctx.needchannels = True
-
-    return True
-
-
-###############################################################################
-# Function: pdevinfo
-###############################################################################
-
-
-@click.command()
-@pass_environment
-def pdevinfo(ctx: Environment) -> bool:
-    """[plugin] Show NxSope device info."""
-    assert ctx.phandler
-    ctx.phandler.enable("devinfo")
-
-    return True
-
-
-###############################################################################
 # Function: devinfo_print
 ###############################################################################
 
@@ -670,7 +354,7 @@ def wait_for_plugins(ret: list[Any]) -> None:
 
 @pass_environment
 def cli_on_close(ctx: Environment) -> bool:
-    """Handle requested plugins on Click close."""
+    """Handle requested plugins on click close."""
     assert ctx.phandler
     assert ctx.nxscope
     # do not show any errors if it was help request
@@ -732,19 +416,13 @@ def cli_on_close(ctx: Environment) -> bool:
 
 def click_final_init() -> None:
     """Handle final Click initialization."""
-    commands = [
-        mpl,
-        chan,
-        trig,
-        pani1,
-        pani2,
-        pcap,
-        pcsv,
-        pnpsave,
-        pnpmem,
-        pnone,
-        pdevinfo,
-    ]
+    commands = [chan, trig, mpl]
+    for plug in g_plugins_default:
+        if plug.command:
+            commands.append(plug.command)
+        else:  # pragma: no cover
+            logger.error("no command implementation for plugin %s", plug.name)
+
     groups = [dummy, serial]
 
     # add commands to interfaces

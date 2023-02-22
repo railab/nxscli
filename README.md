@@ -18,6 +18,7 @@ Compatible with Python 3.10+.
 
 ## Features Planned
 
+* Plugins as python modules
 * Stream data as audio (inspired by audio knock detection systems)
 * Plugins for character-type channels
 * More triggering types
