@@ -1,10 +1,13 @@
 """Module containing Nxscli plugin interfaces."""
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    import click
+
     from nxscli.phandler import PluginHandler
 
 ###############################################################################
@@ -20,6 +23,20 @@ class EPluginType(Enum):
     STATIC = 3
     ANIMATION = 4
     FILE = 5
+
+
+###############################################################################
+# Data: DPluginDescription
+###############################################################################
+
+
+@dataclass
+class DPluginDescription:
+    """Plugin description."""
+
+    name: str
+    plugin: type["IPlugin"]
+    command: "click.Command | None" = None
 
 
 ###############################################################################

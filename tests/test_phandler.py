@@ -5,6 +5,7 @@ from nxslib.nxscope import NxscopeHandler
 from nxslib.proto.parse import Parser
 
 from nxscli.iplugin import (
+    DPluginDescription,
     EPluginType,
     IPlugin,
     IPluginPlotDynamic,
@@ -107,7 +108,10 @@ def test_phandler_init():
     p.cleanup()
 
     # valid data
-    plugins = [("plugin1", MockPlugin1), ("plugin2", MockPlugin2)]
+    plugins = [
+        DPluginDescription("plugin1", MockPlugin1),
+        DPluginDescription("plugin2", MockPlugin2),
+    ]
     p = PluginHandler(plugins=plugins)
     assert isinstance(p, PluginHandler)
     assert p.names == ["plugin1", "plugin2"]
@@ -139,7 +143,10 @@ def nxscope():
 
 
 def test_phandler_connect(nxscope):
-    plugins = [("plugin1", MockPlugin1), ("plugin2", MockPlugin2)]
+    plugins = [
+        DPluginDescription("plugin1", MockPlugin1),
+        DPluginDescription("plugin2", MockPlugin2),
+    ]
     p = PluginHandler(plugins=plugins)
 
     # nxs not connected
@@ -168,7 +175,10 @@ def test_phandler_connect(nxscope):
 
 
 def test_phandler_enable():
-    plugins = [("plugin1", MockPlugin1), ("plugin2", MockPlugin2)]
+    plugins = [
+        DPluginDescription("plugin1", MockPlugin1),
+        DPluginDescription("plugin2", MockPlugin2),
+    ]
     p = PluginHandler(plugins=plugins)
 
     # no plugins enabled at default
@@ -242,9 +252,9 @@ def test_phandler_enable():
 
 def test_phandler_start_ready(nxscope):
     plugins = [
-        ("plugin1", MockPlugin1),
-        ("plugin2", MockPlugin2),
-        ("plugin3", MockPlugin3),
+        DPluginDescription("plugin1", MockPlugin1),
+        DPluginDescription("plugin2", MockPlugin2),
+        DPluginDescription("plugin3", MockPlugin3),
     ]
     p = PluginHandler(plugins=plugins)
     p.nxscope_connect(nxscope)
@@ -272,9 +282,9 @@ def test_phandler_start_ready(nxscope):
 
 def test_phandler_start_poll(nxscope):
     plugins = [
-        ("plugin1", MockPlugin1),
-        ("plugin2", MockPlugin2),
-        ("plugin3", MockPlugin3),
+        DPluginDescription("plugin1", MockPlugin1),
+        DPluginDescription("plugin2", MockPlugin2),
+        DPluginDescription("plugin3", MockPlugin3),
     ]
     p = PluginHandler(plugins=plugins)
     p.nxscope_connect(nxscope)
@@ -306,7 +316,7 @@ def test_phandler_start_poll(nxscope):
 
 
 def test_phandler_start_nostream(nxscope):
-    plugins = [("plugin1", MockPlugin1)]
+    plugins = [DPluginDescription("plugin1", MockPlugin1)]
     p = PluginHandler(plugins=plugins)
     p.nxscope_connect(nxscope)
 
@@ -328,7 +338,7 @@ def test_phandler_start_nostream(nxscope):
 
 
 def test_phandler_start_noready(nxscope):
-    plugins = [("plugin4", MockPlugin4)]
+    plugins = [DPluginDescription("plugin4", MockPlugin4)]
     p = PluginHandler(plugins=plugins)
     p.nxscope_connect(nxscope)
 
