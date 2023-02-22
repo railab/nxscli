@@ -32,7 +32,7 @@ def pani1(
     fmt: list[list[str]],
     write: str,
 ) -> bool:
-    """[plugin] Animation plot without a length limit."""
+    """[plugin] Animation plot without a length limit (infinite plot)."""
     assert ctx.phandler
     ctx.phandler.enable(
         "animation1", channels=chan, trig=trig, dpi=dpi, fmt=fmt, write=write

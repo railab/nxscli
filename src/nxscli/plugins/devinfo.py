@@ -15,7 +15,7 @@ from nxscli.main.environment import Environment, pass_environment
 @click.command()
 @pass_environment
 def pdevinfo(ctx: Environment) -> bool:
-    """[plugin] Show NxSope device info."""
+    """[plugin] Show information about the connected NxScope device."""
     assert ctx.phandler
     ctx.phandler.enable("devinfo")
 

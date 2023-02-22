@@ -34,7 +34,7 @@ def pani2(
     fmt: list[list[str]],
     write: str,
 ) -> bool:
-    """[plugin] Animation plot with a lenght limit."""
+    """[plugin] Animation plot with a lenght limit (saturated X-axis)."""
     assert ctx.phandler
     if maxsamples == 0:  # pragma: no cover
         click.secho("ERROR: Missing argument MAXSAMPLES", err=True, fg="red")

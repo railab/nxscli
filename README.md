@@ -18,7 +18,7 @@ Compatible with Python 3.10+.
 
 ## Features Planned
 
-* Plugins as python modules
+* Plugins as Python modules (decoupling from Matplotlib and Numpy dependencies)
 * Stream data as audio (inspired by audio knock detection systems)
 * Plugins for character-type channels
 * More triggering types

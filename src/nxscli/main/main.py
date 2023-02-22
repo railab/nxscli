@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 )
 @pass_environment
 def main(ctx: Environment, debug: bool) -> bool:
-    """Nxscli - CLI to the Nxslib."""
+    """Nxscli - Command-line clinet to the NxScope."""
     ctx.debug = debug
     if debug:  # pragma: no cover
         logger.setLevel("DEBUG")
@@ -172,7 +172,7 @@ def mpl(ctx: Environment, style: list[str]) -> bool:
 )
 @pass_environment
 def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
-    """[config] Channels configuration.
+    """[config] Channels declaration and configuration.
 
     This command configure and enable given channels.
     The channels must be integer separated by commas, eg 'chan 1,2,3'.
@@ -201,7 +201,7 @@ def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
 def trig(ctx: Environment, triggers: dict[int, "DTriggerConfigReq"]) -> bool:
     """[config] Triggers configuration.
 
-    This command configure software tirggers.
+    This command configure software triggers.
 
     Format: '[channel]:[trigger][#chan_source][@chan_vector][parameters]'
 
