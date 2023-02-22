@@ -287,6 +287,18 @@ def test_main_trig_plugin(runner):
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
+    args = [
+        "dummy",
+        "chan",
+        "1,2,3",
+        "trig",
+        "g:er#2@0,0,10,100",
+        "pcap",
+        "100",
+    ]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
 
 def test_main_help(runner):
     args = ["dummy", "--help"]

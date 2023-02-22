@@ -6,9 +6,12 @@ from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
 from threading import Lock
-from typing import Any
+from typing import TYPE_CHECKING, Any, Iterator
 
 from nxscli.logger import logger
+
+if TYPE_CHECKING:
+    from nxslib.nxscope import DNxscopeStream
 
 ###############################################################################
 # Enum: ETriggerType
@@ -129,7 +132,7 @@ class TriggerHandler(object):
     def __init__(self, chan: int, config: DTriggerConfig) -> None:
         """Initialize a stream data trigger handler."""
         self._config = config
-        self._cache: list[Any] = []
+        self._cache: list["DNxscopeStream"] = []
         self._chan: int = chan
         self._trigger: DTriggerState = DTriggerState(False, 0)
         self._triger_done = False
@@ -191,26 +194,28 @@ class TriggerHandler(object):
         for inst in tmp:
             TriggerHandler._wait_for_src.remove(inst)
 
-    def _pairwise(self, iterable: list[Any]) -> Any:
+    def _pairwise(
+        self, iterable: list["DNxscopeStream"]
+    ) -> Iterator[tuple["DNxscopeStream", "DNxscopeStream"]]:
         (a, b) = itertools.tee(iterable)
         next(b, None)
         return zip(a, b)
 
-    def _alwaysoff(self, _: list[Any]) -> DTriggerState:
+    def _alwaysoff(self, _: list["DNxscopeStream"]) -> DTriggerState:
         # reset cache
         self._cache = []
         return DTriggerState(False, 0)
 
-    def _alwayson(self, _: list[Any]) -> DTriggerState:
+    def _alwayson(self, _: list["DNxscopeStream"]) -> DTriggerState:
         return DTriggerState(True, 0)
 
     def _edgerising(
-        self, combined: list[Any], vect: int, level: float
+        self, combined: list["DNxscopeStream"], vect: int, level: float
     ) -> DTriggerState:
         ret = False
         idx = 0
         for a, b in self._pairwise(combined):
-            if a[0][vect] <= level < b[0][vect]:
+            if a.data[vect] <= level < b.data[vect]:
                 ret = True
                 idx = idx
                 break
@@ -222,12 +227,12 @@ class TriggerHandler(object):
         return DTriggerState(ret, idx)
 
     def _edgefalling(
-        self, combined: list[Any], vect: int, level: float
+        self, combined: list["DNxscopeStream"], vect: int, level: float
     ) -> DTriggerState:
         ret = False
         idx = 0
         for a, b in self._pairwise(combined):
-            if a[0][vect] >= level > b[0][vect]:
+            if a.data[vect] >= level > b.data[vect]:
                 ret = True
                 idx = idx
                 break
@@ -239,7 +244,7 @@ class TriggerHandler(object):
         return DTriggerState(ret, idx)
 
     def _is_self_trigger(
-        self, combined: list[Any], config: DTriggerConfig
+        self, combined: list["DNxscopeStream"], config: DTriggerConfig
     ) -> DTriggerState:
         if config.ttype is ETriggerType.ALWAYS_OFF:
             return self._alwaysoff(combined)
@@ -254,7 +259,7 @@ class TriggerHandler(object):
         else:
             raise AssertionError
 
-    def _is_triggered(self, combined: list[Any]) -> DTriggerState:
+    def _is_triggered(self, combined: list["DNxscopeStream"]) -> DTriggerState:
         if self._trigger.state:
             # make sure that idx is 0
             return DTriggerState(True, 0)
@@ -269,7 +274,7 @@ class TriggerHandler(object):
         # self-triggered
         return self._is_self_trigger(combined, self._config)
 
-    def _cross_channel_handle(self, combined: list[Any]) -> None:
+    def _cross_channel_handle(self, combined: list["DNxscopeStream"]) -> None:
         for cross in self._cross:
             if cross.cross_trigger.state is True:
                 continue
@@ -349,7 +354,9 @@ class TriggerHandler(object):
             if cross is inst:  # pragma: no cover
                 self._cross.pop(i)
 
-    def data_triggered(self, data: list[Any]) -> list[Any]:
+    def data_triggered(
+        self, data: list["DNxscopeStream"]
+    ) -> list["DNxscopeStream"]:
         """Get triggered data.
 
         :param data: stream data
