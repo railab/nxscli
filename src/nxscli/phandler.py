@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from nxslib.dev import Device, DeviceChannel
     from nxslib.nxscope import NxscopeHandler
 
-    from nxscli.iplugin import IPlugin
+    from nxscli.iplugin import DPluginDescription, IPlugin
 
 
 ###############################################################################
@@ -21,9 +21,7 @@ if TYPE_CHECKING:
 class PluginHandler:
     """A class implementing a plugins handler."""
 
-    def __init__(
-        self, plugins: list[tuple[str, type["IPlugin"]]] | None = None
-    ):
+    def __init__(self, plugins: list["DPluginDescription"] | None = None):
         """Initialize a plugin handler.
 
         :param plugins: a list with plugins
@@ -33,7 +31,7 @@ class PluginHandler:
 
         if plugins:
             for cls in plugins:
-                self._plugins[cls[0]] = cls[1]
+                self._plugins[cls.name] = cls.plugin
 
         self._enabled: list[tuple[int, type["IPlugin"], Any]] = []
         self._started: list[tuple["IPlugin", Any]] = []
