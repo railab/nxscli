@@ -237,23 +237,23 @@ def test_main_trig(runner):
     result = runner.invoke(main, args)
     assert result.exit_code == 1
 
-    args = ["dummy", "chan", "1", "trig", "1=er,0,100"]
+    args = ["dummy", "chan", "1", "trig", "1:er,0,100"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
-    args = ["dummy", "chan", "1", "trig", "1=er#2,0,100"]
+    args = ["dummy", "chan", "1", "trig", "1:er#2,0,100"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
-    args = ["dummy", "chan", "1", "trig", "1=er@2,0,100"]
+    args = ["dummy", "chan", "1", "trig", "1:er@2,0,100"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
-    args = ["dummy", "chan", "1", "trig", "1=er#1@2,0,100"]
+    args = ["dummy", "chan", "1", "trig", "1:er#1@2,0,100"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
-    args = ["dummy", "chan", "1", "trig", "1=er@2#2,0,100"]
+    args = ["dummy", "chan", "1", "trig", "1:er@2#2,0,100"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
@@ -267,23 +267,23 @@ def test_main_trig_plugin(runner):
     result = runner.invoke(main, args)
     assert result.exit_code == 1
 
-    args = ["dummy", "chan", "1", "trig", "g:1", "pani2", "1"]
+    args = ["dummy", "chan", "1", "trig", "g=1", "pani2", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 1
 
-    args = ["dummy", "chan", "1", "trig", "g=on", "pani2", "1"]
+    args = ["dummy", "chan", "1", "trig", "g:on", "pani2", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
-    args = ["dummy", "chan", "1", "trig", "g=off", "pani2", "1"]
+    args = ["dummy", "chan", "1", "trig", "g:off", "pani2", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
-    args = ["dummy", "chan", "1,2", "trig", "1=on;2=off", "pani2", "1"]
+    args = ["dummy", "chan", "1,2", "trig", "1:on;2:off", "pani2", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
-    args = ["dummy", "chan", "1,2,3", "pani2", "--trig", "2=off", "1"]
+    args = ["dummy", "chan", "1,2,3", "pani2", "--trig", "2:off", "1"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
 
