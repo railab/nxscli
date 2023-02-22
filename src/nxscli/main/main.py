@@ -13,7 +13,7 @@ from nxslib.proto.parse import Parser
 
 from nxscli.iplugin import EPluginType, IPlugin
 from nxscli.logger import logger
-from nxscli.main.environment import Environment
+from nxscli.main.environment import Environment, pass_environment
 from nxscli.main.types import (
     Channels,
     Divider,
@@ -31,15 +31,6 @@ from nxscli.plot_mpl import MplManager
 
 if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
-
-
-###############################################################################
-# Decorator: pass_environment
-###############################################################################
-
-
-# custom environmet decorator
-pass_environment = click.make_pass_decorator(Environment, ensure=True)
 
 
 ###############################################################################
