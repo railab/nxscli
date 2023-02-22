@@ -19,8 +19,11 @@ from nxscli.main.types import (
     Divider,
     Samples,
     StringList,
-    StringList2,
     Trigger,
+    channels_option_help,
+    divider_option_help,
+    plot_options,
+    trigger_option_help,
 )
 from nxscli.pdefault import g_plugins_default
 from nxscli.phandler import PluginHandler
@@ -28,65 +31,6 @@ from nxscli.plot_mpl import MplManager
 
 if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
-
-
-###############################################################################
-# Globals: stirngs
-###############################################################################
-
-
-_channels_option_help = """Plugin specific channels configuration,
-                           for details look at 'chan' command"""  # noqa: D301
-_trigger_option_help = """Plugin specific triggers configuration,
-                          for details look at 'tirg' command"""  # noqa: D301
-_divider_option_help = """Configure divider for a given channels.
-                          Use a single integer to configure all channels with
-                          the same divider value, or use a list of integers
-                          (separated by commas) to directly configure the
-                          channels."""
-_fmt_option_help = """Plugin specific Matplotlib format string configuration.
-                      Channels separated by a semicolon (;),
-                      vectors separated by a commas (?).
-                      Example: 'r?g?b; -r?; r?b'
-                      Defalut: Matplotlib default.
-                      """  # noqa: D301
-
-
-###############################################################################
-# Decorator: plot_options
-###############################################################################
-
-
-# common plot options
-_plot_options = (
-    click.option(
-        "--chan",
-        default=None,
-        type=Channels(),
-        help=_channels_option_help,
-    ),
-    click.option(
-        "--trig",
-        default=None,
-        type=Trigger(),
-        help=_trigger_option_help,
-    ),
-    click.option("--dpi", type=int, default=100),
-    click.option(
-        "--fmt",
-        default="",
-        type=StringList2(ch1="?"),
-        help=_fmt_option_help,
-    ),
-    click.option("--write", type=click.Path(resolve_path=False), default=""),
-)
-
-
-def plot_options(fn: Any) -> Any:
-    """Decorate command with common plot options decorator."""
-    for decorator in reversed(_plot_options):
-        fn = decorator(fn)
-    return fn
 
 
 ###############################################################################
@@ -237,7 +181,7 @@ def mpl(ctx: Environment, style: list[str]) -> bool:
 @click.command()
 @click.argument("channels", required=True, type=Channels())
 @click.option(
-    "--divider", default="0", type=Divider(), help=_divider_option_help
+    "--divider", default="0", type=Divider(), help=divider_option_help
 )
 @pass_environment
 def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
@@ -441,11 +385,9 @@ def pcap(
 @click.argument("samples", type=Samples(), required=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @click.option(
-    "--chan", default=None, type=Channels(), help=_channels_option_help
+    "--chan", default=None, type=Channels(), help=channels_option_help
 )
-@click.option(
-    "--trig", default=None, type=Trigger(), help=_trigger_option_help
-)
+@click.option("--trig", default=None, type=Trigger(), help=trigger_option_help)
 @click.option(
     "--metastr", default=False, is_flag=True, help="store metadata as string"
 )
@@ -493,11 +435,9 @@ def pcsv(
 @click.argument("samples", type=Samples(), required=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @click.option(
-    "--chan", default=None, type=Channels(), help=_channels_option_help
+    "--chan", default=None, type=Channels(), help=channels_option_help
 )
-@click.option(
-    "--trig", default=None, type=Trigger(), help=_trigger_option_help
-)
+@click.option("--trig", default=None, type=Trigger(), help=trigger_option_help)
 @pass_environment
 def pnpsave(
     ctx: Environment,
@@ -541,11 +481,9 @@ def pnpsave(
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @click.argument("shape", type=int, required=True)
 @click.option(
-    "--chan", default=None, type=Channels(), help=_channels_option_help
+    "--chan", default=None, type=Channels(), help=channels_option_help
 )
-@click.option(
-    "--trig", default=None, type=Trigger(), help=_trigger_option_help
-)
+@click.option("--trig", default=None, type=Trigger(), help=trigger_option_help)
 @pass_environment
 def pnpmem(
     ctx: Environment,
@@ -592,11 +530,9 @@ def pnpmem(
 @click.command()
 @click.argument("samples", type=Samples(), required=True)
 @click.option(
-    "--chan", default=None, type=Channels(), help=_channels_option_help
+    "--chan", default=None, type=Channels(), help=channels_option_help
 )
-@click.option(
-    "--trig", default=None, type=Trigger(), help=_trigger_option_help
-)
+@click.option("--trig", default=None, type=Trigger(), help=trigger_option_help)
 @pass_environment
 def pnone(
     ctx: Environment,
