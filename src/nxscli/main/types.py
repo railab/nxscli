@@ -230,3 +230,62 @@ class StringList2(click.ParamType):
     def convert(self, value: Any, param: Any, ctx: Any) -> list[list[str]]:
         """Convert a string list argument."""
         return get_list_from_str2(value, self._ch1, self._ch2)
+
+
+###############################################################################
+# Globals: stirngs
+###############################################################################
+
+
+channels_option_help = """Plugin specific channels configuration,
+                           for details look at 'chan' command"""  # noqa: D301
+trigger_option_help = """Plugin specific triggers configuration,
+                          for details look at 'tirg' command"""  # noqa: D301
+divider_option_help = """Configure divider for a given channels.
+                          Use a single integer to configure all channels with
+                          the same divider value, or use a list of integers
+                          (separated by commas) to directly configure the
+                          channels."""
+fmt_option_help = """Plugin specific Matplotlib format string configuration.
+                     Channels separated by a semicolon (;),
+                     vectors separated by a commas (?).
+                     Example: 'r?g?b; -r?; r?b'
+                     Defalut: Matplotlib default.
+                      """  # noqa: D301
+
+
+###############################################################################
+# Decorator: plot_options
+###############################################################################
+
+
+# common plot options
+_plot_options = (
+    click.option(
+        "--chan",
+        default=None,
+        type=Channels(),
+        help=channels_option_help,
+    ),
+    click.option(
+        "--trig",
+        default=None,
+        type=Trigger(),
+        help=trigger_option_help,
+    ),
+    click.option("--dpi", type=int, default=100),
+    click.option(
+        "--fmt",
+        default="",
+        type=StringList2(ch1="?"),
+        help=fmt_option_help,
+    ),
+    click.option("--write", type=click.Path(resolve_path=False), default=""),
+)
+
+
+def plot_options(fn: Any) -> Any:
+    """Decorate command with common plot options decorator."""
+    for decorator in reversed(_plot_options):
+        fn = decorator(fn)
+    return fn
