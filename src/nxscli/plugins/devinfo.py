@@ -2,7 +2,25 @@
 
 from typing import Any
 
+import click
+
 from nxscli.iplugin import IPluginText
+from nxscli.main.environment import Environment, pass_environment
+
+###############################################################################
+# Command: pdevinfo
+###############################################################################
+
+
+@click.command()
+@pass_environment
+def pdevinfo(ctx: Environment) -> bool:
+    """[plugin] Show NxSope device info."""
+    assert ctx.phandler
+    ctx.phandler.enable("devinfo")
+
+    return True
+
 
 ###############################################################################
 # Class: PluginDevinfo

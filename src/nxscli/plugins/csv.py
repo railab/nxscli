@@ -3,13 +3,74 @@
 import csv
 from typing import TYPE_CHECKING, Any
 
+import click
+
 from nxscli.idata import PluginData, PluginQueueData
 from nxscli.iplugin import IPluginFile
 from nxscli.logger import logger
+from nxscli.main.environment import Environment, pass_environment
+from nxscli.main.types import (
+    Channels,
+    Samples,
+    Trigger,
+    channels_option_help,
+    trigger_option_help,
+)
 from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:
     from nxslib.nxscope import DNxscopeStream
+
+    from nxscli.trigger import DTriggerConfigReq
+
+###############################################################################
+# Command: pcsv
+###############################################################################
+
+
+@click.command()
+@click.argument("samples", type=Samples(), required=True)
+@click.argument("path", type=click.Path(resolve_path=False), required=True)
+@click.option(
+    "--chan", default=None, type=Channels(), help=channels_option_help
+)
+@click.option("--trig", default=None, type=Trigger(), help=trigger_option_help)
+@click.option(
+    "--metastr", default=False, is_flag=True, help="store metadata as string"
+)
+@pass_environment
+def pcsv(
+    ctx: Environment,
+    samples: int,
+    path: str,
+    chan: list[int],
+    trig: dict[int, "DTriggerConfigReq"],
+    metastr: bool,
+) -> bool:
+    """[plugin] Store samples in CSV files.
+
+    Each configured channel will be stored in a separate file.
+    If SAMPLES argument is set to 'i' then we capture data until enter
+    is press.
+    """  # noqa: D301
+    # wait for enter if samples set to 'i'
+    assert ctx.phandler
+    if samples == 0:  # pragma: no cover
+        ctx.waitenter = True
+
+    ctx.phandler.enable(
+        "csv",
+        samples=samples,
+        path=path,
+        channels=chan,
+        trig=trig,
+        metastr=metastr,
+        nostop=ctx.waitenter,
+    )
+
+    ctx.needchannels = True
+
+    return True
 
 
 ###############################################################################

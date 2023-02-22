@@ -2,13 +2,65 @@
 
 from typing import TYPE_CHECKING, Any
 
+import click
+
 from nxscli.idata import PluginData, PluginQueueData
 from nxscli.iplugin import IPluginNone
 from nxscli.logger import logger
+from nxscli.main.environment import Environment, pass_environment
+from nxscli.main.types import (
+    Channels,
+    Samples,
+    Trigger,
+    channels_option_help,
+    trigger_option_help,
+)
 from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:
     from nxslib.nxscope import DNxscopeStream
+
+    from nxscli.trigger import DTriggerConfigReq
+
+###############################################################################
+# Command: pnone
+###############################################################################
+
+
+@click.command()
+@click.argument("samples", type=Samples(), required=True)
+@click.option(
+    "--chan", default=None, type=Channels(), help=channels_option_help
+)
+@click.option("--trig", default=None, type=Trigger(), help=trigger_option_help)
+@pass_environment
+def pnone(
+    ctx: Environment,
+    samples: int,
+    chan: list[int],
+    trig: dict[int, "DTriggerConfigReq"],
+) -> bool:
+    """[plugin] Dummy capture plugin.
+
+    If SAMPLES argument is set to 'i' then we capture data until enter
+    is press.
+    """  # noqa: D301
+    # wait for enter if samples set to 'i'
+    assert ctx.phandler
+    if samples == 0:  # pragma: no cover
+        ctx.waitenter = True
+
+    ctx.phandler.enable(
+        "none",
+        samples=samples,
+        channels=chan,
+        trig=trig,
+        nostop=ctx.waitenter,
+    )
+
+    ctx.needchannels = True
+
+    return True
 
 
 ###############################################################################

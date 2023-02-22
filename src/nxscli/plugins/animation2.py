@@ -2,7 +2,11 @@
 
 from typing import TYPE_CHECKING, Any
 
+import click
+
 from nxscli.animation_mpl import IPluginAnimation
+from nxscli.main.environment import Environment, pass_environment
+from nxscli.main.types import plot_options
 from nxscli.plot_mpl import PlotDataAxesMpl, PluginAnimationCommonMpl
 
 if TYPE_CHECKING:
@@ -10,6 +14,46 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D  # type: ignore
 
     from nxscli.idata import PluginQueueData
+    from nxscli.trigger import DTriggerConfigReq
+
+###############################################################################
+# Command: pani2
+###############################################################################
+
+
+@click.command()
+@click.argument("maxsamples", type=int, required=True)
+@plot_options
+@pass_environment
+def pani2(
+    ctx: Environment,
+    maxsamples: int,
+    chan: list[int],
+    trig: dict[int, "DTriggerConfigReq"],
+    dpi: float,
+    fmt: list[list[str]],
+    write: str,
+) -> bool:
+    """[plugin] Animation plot with a lenght limit."""
+    assert ctx.phandler
+    if maxsamples == 0:  # pragma: no cover
+        click.secho("ERROR: Missing argument MAXSAMPLES", err=True, fg="red")
+        return False
+
+    ctx.phandler.enable(
+        "animation2",
+        maxsamples=maxsamples,
+        channels=chan,
+        trig=trig,
+        dpi=dpi,
+        fmt=fmt,
+        write=write,
+    )
+
+    ctx.needchannels = True
+
+    return True
+
 
 ###############################################################################
 # Class: Animation2
