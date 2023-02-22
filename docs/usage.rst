@@ -1,40 +1,103 @@
 Usage
 -----
 
-You can run _Nxscli_ as a package: 
+Commands
+---------
+
+You can run Nxscli as a Python module:
 
 .. code-block:: bash
+
    python -m nxscli [interface] [config] [plugins]
 
-Only one [interface] can be selected but many [config] and [plugins] commands can be handled when calling the program.
-[config] commands are global for all plugins, but each plugin can overwritte this with dedicated options.
 
-Plugins will be launched in parallel.
+There are three types of commands:
 
-For commands details use `--help` option.
+1. ``interface`` - select communication interface
+2. ``config`` - set global configuration
+3. ``plugins`` - process data from NxScope
 
-To run the application with a simulated mode use this command:
+You can select many [config] and [plugins] commands at a time.
+Plugin-specific options can overwrite some of the global configuration options.
+Plugins are launched in parallel, allowing you to process data in multiple ways at
+the same time.
+
+For commands details use ``--help`` option.
+
+The following example illustrates how to run multiple plugins simultaneously
+with various channel configurations:
 
 .. code-block:: bash
-   python -m nxscli dummy [config] [plugins]
 
-Example 1: 
-
-.. code-block:: bash
    python -m nxscli dummy chan 1,2,3,4 pcap --chan 1 100 pcap --chan 2,3 200 pcap 300
 
-NuttX simulation
-----------------
 
-You can establish a connection with the simulated NuttX target using `socat`:
+Interace commands
+=================
+
+Supported interface commands:
+
+* ``dummy`` - select simulated NxScope interface
+
+  Available device channels:
+
+  - chan0 - vdim = 1, random()
+  - chan1 - vdim = 1, saw wave
+  - chan2 - vdim = 1, triangle wave
+  - chan3 - vdim = 2, random()
+  - chan4 - vdim = 3, random()
+  - chan5 - vdim = 3, static vector = [1.0, 0.0, -1.0]
+  - chan6 - vdim = 1, 'hello' string
+  - chan7 - vdim = 3, static vector = [1.0, 0.0, -1.0], meta = 1B int
+  - chan8 - vdim = 0, meta = 'hello string', mlen = 16
+  - chan9 - vdim = 3, 3-phase sine wave
+
+* ``serial`` - select serial port NxScope interface
+
+Configuratio commands
+=====================
+
+Available configuration commands:
+
+* ``chan`` - channels declaration and configuration.
+
+  Mandatory if selected plugins require declared channels.
+
+  In the default, all channels from this command are passed to the plugins.
+  This behaviour can be surpassed with the plugin option ``--chan``.
+
+* ``trig`` - softwar triggers configuration.
+
+  Optional, at default all channels are always-on.
+
+  Triggers can be configured per channel with the option ``--trig``.
+
+* ``mpl`` - Matplotlib configuration.
+
+  Optional, at default:
+
+  - style = "ggplot,fast"
 
 
-.. code-block:: bash
-   SERIAL_HOST={PATH}/ttyNX0
-   SERIAL_NUTTX={PATH}/ttySIM0
+Plugin commands
+===============
 
-   socat PTY,link=$SERIAL_NUTTX PTY,link=$SERIAL_HOST &
-   stty -F $SERIAL_NUTTX raw
-   stty -F $SERIAL_HOST raw
-   stty -F $SERIAL_NUTTX 115200
-   stty -F $SERIAL_HOST 115200
+One day, there should be available only basic plugins that don't need any extra
+requirements. Other plugins will be placed in their own python modules (take
+``pytest`` as an example).
+
+We shouldn't require users to install any other external libraries except Nxslib.
+and Click.
+
+Plugins supported so far:
+
+* ``pani1`` - infinite animation plot (no X-axis limits)
+* ``pani2`` - animation plot with X-axis saturation
+* ``pcap`` - static plot (capture data and plot)
+* ``pcsv`` - store samples in CSV files
+* ``pdevinfo`` - show information about the connected NxScope device
+* ``pnone`` - capture data and do nothing with them
+* ``pnpmem`` - stream data via Numpy memmap files
+* ``pnpsave`` - store data in Numpy files
+
+For more information, use the plugin's ``--help`` option.

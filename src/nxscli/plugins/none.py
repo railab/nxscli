@@ -31,7 +31,7 @@ def pnone(
     chan: list[int],
     trig: dict[int, "DTriggerConfigReq"],
 ) -> bool:
-    """[plugin] Dummy capture plugin.
+    """[plugin] Capture data and do nothing with them.
 
     If SAMPLES argument is set to 'i' then we capture data until enter
     is press.
