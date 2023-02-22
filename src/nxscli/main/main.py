@@ -152,7 +152,7 @@ class Trigger(click.ParamType):
     name = "trigger"
 
     req_split = ";"
-    req_assign = "="
+    req_assign = ":"
     req_separator = ","
     req_cross = "#"
     req_global = "g"
@@ -521,7 +521,7 @@ def trig(ctx: Environment, triggers: dict[int, DTriggerConfigReq]) -> bool:
 
     This command configure software tirggers.
 
-    Format: '[channel]=[trigger][#chan_source][@chan_vector][parameters]'
+    Format: '[channel]:[trigger][#chan_source][@chan_vector][parameters]'
 
     You can define many triggers at once, just separate them with
     a semicolon (;). The configuration request must be surrounded
@@ -545,23 +545,23 @@ def trig(ctx: Environment, triggers: dict[int, DTriggerConfigReq]) -> bool:
        hoffset - horizontal offset for triggered data
        level - trigger level
 
-    Default: all channels on ('g=on').
+    Default: all channels on ('g:on').
 
     \b
     Some triggers configuration examples:
     - all chans triggered on a rising edge, hoffset=0, level=10.0:
-      'g=er,0,10.0'
+      'g:er,0,10.0'
     - all chans triggered on a chan 0 rising edge, hoffset=0, level=10.0:
-      'g=er#0,0,10.0'
+      'g:er#0,0,10.0'
     - chan 1 triggered on a vect 3 rising edge, hoffset=0, level=10.0:
-      '1=er@3,0,10.0'
+      '1:er@3,0,10.0'
     - chan 2 triggered on chan 3 falling edge, hoffset=10, level=-10:
-      '2=er#2,10,-10'
+      '2:er#2,10,-10'
     - chan 2 triggered on chan 3 vect 1 falling edge, hoffset=0, level=1,
       chan 3 always on,
       chan 4 always off,
       white spaces ignored:
-      '2 = er#2@1, 0, 1; 3 = on; 4 = off'
+      '2 : er#2@1, 0, 1; 3 : on; 4 : off'
     """  # noqa: D301
     assert ctx.phandler
     ctx.triggers = triggers
