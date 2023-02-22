@@ -9,13 +9,7 @@ from nxscli.idata import PluginData, PluginQueueData
 from nxscli.iplugin import IPluginFile
 from nxscli.logger import logger
 from nxscli.main.environment import Environment, pass_environment
-from nxscli.main.types import (
-    Channels,
-    Samples,
-    Trigger,
-    channels_option_help,
-    trigger_option_help,
-)
+from nxscli.main.types import Samples, capture_options
 from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:
@@ -32,10 +26,7 @@ if TYPE_CHECKING:
 @click.argument("samples", type=Samples(), required=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @click.argument("shape", type=int, required=True)
-@click.option(
-    "--chan", default=None, type=Channels(), help=channels_option_help
-)
-@click.option("--trig", default=None, type=Trigger(), help=trigger_option_help)
+@capture_options
 @pass_environment
 def pnpmem(
     ctx: Environment,

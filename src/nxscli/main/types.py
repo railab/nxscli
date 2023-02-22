@@ -289,3 +289,32 @@ def plot_options(fn: Any) -> Any:
     for decorator in reversed(_plot_options):
         fn = decorator(fn)
     return fn
+
+
+###############################################################################
+# Decorator: capture_options
+###############################################################################
+
+
+# common capture options
+_capture_options = (
+    click.option(
+        "--chan",
+        default=None,
+        type=Channels(),
+        help=channels_option_help,
+    ),
+    click.option(
+        "--trig",
+        default=None,
+        type=Trigger(),
+        help=trigger_option_help,
+    ),
+)
+
+
+def capture_options(fn: Any) -> Any:
+    """Decorate command with common capture options decorator."""
+    for decorator in reversed(_capture_options):
+        fn = decorator(fn)
+    return fn
