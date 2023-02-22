@@ -2,7 +2,6 @@
 
 import pprint
 import sys
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import click
@@ -14,6 +13,7 @@ from nxslib.proto.parse import Parser
 
 from nxscli.iplugin import EPluginType, IPlugin
 from nxscli.logger import logger
+from nxscli.main.environment import Environment
 from nxscli.main.types import (
     Channels,
     Divider,
@@ -28,39 +28,6 @@ from nxscli.plot_mpl import MplManager
 
 if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
-
-###############################################################################
-# Class: DEnvironmentData
-###############################################################################
-
-
-@dataclass
-class DEnvironmentData:
-    """Environment data."""
-
-    debug: bool = False
-    waitenter: bool = False
-    nxscope: NxscopeHandler | None = None
-    parser: Parser | None = None
-    interface: bool = False
-    needchannels: bool = False
-    channels: tuple[list[int], Any] | None = None
-    phandler: PluginHandler | None = None
-    triggers: dict[int, "DTriggerConfigReq"] | None = None
-    mplstyle: list[str] | None = None
-
-
-###############################################################################
-# Class: Environment
-###############################################################################
-
-
-class Environment(DEnvironmentData):
-    """A class with application environmet."""
-
-    def __init__(self) -> None:
-        """Initialize environmet."""
-        super().__init__()
 
 
 ###############################################################################
