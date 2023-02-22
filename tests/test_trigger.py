@@ -1,6 +1,7 @@
 from threading import Lock
 
 import pytest  # type: ignore
+from nxslib.nxscope import DNxscopeStream
 
 from nxscli.trigger import (
     DTriggerConfig,
@@ -84,7 +85,11 @@ def test_triggerhandle_init():
 
         # try get data but we don't have required src channel
         with pytest.raises(AssertionError):
-            din = [((0,), ()), ((0,), ()), ((0,), ())]
+            din = [
+                DNxscopeStream((0,), ()),
+                DNxscopeStream((0,), ()),
+                DNxscopeStream((0,), ()),
+            ]
             _ = thfail.data_triggered(din)
 
         assert th0.chan == 0
@@ -174,7 +179,11 @@ def test_triggerhandle_init3():
 
         # try get data but we don't have required src channel yet
         with pytest.raises(AssertionError):
-            din = [((0,), ()), ((0,), ()), ((0,), ())]
+            din = [
+                DNxscopeStream((0,), ()),
+                DNxscopeStream((0,), ()),
+                DNxscopeStream((0,), ()),
+            ]
             _ = th1.data_triggered(din)
 
         dtc0 = DTriggerConfig(ETriggerType.ALWAYS_OFF)
@@ -189,7 +198,11 @@ def test_triggerhandle_init3():
         assert len(TriggerHandler._wait_for_src) == 0
 
         # try get data, now should not fail
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         _ = th1.data_triggered(din)
 
         # wait for source channel and celan up without registered source
@@ -215,7 +228,11 @@ def test_triggerhandle_alwaysoff():
         th = TriggerHandler(0, dtc)
         assert len(th._instances) == 1
         for _ in range(100):
-            din = [(1,), (2,), (3,)]
+            din = [
+                DNxscopeStream((1,), ()),
+                DNxscopeStream((2,), ()),
+                DNxscopeStream((3,), ()),
+            ]
             dout = th.data_triggered(din)
             assert dout == []
 
@@ -233,9 +250,17 @@ def test_triggerhandle_alwayson():
         th = TriggerHandler(0, dtc)
         assert len(th._instances) == 1
         for _ in range(100):
-            din = [(1,), (2,), (3,)]
+            din = [
+                DNxscopeStream((1,), ()),
+                DNxscopeStream((2,), ()),
+                DNxscopeStream((3,), ()),
+            ]
             dout = th.data_triggered(din)
-            assert dout == [(1,), (2,), (3,)]
+            assert dout == [
+                DNxscopeStream((1,), ()),
+                DNxscopeStream((2,), ()),
+                DNxscopeStream((3,), ()),
+            ]
 
         # clean up
         TriggerHandler.cls_cleanup()
@@ -256,38 +281,86 @@ def test_triggerhandle_edgerising1():
 
         assert len(th._instances) == 1
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((-1,), ()), ((-2,), ()), ((-3,), ())]
+        din = [
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-2,), ()),
+            DNxscopeStream((-3,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((-3,), ()), ((-3,), ()), ((-3,), ())]
+        din = [
+            DNxscopeStream((-3,), ()),
+            DNxscopeStream((-3,), ()),
+            DNxscopeStream((-3,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
         # triggered - rising edge on 0
-        din = [((0,), ()), ((1,), ()), ((2,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((0,), ()), ((1,), ()), ((2,), ())]
+        assert dout == [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+        ]
 
-        din = [((3,), ()), ((4,), ()), ((5,), ())]
+        din = [
+            DNxscopeStream((3,), ()),
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((3,), ()), ((4,), ()), ((5,), ())]
+        assert dout == [
+            DNxscopeStream((3,), ()),
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+        ]
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((0,), ()), ((0,), ()), ((0,), ())]
+        assert dout == [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
 
-        din = [((0,), ()), ((-1,), ()), ((-2,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-2,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((0,), ()), ((-1,), ()), ((-2,), ())]
+        assert dout == [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-2,), ()),
+        ]
 
         # clean up
         TriggerHandler.cls_cleanup()
@@ -308,42 +381,95 @@ def test_triggerhandle_edgerising2():
 
         assert len(th._instances) == 1
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((-1,), ()), ((-2,), ()), ((-3,), ())]
+        din = [
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-2,), ()),
+            DNxscopeStream((-3,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((-4,), ()), ((-3,), ()), ((-2,), ())]
+        din = [
+            DNxscopeStream((-4,), ()),
+            DNxscopeStream((-3,), ()),
+            DNxscopeStream((-2,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((0,), ()), ((1,), ()), ((2,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
         # triggered
-        din = [((4,), ()), ((5,), ()), ((6,), ()), ((7,), ())]
+        din = [
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+            DNxscopeStream((6,), ()),
+            DNxscopeStream((7,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((5,), ()), ((6,), ()), ((7,), ())]
+        assert dout == [
+            DNxscopeStream((5,), ()),
+            DNxscopeStream((6,), ()),
+            DNxscopeStream((7,), ()),
+        ]
 
-        din = [((3,), ()), ((4,), ()), ((5,), ())]
+        din = [
+            DNxscopeStream((3,), ()),
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((3,), ()), ((4,), ()), ((5,), ())]
+        assert dout == [
+            DNxscopeStream((3,), ()),
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+        ]
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((0,), ()), ((0,), ()), ((0,), ())]
+        assert dout == [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
 
-        din = [((0,), ()), ((-1,), ()), ((-2,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-2,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((0,), ()), ((-1,), ()), ((-2,), ())]
+        assert dout == [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-2,), ()),
+        ]
 
         # clean up
         TriggerHandler.cls_cleanup()
@@ -364,42 +490,99 @@ def test_triggerhandle_edgefalling1():
 
         assert len(th._instances) == 1
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((0,), ()), ((1,), ()), ((2,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
         # triggered
-        din = [((2,), ()), ((1,), ()), ((0,), ()), ((-1,), ())]
+        din = [
+            DNxscopeStream((2,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((-1,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((0,), ()), ((-1,), ())]
+        assert dout == [DNxscopeStream((0,), ()), DNxscopeStream((-1,), ())]
 
-        din = [((-1,), ()), ((-2,), ()), ((-3,), ())]
+        din = [
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-2,), ()),
+            DNxscopeStream((-3,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((-1,), ()), ((-2,), ()), ((-3,), ())]
+        assert dout == [
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-2,), ()),
+            DNxscopeStream((-3,), ()),
+        ]
 
-        din = [((2,), ()), ((1,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((2,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((2,), ()), ((1,), ()), ((0,), ())]
+        assert dout == [
+            DNxscopeStream((2,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((0,), ()),
+        ]
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((0,), ()), ((0,), ()), ((0,), ())]
+        assert dout == [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
 
-        din = [((1,), ()), ((2,), ()), ((3,), ())]
+        din = [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+            DNxscopeStream((3,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((1,), ()), ((2,), ()), ((3,), ())]
+        assert dout == [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+            DNxscopeStream((3,), ()),
+        ]
 
-        din = [((4,), ()), ((5,), ()), ((6,), ())]
+        din = [
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+            DNxscopeStream((6,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((4,), ()), ((5,), ()), ((6,), ())]
+        assert dout == [
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+            DNxscopeStream((6,), ()),
+        ]
 
         # clean up
         TriggerHandler.cls_cleanup()
@@ -420,46 +603,102 @@ def test_triggerhandle_edgefalling2():
 
         assert len(th._instances) == 1
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((0,), ()), ((1,), ()), ((2,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((3,), ()), ((2,), ()), ((1,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((3,), ()),
+            DNxscopeStream((2,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
-        din = [((-1,), ()), ((-2,), ()), ((-3,), ())]
+        din = [
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-2,), ()),
+            DNxscopeStream((-3,), ()),
+        ]
         dout = th.data_triggered(din)
         assert dout == []
 
         # triggered
-        din = [((-4,), ()), ((-5,), ()), ((-6,), ())]
+        din = [
+            DNxscopeStream((-4,), ()),
+            DNxscopeStream((-5,), ()),
+            DNxscopeStream((-6,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((-5,), ()), ((-6,), ())]
+        assert dout == [DNxscopeStream((-5,), ()), DNxscopeStream((-6,), ())]
 
-        din = [((2,), ()), ((1,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((2,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((2,), ()), ((1,), ()), ((0,), ())]
+        assert dout == [
+            DNxscopeStream((2,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((0,), ()),
+        ]
 
-        din = [((0,), ()), ((0,), ()), ((0,), ())]
+        din = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((0,), ()), ((0,), ()), ((0,), ())]
+        assert dout == [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
 
-        din = [((1,), ()), ((2,), ()), ((3,), ())]
+        din = [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+            DNxscopeStream((3,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((1,), ()), ((2,), ()), ((3,), ())]
+        assert dout == [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+            DNxscopeStream((3,), ()),
+        ]
 
-        din = [((4,), ()), ((5,), ()), ((6,), ())]
+        din = [
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+            DNxscopeStream((6,), ()),
+        ]
         dout = th.data_triggered(din)
-        assert dout == [((4,), ()), ((5,), ()), ((6,), ())]
+        assert dout == [
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+            DNxscopeStream((6,), ()),
+        ]
 
         # clean up
         TriggerHandler.cls_cleanup()
@@ -489,55 +728,116 @@ def test_triggerhandle_chanxtochany_nohoffset():
         assert len(th0._instances) == 2
         assert len(th1._instances) == 2
 
-        din0 = [((0,), ()), ((1,), ()), ((2,), ())]
+        din0 = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+        ]
         dout0 = th0.data_triggered(din0)
         assert dout0 == []
 
-        din1 = [((0,), ()), ((1,), ()), ((2,), ())]
+        din1 = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
         assert dout1 == []
 
-        din0 = [((1,), ()), ((0,), ()), ((-1,), ())]
+        din0 = [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((-1,), ()),
+        ]
         dout0 = th0.data_triggered(din0)
         assert dout0 == []
 
-        din1 = [((3,), ()), ((4,), ()), ((5,), ())]
+        din1 = [
+            DNxscopeStream((3,), ()),
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
         assert dout1 == []
 
-        din0 = [((0,), ()), ((0,), ()), ((0,), ())]
+        din0 = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout0 = th0.data_triggered(din0)
         assert dout0 == []
 
-        din1 = [((4,), ()), ((3,), ()), ((2,), ())]
+        din1 = [
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((3,), ()),
+            DNxscopeStream((2,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
         assert dout1 == []
 
         # th1 triggered from now - but th0 is always off
-        din0 = [((3,), ()), ((4,), ()), ((5,), ())]
+        din0 = [
+            DNxscopeStream((3,), ()),
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+        ]
         dout0 = th0.data_triggered(din0)
         assert dout0 == []
 
-        din1 = [((10,), ()), ((11,), ()), ((12,), ())]
+        din1 = [
+            DNxscopeStream((10,), ()),
+            DNxscopeStream((11,), ()),
+            DNxscopeStream((12,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
         assert dout1 == []  # no data yet
 
-        din0 = [((0,), ()), ((0,), ()), ((0,), ())]
+        din0 = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout0 = th0.data_triggered(din0)
         assert dout0 == []
 
-        din1 = [((1,), ()), ((1,), ()), ((1,), ())]
+        din1 = [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
-        assert dout1 == [((1,), ()), ((1,), ()), ((1,), ())]
+        assert dout1 == [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+        ]
 
         # th1 is now triggered
-        din1 = [((1,), ()), ((1,), ()), ((1,), ())]
-        dout1 = th1.data_triggered(din1)
-        assert dout1 == [((1,), ()), ((1,), ()), ((1,), ())]
 
-        din1 = [((-1,), ()), ((-1,), ()), ((-1,), ())]
+        din1 = [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
-        assert dout1 == [((-1,), ()), ((-1,), ()), ((-1,), ())]
+        assert dout1 == [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+        ]
+
+        din1 = [
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-1,), ()),
+        ]
+        dout1 = th1.data_triggered(din1)
+        assert dout1 == [
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-1,), ()),
+        ]
 
         # clean up
         TriggerHandler.cls_cleanup()
@@ -567,55 +867,115 @@ def test_triggerhandle_chanxtochany_hoffset():
         assert len(th0._instances) == 2
         assert len(th1._instances) == 2
 
-        din0 = [((0,), ()), ((1,), ()), ((2,), ())]
+        din0 = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+        ]
         dout0 = th0.data_triggered(din0)
         assert dout0 == []
 
-        din1 = [((0,), ()), ((1,), ()), ((2,), ())]
+        din1 = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((2,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
         assert dout1 == []
 
-        din0 = [((1,), ()), ((0,), ()), ((-1,), ())]
+        din0 = [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((-1,), ()),
+        ]
         dout0 = th0.data_triggered(din0)
         assert dout0 == []
 
-        din1 = [((3,), ()), ((4,), ()), ((5,), ())]
+        din1 = [
+            DNxscopeStream((3,), ()),
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
         assert dout1 == []
 
-        din0 = [((0,), ()), ((0,), ()), ((0,), ())]
+        din0 = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout0 = th0.data_triggered(din0)
         assert dout0 == []
 
-        din1 = [((4,), ()), ((3,), ()), ((2,), ())]
+        din1 = [
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((3,), ()),
+            DNxscopeStream((2,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
         assert dout1 == []
 
         # th1 triggerd with hoffset - but th0 is always off
-        din0 = [((3,), ()), ((4,), ()), ((5,), ())]
+        din0 = [
+            DNxscopeStream((3,), ()),
+            DNxscopeStream((4,), ()),
+            DNxscopeStream((5,), ()),
+        ]
         dout0 = th0.data_triggered(din0)
         assert dout0 == []
 
-        din1 = [((10,), ()), ((11,), ()), ((12,), ())]
+        din1 = [
+            DNxscopeStream((10,), ()),
+            DNxscopeStream((11,), ()),
+            DNxscopeStream((12,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
         assert dout1 == []  # no data yet
 
-        din0 = [((0,), ()), ((0,), ()), ((0,), ())]
+        din0 = [
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+            DNxscopeStream((0,), ()),
+        ]
         dout0 = th0.data_triggered(din0)
         assert dout0 == []
 
-        din1 = [((1,), ()), ((1,), ()), ((1,), ())]
+        din1 = [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
-        assert dout1 == [((1,), ()), ((1,), ()), ((1,), ())]
+        assert dout1 == [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+        ]
 
         # th1 is now triggered
-        din1 = [((1,), ()), ((1,), ()), ((1,), ())]
+        din1 = [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
-        assert dout1 == [((1,), ()), ((1,), ()), ((1,), ())]
+        assert dout1 == [
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+            DNxscopeStream((1,), ()),
+        ]
 
-        din1 = [((-1,), ()), ((-1,), ()), ((-1,), ())]
+        din1 = [
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-1,), ()),
+        ]
         dout1 = th1.data_triggered(din1)
-        assert dout1 == [((-1,), ()), ((-1,), ()), ((-1,), ())]
+        assert dout1 == [
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-1,), ()),
+            DNxscopeStream((-1,), ()),
+        ]
 
         # clean up
         TriggerHandler.cls_cleanup()
