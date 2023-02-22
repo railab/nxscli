@@ -1,8 +1,9 @@
 """Module containint the Click environmet."""
 
-
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
+
+import click
 
 if TYPE_CHECKING:
     from nxslib.nxscope import NxscopeHandler
@@ -44,3 +45,12 @@ class Environment(DEnvironmentData):
     def __init__(self) -> None:
         """Initialize environmet."""
         super().__init__()
+
+
+###############################################################################
+# Decorator: pass_environment
+###############################################################################
+
+
+# custom environmet decorator
+pass_environment = click.make_pass_decorator(Environment, ensure=True)
