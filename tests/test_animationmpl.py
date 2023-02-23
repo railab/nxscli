@@ -1,5 +1,4 @@
 import pytest  # type: ignore
-from nxslib.comm import CommHandler
 from nxslib.intf.dummy import DummyDev
 from nxslib.nxscope import NxscopeHandler
 from nxslib.proto.parse import Parser
@@ -56,9 +55,7 @@ def test_ipluginanimation_init():
 def nxscope():
     intf = DummyDev()
     parse = Parser()
-    comm = CommHandler(intf, parse)
-    nxscope = NxscopeHandler()
-    nxscope.intf_connect(comm)
+    nxscope = NxscopeHandler(intf, parse)
     return nxscope
 
 

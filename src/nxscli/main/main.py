@@ -5,7 +5,6 @@ import sys
 from typing import TYPE_CHECKING, Any
 
 import click
-from nxslib.comm import CommHandler
 from nxslib.intf.dummy import DummyDev
 from nxslib.intf.serial import SerialDevice
 from nxslib.nxscope import NxscopeHandler
@@ -51,7 +50,6 @@ def main(ctx: Environment, debug: bool) -> bool:
         logger.setLevel("INFO")
 
     ctx.phandler = PluginHandler(g_plugins_default)
-    ctx.nxscope = NxscopeHandler()
     parse = Parser()
     ctx.parser = parse
     ctx.triggers = {}
@@ -93,9 +91,6 @@ def dummy(
       chan8 - vdim = 0, meta = 'hello string', mlen = 16
       chan9 - vdim = 3, 3-phase sine wave
     """  # noqa: D301
-    assert ctx.phandler
-    assert ctx.parser
-    assert ctx.nxscope
     intf = DummyDev(
         rxpadding=writepadding,
         stream_sleep=streamsleep,
@@ -103,8 +98,8 @@ def dummy(
     )
 
     # initialize nxslib communication handler
-    comm = CommHandler(intf, ctx.parser)
-    ctx.nxscope.intf_connect(comm)
+    assert ctx.parser
+    ctx.nxscope = NxscopeHandler(intf, ctx.parser)
 
     ctx.interface = True
 
@@ -125,15 +120,12 @@ def serial(
     ctx: Environment, path: str, baud: int, writepadding: bool
 ) -> bool:  # pragma: no cover
     """[interface] Connect with a serial port NxScope devie."""
-    assert ctx.phandler
-    assert ctx.nxscope
-    assert ctx.parser
     intf = SerialDevice(path, baud=baud)
     intf.write_padding = writepadding
 
     # initialize nxslib communication handler
-    comm = CommHandler(intf, ctx.parser)
-    ctx.nxscope.intf_connect(comm)
+    assert ctx.parser
+    ctx.nxscope = NxscopeHandler(intf, ctx.parser)
 
     ctx.interface = True
 
@@ -184,7 +176,6 @@ def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
     You can precisesly configure the channels for a given plugin using
     the '--chan' option.
     """  # noqa: D301
-    assert ctx.phandler
     ctx.channels = (channels, divider)
 
     return True
@@ -356,7 +347,6 @@ def wait_for_plugins(ret: list[Any]) -> None:
 def cli_on_close(ctx: Environment) -> bool:
     """Handle requested plugins on click close."""
     assert ctx.phandler
-    assert ctx.nxscope
     # do not show any errors if it was help request
     if "--help" in sys.argv:  # pragma: no cover
         ctx.phandler.cleanup()
@@ -378,6 +368,7 @@ def cli_on_close(ctx: Environment) -> bool:
             return False
 
     # connect nxscope to phandler
+    assert ctx.nxscope
     ctx.phandler.nxscope_connect(ctx.nxscope)
 
     # configure channles after connected to nxscope
