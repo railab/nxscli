@@ -18,11 +18,11 @@ if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
 
 ###############################################################################
-# Command: pcsv
+# Command: cmd_pcsv
 ###############################################################################
 
 
-@click.command()
+@click.command(name="pcsv")
 @click.argument("samples", type=Samples(), required=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @capture_options
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     "--metastr", default=False, is_flag=True, help="store metadata as string"
 )
 @pass_environment
-def pcsv(
+def cmd_pcsv(
     ctx: Environment,
     samples: int,
     path: str,

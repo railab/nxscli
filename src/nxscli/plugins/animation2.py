@@ -17,15 +17,15 @@ if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
 
 ###############################################################################
-# Command: pani2
+# Command: cmd_pani2
 ###############################################################################
 
 
-@click.command()
+@click.command(name="pani2")
 @click.argument("maxsamples", type=int, required=True)
 @plot_options
 @pass_environment
-def pani2(
+def cmd_pani2(
     ctx: Environment,
     maxsamples: int,
     chan: list[int],

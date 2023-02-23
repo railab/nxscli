@@ -17,15 +17,15 @@ if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
 
 ###############################################################################
-# Command: pnone
+# Command: cmd_pnone
 ###############################################################################
 
 
-@click.command()
+@click.command(name="pnone")
 @click.argument("samples", type=Samples(), required=True)
 @capture_options
 @pass_environment
-def pnone(
+def cmd_pnone(
     ctx: Environment,
     samples: int,
     chan: list[int],

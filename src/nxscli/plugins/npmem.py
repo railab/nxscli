@@ -18,17 +18,17 @@ if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
 
 ###############################################################################
-# Command: pnpmem
+# Command: cmd_pnpmem
 ###############################################################################
 
 
-@click.command()
+@click.command(name="pnpmem")
 @click.argument("samples", type=Samples(), required=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @click.argument("shape", type=int, required=True)
 @capture_options
 @pass_environment
-def pnpmem(
+def cmd_pnpmem(
     ctx: Environment,
     samples: int,
     path: str,

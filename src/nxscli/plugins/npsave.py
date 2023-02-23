@@ -18,16 +18,16 @@ if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
 
 ###############################################################################
-# Command!: pnpsave
+# Command: cmd_pnpsave
 ###############################################################################
 
 
-@click.command()
+@click.command(name="pnpsave")
 @click.argument("samples", type=Samples(), required=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @capture_options
 @pass_environment
-def pnpsave(
+def cmd_pnpsave(
     ctx: Environment,
     samples: int,
     path: str,

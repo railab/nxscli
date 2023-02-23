@@ -17,14 +17,14 @@ if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
 
 ###############################################################################
-# Command: pani1
+# Command: cmd_pani1
 ###############################################################################
 
 
-@click.command()
+@click.command(name="pani1")
 @plot_options
 @pass_environment
-def pani1(
+def cmd_pani1(
     ctx: Environment,
     chan: list[int],
     trig: dict[int, "DTriggerConfigReq"],

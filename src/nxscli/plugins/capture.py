@@ -18,15 +18,15 @@ if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
 
 ###############################################################################
-# Function: pcap
+# Command: cmd_pcap
 ###############################################################################
 
 
-@click.command()
+@click.command(name="pcap")
 @click.argument("samples", type=Samples(), required=True)
 @plot_options
 @pass_environment
-def pcap(
+def cmd_pcap(
     ctx: Environment,
     samples: int,
     chan: list[int],
