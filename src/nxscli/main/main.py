@@ -9,12 +9,12 @@ from nxslib.proto.parse import Parser
 
 from nxscli.iplugin import EPluginType, IPlugin
 from nxscli.logger import logger
-from nxscli.main.cmd_config import chan, trig
-from nxscli.main.cmd_interface import dummy, serial
+from nxscli.main.cmd_config import cmd_chan, cmd_trig
+from nxscli.main.cmd_interface import cmd_dummy, cmd_serial
 from nxscli.main.environment import Environment, pass_environment
 from nxscli.pdefault import g_plugins_default
 from nxscli.phandler import PluginHandler
-from nxscli.plot_mpl import MplManager, mpl
+from nxscli.plot_mpl import MplManager, cmd_mpl
 
 ###############################################################################
 # Function: main
@@ -211,12 +211,12 @@ def cli_on_close(ctx: Environment) -> bool:
 def click_final_init() -> None:
     """Handle final Click initialization."""
     # interface commands
-    interfaces = [dummy, serial]
+    interfaces = [cmd_dummy, cmd_serial]
     for intf in interfaces:
         main.add_command(intf)
 
     # config commands
-    config = [chan, trig, mpl]
+    config = [cmd_chan, cmd_trig, cmd_mpl]
     for group in interfaces:
         for cmd in config:
             group.add_command(cmd)

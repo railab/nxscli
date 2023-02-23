@@ -12,17 +12,17 @@ if TYPE_CHECKING:
 
 
 ###############################################################################
-# Function: chan
+# Command: cmd_chan
 ###############################################################################
 
 
-@click.command()
+@click.command(name="chan")
 @click.argument("channels", required=True, type=Channels())
 @click.option(
     "--divider", default="0", type=Divider(), help=divider_option_help
 )
 @pass_environment
-def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
+def cmd_chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
     """[config] Channels declaration and configuration.
 
     This command configure and enable given channels.
@@ -41,14 +41,16 @@ def chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
 
 
 ###############################################################################
-# Function: trig
+# Command: cmd_trig
 ###############################################################################
 
 
-@click.command()
+@click.command(name="trig")
 @click.argument("triggers", type=Trigger())
 @pass_environment
-def trig(ctx: Environment, triggers: dict[int, "DTriggerConfigReq"]) -> bool:
+def cmd_trig(
+    ctx: Environment, triggers: dict[int, "DTriggerConfigReq"]
+) -> bool:
     """[config] Triggers configuration.
 
     This command configure software triggers.

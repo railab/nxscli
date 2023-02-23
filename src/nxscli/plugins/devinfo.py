@@ -8,13 +8,13 @@ from nxscli.iplugin import IPluginText
 from nxscli.main.environment import Environment, pass_environment
 
 ###############################################################################
-# Command: pdevinfo
+# Command: cmd_pdevinfo
 ###############################################################################
 
 
-@click.command()
+@click.command(name="pdevinfo")
 @pass_environment
-def pdevinfo(ctx: Environment) -> bool:
+def cmd_pdevinfo(ctx: Environment) -> bool:
     """[plugin] Show information about the connected NxScope device."""
     assert ctx.phandler
     ctx.phandler.enable("devinfo")

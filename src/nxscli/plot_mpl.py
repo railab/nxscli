@@ -27,11 +27,11 @@ if TYPE_CHECKING:
 
 
 ###############################################################################
-# Function: mpl
+# Command: cmd_mpl
 ###############################################################################
 
 
-@click.command()
+@click.command(name="mpl")
 @click.option(
     "--style",
     default="ggplot,fast",
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     help="Configure Matplotlib style, default: ggplot, fast",
 )
 @pass_environment
-def mpl(ctx: Environment, style: list[str]) -> bool:
+def cmd_mpl(ctx: Environment, style: list[str]) -> bool:
     """[config] Matplotlib configuration."""  # noqa: D301
     ctx.mplstyle = style
 

@@ -8,11 +8,11 @@ from nxslib.nxscope import NxscopeHandler
 from nxscli.main.environment import Environment, pass_environment
 
 ###############################################################################
-# Function: dummy
+# Command: cmd_dummy
 ###############################################################################
 
 
-@click.group(chain=True)
+@click.group(name="dummy", chain=True)
 @click.option("--writepadding", default=0)
 @click.option(
     "--streamsleep", type=float, default=0.001, help="dummy dev parameter"
@@ -21,7 +21,7 @@ from nxscli.main.environment import Environment, pass_environment
     "--samplesnum", type=int, default=100, help="dummy dev parameter"
 )
 @pass_environment
-def dummy(
+def cmd_dummy(
     ctx: Environment, writepadding: int, streamsleep: float, samplesnum: int
 ) -> bool:
     """[interface] Connect with a simulated NxScope devicve.
@@ -55,16 +55,16 @@ def dummy(
 
 
 ###############################################################################
-# Function: serial
+# Command: cmd_serial
 ###############################################################################
 
 
-@click.group(chain=True)
+@click.group(name="serial", chain=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
 @click.option("--baud", default=115200)
 @click.option("--writepadding", default=0)
 @pass_environment
-def serial(
+def cmd_serial(
     ctx: Environment, path: str, baud: int, writepadding: bool
 ) -> bool:  # pragma: no cover
     """[interface] Connect with a serial port NxScope devie."""
