@@ -4,7 +4,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = "nxscli"
-version = "0.0.1"
+version = "0.5.0"
 authors = [{name = "raiden00", email = "raiden00@railab.me"}]
 description = "Nxscope CLI client"
 license = {text = "Apache-2.0"}
