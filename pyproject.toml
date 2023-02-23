@@ -7,13 +7,30 @@ name = "nxscli"
 version = "0.0.1"
 authors = [{name = "raiden00", email = "raiden00@railab.me"}]
 description = "Nxscope CLI client"
-license = {file = "LICENSE"}
+license = {text = "Apache-2.0"}
+readme = "README.md"
 requires-python = ">=3.10"
-classifiers = ["License :: OSI Approved :: Apache Software License"]
 dependencies = [
          "nxslib @ git+https://github.com/railab/nxslib.git",
          "click>=8.1"
 ]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Software Development :: Embedded Systems",
+  "Operating System :: OS Independent",
+]
+keywords = [
+  "nuttx",
+  "nxslib",
+]
+
+[project.urls]
+Changelog = "https://github.com/railab/nxscli/blob/master/CHANGES.md"
+Homepage = "https://github.com/railab/nxscli"
 
 [project.scripts]
 nxscli = "nxscli.cli.main:main"
