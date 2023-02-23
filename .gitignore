@@ -13,3 +13,4 @@ venv
 *egg-info
 .projectile
 build
+dist
