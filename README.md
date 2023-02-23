@@ -39,11 +39,11 @@ Available plugins:
 
 ## Instalation
 
-For now, only installation from sources is available.
+Nxscli can be installed by running `pip install nxscli`.
 
-To install Nxscli locally from this repository use:
+To install latest development version, use:
 
-`pip install --user git+https://github.com/railab/nxscli.git`
+`pip install git+https://github.com/railab/nxscli.git`
 
 ## Usage
 
