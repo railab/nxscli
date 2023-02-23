@@ -1,8 +1,8 @@
 # Nxscli
 ![master workflow](https://github.com/railab/nxscli/actions/workflows/master.yml/badge.svg)
 
-_Nxscli_ is a command-line client package to the [Apache NuttX](https://nuttx.apache.org/)
-_NxScope_ real-time logging module.
+Nxscli is a command-line client package for the [Apache NuttX](https://nuttx.apache.org/)
+NxScope real-time logging module.
 
 Compatible with Python 3.10+.
 
@@ -33,7 +33,7 @@ Compatible with Python 3.10+.
 
 For now, only installation from sources is available.
 
-To install _Nxscli_ locally from this repository use:
+To install Nxscli locally from this repository use:
 
 `pip install --user git+https://github.com/railab/nxscli.git`
 
@@ -46,5 +46,5 @@ Look at [docs/usage](docs/usage.rst).
 
 All contributions are welcome to this project. 
 
-To get started with developing _Nxscli_, see [CONTRIBUTING.md](CONTRIBUTING.md).
+To get started with developing Nxscli, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
