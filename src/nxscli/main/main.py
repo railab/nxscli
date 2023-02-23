@@ -16,13 +16,12 @@ from nxscli.main.environment import Environment, pass_environment
 from nxscli.main.types import (
     Channels,
     Divider,
-    StringList,
     Trigger,
     divider_option_help,
 )
 from nxscli.pdefault import g_plugins_default
 from nxscli.phandler import PluginHandler
-from nxscli.plot_mpl import MplManager
+from nxscli.plot_mpl import MplManager, mpl
 
 if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
@@ -128,26 +127,6 @@ def serial(
     ctx.nxscope = NxscopeHandler(intf, ctx.parser)
 
     ctx.interface = True
-
-    return True
-
-
-###############################################################################
-# Function: mpl
-###############################################################################
-
-
-@click.command()
-@click.option(
-    "--style",
-    default="ggplot,fast",
-    type=StringList(),
-    help="Configure Matplotlib style, default: ggplot, fast",
-)
-@pass_environment
-def mpl(ctx: Environment, style: list[str]) -> bool:
-    """[config] Matplotlib configuration."""  # noqa: D301
-    ctx.mplstyle = style
 
     return True
 

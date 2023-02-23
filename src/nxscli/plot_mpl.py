@@ -5,6 +5,7 @@ import time
 from functools import partial
 from typing import TYPE_CHECKING, Any, Generator
 
+import click
 import matplotlib.pyplot as plt  # type: ignore
 from matplotlib import _pylab_helpers
 from matplotlib.animation import FuncAnimation  # type: ignore
@@ -12,6 +13,8 @@ from matplotlib.animation import FFMpegWriter, PillowWriter
 
 from nxscli.idata import PluginData, PluginDataCb, PluginQueueData
 from nxscli.logger import logger
+from nxscli.main.environment import Environment, pass_environment
+from nxscli.main.types import StringList
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes  # type: ignore
@@ -21,6 +24,27 @@ if TYPE_CHECKING:
     from nxslib.nxscope import DNxscopeStream
 
     from nxscli.trigger import TriggerHandler
+
+
+###############################################################################
+# Function: mpl
+###############################################################################
+
+
+@click.command()
+@click.option(
+    "--style",
+    default="ggplot,fast",
+    type=StringList(),
+    help="Configure Matplotlib style, default: ggplot, fast",
+)
+@pass_environment
+def mpl(ctx: Environment, style: list[str]) -> bool:
+    """[config] Matplotlib configuration."""  # noqa: D301
+    ctx.mplstyle = style
+
+    return True
+
 
 ###############################################################################
 # Class: MplManager
