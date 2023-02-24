@@ -274,6 +274,18 @@ class PluginHandler:
 
         return ret
 
+    def wait_for_plugins(self) -> None:
+        """Wait for plugins."""
+        while True:
+            done = True
+            for plg in self._started:
+                plugin, _ = plg
+                if not plugin.wait_for_plugin():
+                    done = False
+            # exit from loop if done
+            if done:
+                break
+
     def trigger_get(
         self, chid: int, src: dict[int, DTriggerConfigReq] | None = None
     ) -> DTriggerConfigReq:

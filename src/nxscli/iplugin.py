@@ -74,6 +74,10 @@ class IPlugin(ABC):
         """
         self._handled = val
 
+    def wait_for_plugin(self) -> bool:
+        """Return True if plugin is dont't need to wait."""
+        return True
+
     @property
     @abstractmethod
     def stream(self) -> bool:

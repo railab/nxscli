@@ -53,6 +53,15 @@ class IPluginAnimation(IPluginPlotDynamic):
         """Return True if this plugin needs stream."""
         return True
 
+    def wait_for_plugin(self) -> bool:  # pragma: no cover
+        """Wait for figure to close."""
+        done = True
+        if MplManager.fig_is_open():
+            done = False
+            # pause
+            MplManager.pause(1)
+        return done
+
     def stop(self) -> None:
         """Stop all animations."""
         assert self._plot

@@ -98,6 +98,15 @@ class PluginCapture(PluginThread, IPluginPlotStatic):
         # get data len
         self._datalen[j] = len(self._plot.plist[j].ydata[0])
 
+    def wait_for_plugin(self) -> bool:  # pragma: no cover
+        """Wait for figure to close."""
+        done = True
+        if MplManager.fig_is_open():
+            done = False
+            # pause
+            MplManager.pause(1)
+        return done
+
     def start(self, kwargs: Any) -> bool:
         """Start capture plugin.
 

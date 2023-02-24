@@ -18,10 +18,16 @@ from nxscli.trigger import DTriggerConfigReq
 class MockPlugin1(IPlugin):
     def __init__(self):
         super().__init__(EPluginType.TEXT)
+        self._wait_for = False
 
     @property
     def stream(self) -> bool:
         return False
+
+    def wait_for_plugin(self) -> bool:
+        ret = self._wait_for
+        self._wait_for = True
+        return ret
 
     def stop(self) -> None:
         pass
@@ -270,6 +276,9 @@ def test_phandler_start_ready(nxscope):
     assert ret[1].result() == "2"
     assert ret[2].result() is None
 
+    # plugins not need to wait
+    assert p.wait_for_plugins() is None
+
     # stop plugins
     p.stop()
 
@@ -305,6 +314,9 @@ def test_phandler_start_poll(nxscope):
     ret = p.poll()
     assert ret is None
 
+    # plugins not need to wait
+    assert p.wait_for_plugins() is None
+
     # stop plugins
     p.stop()
 
@@ -326,6 +338,9 @@ def test_phandler_start_nostream(nxscope):
 
     ret = p.ready()
     assert ret[0].result() == "1"
+
+    # plugins not need to wait
+    assert p.wait_for_plugins() is None
 
     # stop plugins
     p.stop()
@@ -353,6 +368,9 @@ def test_phandler_start_noready(nxscope):
     # always not ready
     ret = p.poll()
     assert ret == []
+
+    # plugins not need to wait
+    assert p.wait_for_plugins() is None
 
     # stop plugins
     p.stop()
