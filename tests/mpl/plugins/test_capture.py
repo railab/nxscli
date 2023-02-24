@@ -1,4 +1,4 @@
-from nxscli.plugins.capture import PluginCapture
+from nxscli.mpl.plugins.capture import PluginCapture
 
 
 def test_plugincapture_init():

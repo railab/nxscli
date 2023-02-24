@@ -6,7 +6,7 @@ from matplotlib.figure import Figure  # type: ignore
 from nxslib.dev import DeviceChannel
 
 from nxscli.idata import PluginDataCb, PluginQueueData
-from nxscli.plot_mpl import (
+from nxscli.mpl.plot_mpl import (
     PlotDataAxesMpl,
     PlotDataCommon,
     PluginAnimationCommonMpl,

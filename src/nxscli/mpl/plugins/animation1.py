@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Any
 
 import click
 
-from nxscli.animation_mpl import IPluginAnimation
 from nxscli.main.environment import Environment, pass_environment
 from nxscli.main.types import plot_options
-from nxscli.plot_mpl import PlotDataAxesMpl, PluginAnimationCommonMpl
+from nxscli.mpl.animation_mpl import IPluginAnimation
+from nxscli.mpl.plot_mpl import PlotDataAxesMpl, PluginAnimationCommonMpl
 
 if TYPE_CHECKING:
     from matplotlib.figure import Figure  # type: ignore

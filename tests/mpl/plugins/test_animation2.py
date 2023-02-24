@@ -1,4 +1,4 @@
-from nxscli.plugins.animation2 import PluginAnimation2
+from nxscli.mpl.plugins.animation2 import PluginAnimation2
 
 
 def test_pluginanimaton2_init():
