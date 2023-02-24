@@ -76,15 +76,10 @@ def handle_plugin(plugin: IPlugin) -> tuple[EPluginType, Any] | None:
 
     elif plugin.ptype == EPluginType.STATIC:
         plot = plugin.result()
-        for pdata in plot.plist:
-            # plot samples
-            pdata.plot()
-        MplManager.show(block=False)
         return (EPluginType.STATIC, plot)
 
     elif plugin.ptype == EPluginType.ANIMATION:
         plot = plugin.result()
-        MplManager.show(block=False)
         return (EPluginType.ANIMATION, plot)
 
     elif plugin.ptype == EPluginType.FILE:
