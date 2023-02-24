@@ -2,10 +2,6 @@
 
 from typing import TYPE_CHECKING, Any
 
-import click
-
-from nxscli.cli.environment import Environment, pass_environment
-from nxscli.cli.types import plot_options
 from nxscli.mpl.animation_mpl import IPluginAnimation
 from nxscli.mpl.plot_mpl import PlotDataAxesMpl, PluginAnimationCommonMpl
 
@@ -14,33 +10,6 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D  # type: ignore
 
     from nxscli.idata import PluginQueueData
-    from nxscli.trigger import DTriggerConfigReq
-
-###############################################################################
-# Command: cmd_pani1
-###############################################################################
-
-
-@click.command(name="pani1")
-@plot_options
-@pass_environment
-def cmd_pani1(
-    ctx: Environment,
-    chan: list[int],
-    trig: dict[int, "DTriggerConfigReq"],
-    dpi: float,
-    fmt: list[list[str]],
-    write: str,
-) -> bool:
-    """[plugin] Animation plot without a length limit (infinite plot)."""
-    assert ctx.phandler
-    ctx.phandler.enable(
-        "animation1", channels=chan, trig=trig, dpi=dpi, fmt=fmt, write=write
-    )
-
-    ctx.needchannels = True
-
-    return True
 
 
 ###############################################################################
