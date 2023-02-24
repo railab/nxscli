@@ -1,11 +1,13 @@
-"""Module containing dummy capture plugin."""
+"""Module containing printer plugin."""
 
+import queue
+from threading import Event
 from typing import TYPE_CHECKING, Any
 
 import click
 
 from nxscli.idata import PluginData, PluginQueueData
-from nxscli.iplugin import IPluginNone
+from nxscli.iplugin import IPluginText
 from nxscli.logger import logger
 from nxscli.main.environment import Environment, pass_environment
 from nxscli.main.types import Samples, capture_options
@@ -17,21 +19,25 @@ if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq
 
 ###############################################################################
-# Command: cmd_pnone
+# Command: cmd_printer
 ###############################################################################
 
 
-@click.command(name="pnone")
+@click.command(name="pprinter")
 @click.argument("samples", type=Samples(), required=True)
 @capture_options
+@click.option(
+    "--metastr", default=False, is_flag=True, help="store metadata as string"
+)
 @pass_environment
-def cmd_pnone(
+def cmd_printer(
     ctx: Environment,
     samples: int,
     chan: list[int],
     trig: dict[int, "DTriggerConfigReq"],
+    metastr: bool,
 ) -> bool:
-    """[plugin] Capture data and do nothing with them.
+    """[plugin] Print data from stream.
 
     If SAMPLES argument is set to 'i' then we capture data until enter
     is press.
@@ -42,10 +48,11 @@ def cmd_pnone(
         ctx.waitenter = True
 
     ctx.phandler.enable(
-        "none",
+        "printer",
         samples=samples,
         channels=chan,
         trig=trig,
+        metastr=metastr,
         nostop=ctx.waitenter,
     )
 
@@ -55,17 +62,22 @@ def cmd_pnone(
 
 
 ###############################################################################
-# Class: PluginNone
+# Class: PluginPrinter
 ###############################################################################
 
 
-class PluginNone(PluginThread, IPluginNone):
-    """Dummy plugin that do nothing with captured data."""
+class PluginPrinter(PluginThread, IPluginText):
+    """Dummy plugin that print captured data."""
 
     def __init__(self) -> None:
-        """Intiialize a none plugin."""
-        IPluginNone.__init__(self)
+        """Intiialize a printer plugin."""
+        IPluginText.__init__(self)
         PluginThread.__init__(self)
+
+        self._q: queue.Queue[Any] = queue.Queue()
+        self._done = Event()
+        self._ret_len = 0
+        self._meta_string = False
 
         self._data: "PluginData"
 
@@ -73,17 +85,49 @@ class PluginNone(PluginThread, IPluginNone):
         assert self._phandler
 
     def _final(self) -> None:
-        logger.info("None DONE")
+        logger.info("printer DONE")
 
     def _handle_samples(
         self, data: list["DNxscopeStream"], pdata: "PluginQueueData", j: int
     ) -> None:
-        for _ in data:
-            # get data len
-            self._datalen[j] += 1
+        for sample in data:
+            if self._datalen[j] < self._samples:
+                d: dict[str, Any] = dict()
+                d["chan"] = self._data.qdlist[j].chan
+                d["data"] = sample.data
+                if self._meta_string:
+                    d["meta"] = bytes(list(sample.meta)).decode()
+                else:
+                    d["meta"] = sample.meta
+                self._q.put(d)
+                self._datalen[j] += 1
+
+    @property
+    def handled(self) -> bool:
+        """Get handled flag."""
+        return self._handled
+
+    @handled.setter
+    def handled(self, val: bool) -> None:
+        """Overload method common method.
+
+        :param val: plugin handled state
+        """
+        if self._done.is_set():
+            self._handled = val
+        else:
+            # force not handled
+            self._handled = False
+
+    def data_wait(self, timeout: float = 0.0) -> bool:
+        """Return True if data are ready.
+
+        :param timeout: data wait timeout
+        """
+        return True
 
     def start(self, kwargs: Any) -> bool:
-        """Start none plugin.
+        """Start printer plugin.
 
         :param kwargs: implementation specific arguments
         """
@@ -92,6 +136,7 @@ class PluginNone(PluginThread, IPluginNone):
         logger.info("start capture %s", str(kwargs))
 
         self._samples = kwargs["samples"]
+        self._meta_string = kwargs["metastr"]
         self._nostop = kwargs["nostop"]
 
         chanlist = self._phandler.chanlist_plugin(kwargs["channels"])
@@ -107,6 +152,17 @@ class PluginNone(PluginThread, IPluginNone):
 
         return True
 
-    def result(self) -> None:
-        """Get none plugin result."""
-        return  # pragma: no cover
+    def result(self) -> str:
+        """Get printer plugin result."""
+        try:
+            samples = self._q.get(block=True, timeout=1.0)
+            self._ret_len += 1
+
+        except queue.Empty:
+            return ""
+
+        if self._ret_len >= self._samples:
+            self._done.set()
+
+        s = str(self._ret_len) + ": " + str(samples)
+        return s

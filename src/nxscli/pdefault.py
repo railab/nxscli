@@ -10,6 +10,7 @@ from nxscli.np.plugins.npsave import PluginNpsave, cmd_pnpsave
 from nxscli.plugins.csv import PluginCsv, cmd_pcsv
 from nxscli.plugins.devinfo import PluginDevinfo, cmd_pdevinfo
 from nxscli.plugins.none import PluginNone, cmd_pnone
+from nxscli.plugins.printer import PluginPrinter, cmd_printer
 
 g_plugins_default = [
     DPluginDescription("devinfo", PluginDevinfo, cmd_pdevinfo),
@@ -20,4 +21,5 @@ g_plugins_default = [
     DPluginDescription("npsave", PluginNpsave, cmd_pnpsave),
     DPluginDescription("npmem", PluginNpmem, cmd_pnpmem),
     DPluginDescription("none", PluginNone, cmd_pnone),
+    DPluginDescription("printer", PluginPrinter, cmd_printer),
 ]
