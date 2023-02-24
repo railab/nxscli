@@ -2,10 +2,6 @@
 
 from typing import TYPE_CHECKING, Any
 
-import click
-
-from nxscli.cli.environment import Environment, pass_environment
-from nxscli.cli.types import plot_options
 from nxscli.mpl.animation_mpl import IPluginAnimation
 from nxscli.mpl.plot_mpl import PlotDataAxesMpl, PluginAnimationCommonMpl
 
@@ -14,45 +10,6 @@ if TYPE_CHECKING:
     from matplotlib.lines import Line2D  # type: ignore
 
     from nxscli.idata import PluginQueueData
-    from nxscli.trigger import DTriggerConfigReq
-
-###############################################################################
-# Command: cmd_pani2
-###############################################################################
-
-
-@click.command(name="pani2")
-@click.argument("maxsamples", type=int, required=True)
-@plot_options
-@pass_environment
-def cmd_pani2(
-    ctx: Environment,
-    maxsamples: int,
-    chan: list[int],
-    trig: dict[int, "DTriggerConfigReq"],
-    dpi: float,
-    fmt: list[list[str]],
-    write: str,
-) -> bool:
-    """[plugin] Animation plot with a lenght limit (saturated X-axis)."""
-    assert ctx.phandler
-    if maxsamples == 0:  # pragma: no cover
-        click.secho("ERROR: Missing argument MAXSAMPLES", err=True, fg="red")
-        return False
-
-    ctx.phandler.enable(
-        "animation2",
-        maxsamples=maxsamples,
-        channels=chan,
-        trig=trig,
-        dpi=dpi,
-        fmt=fmt,
-        write=write,
-    )
-
-    ctx.needchannels = True
-
-    return True
 
 
 ###############################################################################

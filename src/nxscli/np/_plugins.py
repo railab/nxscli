@@ -1,8 +1,10 @@
 """Numpy based plugins list."""
 
 from nxscli.iplugin import DPluginDescription
-from nxscli.np.plugins.npmem import PluginNpmem, cmd_pnpmem
-from nxscli.np.plugins.npsave import PluginNpsave, cmd_pnpsave
+from nxscli.np.commands.cmd_npmem import cmd_pnpmem
+from nxscli.np.commands.cmd_npsave import cmd_pnpsave
+from nxscli.np.plugins.npmem import PluginNpmem
+from nxscli.np.plugins.npsave import PluginNpsave
 
 plugins_list = [
     DPluginDescription("npsave", PluginNpsave, cmd_pnpsave),

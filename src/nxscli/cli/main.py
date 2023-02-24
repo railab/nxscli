@@ -11,7 +11,7 @@ from nxscli.cli.cmd_interface import cmd_dummy, cmd_serial
 from nxscli.cli.environment import Environment, pass_environment
 from nxscli.iplugin import EPluginType, IPlugin
 from nxscli.logger import logger
-from nxscli.mpl.plot_mpl import cmd_mpl
+from nxscli.mpl.commands.cmd_mpl import cmd_mpl
 from nxscli.phandler import PluginHandler
 from nxscli.plugins_loader import plugins_list
 

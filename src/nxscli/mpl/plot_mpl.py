@@ -5,14 +5,11 @@ import time
 from functools import partial
 from typing import TYPE_CHECKING, Any, Generator
 
-import click
 import matplotlib.pyplot as plt  # type: ignore
 from matplotlib import _pylab_helpers
 from matplotlib.animation import FuncAnimation  # type: ignore
 from matplotlib.animation import FFMpegWriter, PillowWriter
 
-from nxscli.cli.environment import Environment, pass_environment
-from nxscli.cli.types import StringList
 from nxscli.idata import PluginData, PluginDataCb, PluginQueueData
 from nxscli.logger import logger
 
@@ -24,25 +21,6 @@ if TYPE_CHECKING:
     from nxslib.nxscope import DNxscopeStream
 
     from nxscli.trigger import TriggerHandler
-
-
-###############################################################################
-# Command: cmd_mpl
-###############################################################################
-
-
-@click.command(name="mpl")
-@click.option(
-    "--style",
-    default="ggplot,fast",
-    type=StringList(),
-    help="Configure Matplotlib style, default: ggplot, fast",
-)
-@pass_environment
-def cmd_mpl(ctx: Environment, style: list[str]) -> bool:
-    """[config] Matplotlib configuration."""  # noqa: D301
-    MplManager.style_set(style)
-    return True
 
 
 ###############################################################################
@@ -710,7 +688,3 @@ class PluginPlotMpl(PluginData):
             for ax in self._ax:
                 if ax is not None:
                     ax.cla()
-
-
-# default configuration
-MplManager.style_set(["ggplot", "fast"])
