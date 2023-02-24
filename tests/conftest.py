@@ -15,7 +15,7 @@ def pytest_sessionstart(session):
 def default_session_fixture(request):
     # mock MplManager show method
     patched = mock.patch.object(
-        nxscli.plot_mpl.MplManager, "show", autospec=True
+        nxscli.mpl.plot_mpl.MplManager, "show", autospec=True
     )
     patched.start()
 

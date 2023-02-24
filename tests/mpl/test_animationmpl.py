@@ -3,9 +3,9 @@ from nxslib.intf.dummy import DummyDev
 from nxslib.nxscope import NxscopeHandler
 from nxslib.proto.parse import Parser
 
-from nxscli.animation_mpl import IPluginAnimation
+from nxscli.mpl.animation_mpl import IPluginAnimation
+from nxscli.mpl.plot_mpl import PluginAnimationCommonMpl
 from nxscli.phandler import PluginHandler
-from nxscli.plot_mpl import PluginAnimationCommonMpl
 
 
 class XTestAnimation(PluginAnimationCommonMpl):

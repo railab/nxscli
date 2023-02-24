@@ -11,9 +11,9 @@ from nxscli.logger import logger
 from nxscli.main.cmd_config import cmd_chan, cmd_trig
 from nxscli.main.cmd_interface import cmd_dummy, cmd_serial
 from nxscli.main.environment import Environment, pass_environment
+from nxscli.mpl.plot_mpl import cmd_mpl
 from nxscli.pdefault import g_plugins_default
 from nxscli.phandler import PluginHandler
-from nxscli.plot_mpl import cmd_mpl
 
 ###############################################################################
 # Function: main

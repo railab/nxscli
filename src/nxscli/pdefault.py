@@ -2,14 +2,14 @@
 
 # TODO: dynamic load
 from nxscli.iplugin import DPluginDescription
-from nxscli.plugins.animation1 import PluginAnimation1, cmd_pani1
-from nxscli.plugins.animation2 import PluginAnimation2, cmd_pani2
-from nxscli.plugins.capture import PluginCapture, cmd_pcap
+from nxscli.mpl.plugins.animation1 import PluginAnimation1, cmd_pani1
+from nxscli.mpl.plugins.animation2 import PluginAnimation2, cmd_pani2
+from nxscli.mpl.plugins.capture import PluginCapture, cmd_pcap
+from nxscli.np.plugins.npmem import PluginNpmem, cmd_pnpmem
+from nxscli.np.plugins.npsave import PluginNpsave, cmd_pnpsave
 from nxscli.plugins.csv import PluginCsv, cmd_pcsv
 from nxscli.plugins.devinfo import PluginDevinfo, cmd_pdevinfo
 from nxscli.plugins.none import PluginNone, cmd_pnone
-from nxscli.plugins.npmem import PluginNpmem, cmd_pnpmem
-from nxscli.plugins.npsave import PluginNpsave, cmd_pnpsave
 
 g_plugins_default = [
     DPluginDescription("devinfo", PluginDevinfo, cmd_pdevinfo),

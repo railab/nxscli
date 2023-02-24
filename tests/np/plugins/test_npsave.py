@@ -1,4 +1,4 @@
-from nxscli.plugins.npsave import PluginNpsave
+from nxscli.np.plugins.npsave import PluginNpsave
 
 
 def test_pluginnpsave_init():

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from nxscli.iplugin import IPluginPlotDynamic
 from nxscli.logger import logger
-from nxscli.plot_mpl import (
+from nxscli.mpl.plot_mpl import (
     MplManager,
     PlotDataAxesMpl,
     PluginAnimationCommonMpl,
