@@ -14,7 +14,7 @@ from nxscli.main.cmd_interface import cmd_dummy, cmd_serial
 from nxscli.main.environment import Environment, pass_environment
 from nxscli.pdefault import g_plugins_default
 from nxscli.phandler import PluginHandler
-from nxscli.plot_mpl import MplManager, cmd_mpl
+from nxscli.plot_mpl import cmd_mpl
 
 ###############################################################################
 # Function: main
@@ -164,11 +164,6 @@ def cli_on_close(ctx: Environment) -> bool:
     # configure channles after connected to nxscope
     if ctx.needchannels and ctx.channels:
         ctx.phandler.channels_configure(ctx.channels[0], ctx.channels[1])
-
-    # configure mplt
-    if not ctx.mplstyle:  # pragma: no cover
-        ctx.mplstyle = ["ggplot", "fast"]
-    MplManager.mpl_config(ctx.mplstyle)
 
     # start plugins
     ctx.phandler.start()
