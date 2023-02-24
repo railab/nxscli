@@ -20,7 +20,6 @@ Compatible with Python 3.10+.
 
 * Plugins as Python modules (decoupling from Matplotlib and Numpy dependencies)
 * Stream data as audio (inspired by audio knock detection systems)
-* Plugins for character-type channels
 * More triggering types
 * Boolean operations on triggers
 * Virtual channels and math operations on channels data
