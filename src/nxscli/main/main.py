@@ -1,6 +1,5 @@
 """Module containint the CLI logic for Nxslib."""
 
-import pprint
 import sys
 from typing import Any
 
@@ -48,20 +47,6 @@ def main(ctx: Environment, debug: bool) -> bool:
 
 
 ###############################################################################
-# Function: devinfo_print
-###############################################################################
-
-
-def devinfo_print(info: dict[str, str]) -> None:
-    """Print device information."""
-    print("\nDevice common:\n")
-    pprint.pprint(info["cmn"])
-    print("\nDevice channels:")
-    pprint.pprint(info["channels"])
-    print("\n")
-
-
-###############################################################################
 # Function: handle_plugin
 ###############################################################################
 
@@ -69,9 +54,8 @@ def devinfo_print(info: dict[str, str]) -> None:
 def handle_plugin(plugin: IPlugin) -> tuple[EPluginType, Any] | None:
     """Handle a given plugin."""
     if plugin.ptype == EPluginType.TEXT:
-        # REVISIT: only devinfo supported for now
-        info = plugin.result()
-        devinfo_print(info)
+        # print output
+        print(plugin.result())
         return None
 
     elif plugin.ptype == EPluginType.STATIC:
