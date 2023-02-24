@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Any
 
 import click
 
+from nxscli.cli.environment import Environment, pass_environment
+from nxscli.cli.types import Samples, plot_options
 from nxscli.iplugin import IPluginPlotStatic
 from nxscli.logger import logger
-from nxscli.main.environment import Environment, pass_environment
-from nxscli.main.types import Samples, plot_options
 from nxscli.mpl.plot_mpl import MplManager, PluginPlotMpl
 from nxscli.pluginthr import PluginThread
 

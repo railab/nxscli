@@ -2,12 +2,12 @@ import pytest  # type: ignore
 from click.testing import CliRunner
 
 import nxscli
-from nxscli.main.main import main
+from nxscli.cli.main import main
 
 
 @pytest.fixture
 def runner(mocker):
-    mocker.patch.object(nxscli.main.main, "wait_for_plugins", autospec=True)
+    mocker.patch.object(nxscli.cli.main, "wait_for_plugins", autospec=True)
     return CliRunner()
 
 

@@ -6,11 +6,11 @@ from typing import Any
 import click
 from nxslib.proto.parse import Parser
 
+from nxscli.cli.cmd_config import cmd_chan, cmd_trig
+from nxscli.cli.cmd_interface import cmd_dummy, cmd_serial
+from nxscli.cli.environment import Environment, pass_environment
 from nxscli.iplugin import EPluginType, IPlugin
 from nxscli.logger import logger
-from nxscli.main.cmd_config import cmd_chan, cmd_trig
-from nxscli.main.cmd_interface import cmd_dummy, cmd_serial
-from nxscli.main.environment import Environment, pass_environment
 from nxscli.mpl.plot_mpl import cmd_mpl
 from nxscli.phandler import PluginHandler
 from nxscli.plugins_loader import plugins_list

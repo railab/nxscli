@@ -5,7 +5,7 @@ from nxslib.intf.dummy import DummyDev
 from nxslib.intf.serial import SerialDevice
 from nxslib.nxscope import NxscopeHandler
 
-from nxscli.main.environment import Environment, pass_environment
+from nxscli.cli.environment import Environment, pass_environment
 
 ###############################################################################
 # Command: cmd_dummy
