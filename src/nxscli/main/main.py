@@ -12,8 +12,8 @@ from nxscli.main.cmd_config import cmd_chan, cmd_trig
 from nxscli.main.cmd_interface import cmd_dummy, cmd_serial
 from nxscli.main.environment import Environment, pass_environment
 from nxscli.mpl.plot_mpl import cmd_mpl
-from nxscli.pdefault import g_plugins_default
 from nxscli.phandler import PluginHandler
+from nxscli.plugins_loader import plugins_list
 
 ###############################################################################
 # Function: main
@@ -36,7 +36,7 @@ def main(ctx: Environment, debug: bool) -> bool:
     else:
         logger.setLevel("INFO")
 
-    ctx.phandler = PluginHandler(g_plugins_default)
+    ctx.phandler = PluginHandler(plugins_list)
     parse = Parser()
     ctx.parser = parse
     ctx.triggers = {}
@@ -189,7 +189,7 @@ def click_final_init() -> None:
 
     # plugin commands
     for group in interfaces:
-        for plug in g_plugins_default:
+        for plug in plugins_list:
             if plug.command:
                 group.add_command(plug.command)
             else:  # pragma: no cover
