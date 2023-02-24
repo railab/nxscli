@@ -31,7 +31,6 @@ class DEnvironmentData:
     channels: tuple[list[int], Any] | None = None
     phandler: "PluginHandler | None" = None
     triggers: dict[int, "DTriggerConfigReq"] | None = None
-    mplstyle: list[str] | None = None
 
 
 ###############################################################################

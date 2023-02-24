@@ -41,8 +41,7 @@ if TYPE_CHECKING:
 @pass_environment
 def cmd_mpl(ctx: Environment, style: list[str]) -> bool:
     """[config] Matplotlib configuration."""  # noqa: D301
-    ctx.mplstyle = style
-
+    MplManager.style_set(style)
     return True
 
 
@@ -91,7 +90,7 @@ class MplManager:
         plt.show(block=block)  # pragma: no cover
 
     @staticmethod
-    def mpl_config(style: list[str]) -> None:
+    def style_set(style: list[str]) -> None:
         """Configure matplotlib."""
         logger.info("plt.style %s", str(style))
         plt.style.use(style)
@@ -711,3 +710,7 @@ class PluginPlotMpl(PluginData):
             for ax in self._ax:
                 if ax is not None:
                     ax.cla()
+
+
+# default configuration
+MplManager.style_set(["ggplot", "fast"])
