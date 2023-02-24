@@ -1,4 +1,4 @@
-from nxscli.main.types import get_list_from_str, get_list_from_str2
+from nxscli.cli.types import get_list_from_str, get_list_from_str2
 
 
 def test_get_list_from_str():

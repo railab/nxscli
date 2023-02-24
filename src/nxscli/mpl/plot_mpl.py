@@ -11,10 +11,10 @@ from matplotlib import _pylab_helpers
 from matplotlib.animation import FuncAnimation  # type: ignore
 from matplotlib.animation import FFMpegWriter, PillowWriter
 
+from nxscli.cli.environment import Environment, pass_environment
+from nxscli.cli.types import StringList
 from nxscli.idata import PluginData, PluginDataCb, PluginQueueData
 from nxscli.logger import logger
-from nxscli.main.environment import Environment, pass_environment
-from nxscli.main.types import StringList
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes  # type: ignore

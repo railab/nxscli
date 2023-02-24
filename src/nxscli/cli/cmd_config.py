@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Any
 
 import click
 
-from nxscli.main.environment import Environment, pass_environment
-from nxscli.main.types import Channels, Divider, Trigger, divider_option_help
+from nxscli.cli.environment import Environment, pass_environment
+from nxscli.cli.types import Channels, Divider, Trigger, divider_option_help
 
 if TYPE_CHECKING:
     from nxscli.trigger import DTriggerConfigReq

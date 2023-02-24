@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Any
 import click
 import numpy as np
 
+from nxscli.cli.environment import Environment, pass_environment
+from nxscli.cli.types import Samples, capture_options
 from nxscli.idata import PluginData, PluginQueueData
 from nxscli.iplugin import IPluginFile
 from nxscli.logger import logger
-from nxscli.main.environment import Environment, pass_environment
-from nxscli.main.types import Samples, capture_options
 from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:

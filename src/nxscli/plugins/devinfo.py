@@ -5,8 +5,8 @@ from typing import Any
 
 import click
 
+from nxscli.cli.environment import Environment, pass_environment
 from nxscli.iplugin import IPluginText
-from nxscli.main.environment import Environment, pass_environment
 
 ###############################################################################
 # Command: cmd_pdevinfo
