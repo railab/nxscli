@@ -83,7 +83,6 @@ def handle_plugin(plugin: IPlugin) -> tuple[EPluginType, Any] | None:
         return (EPluginType.ANIMATION, plot)
 
     elif plugin.ptype == EPluginType.FILE:
-        print("TODO: file handler ?")
         return None
 
     elif plugin.ptype == EPluginType.NONE:
@@ -123,17 +122,10 @@ def plugin_loop(ctx: Environment) -> list[Any]:
 ###############################################################################
 
 
-def wait_for_plugins(ret: list[Any]) -> None:
+def wait_for_plugins(ctx: Environment) -> None:  # pragma: no cover
     """Wait for plugins."""
-    while True:  # pragma: no cover
-        fig_open = False
-        if MplManager.fig_is_open():
-            fig_open = True
-        # no fig opened - we can exit
-        if not fig_open:
-            break
-        # pause
-        MplManager.pause(1)
+    assert ctx.phandler
+    ctx.phandler.wait_for_plugins()
 
 
 ###############################################################################
@@ -185,10 +177,10 @@ def cli_on_close(ctx: Environment) -> bool:
         _ = input("wait for Enter key...")
 
     # plugins loop
-    ret = plugin_loop(ctx)
+    plugin_loop(ctx)
 
-    # wait until all figers closed
-    wait_for_plugins(ret)
+    # wait for plugin
+    wait_for_plugins(ctx)
 
     print("closing...")
     ctx.phandler.stop()

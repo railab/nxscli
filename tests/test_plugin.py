@@ -45,3 +45,6 @@ def test_nxscliplugin_init():
     p1.data_wait()
     p1.start(None, None)
     p1.result()
+
+    # at default plugins dont need to wait
+    assert p1.wait_for_plugin() is True
