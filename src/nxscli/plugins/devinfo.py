@@ -1,5 +1,6 @@
 """Module containing devinfo plugin."""
 
+import pprint
 from typing import Any
 
 import click
@@ -73,7 +74,7 @@ class PluginDevinfo(IPluginText):
             chan["vdim"] = chinfo.data.vdim
             chan["name"] = chinfo.data.name
 
-            tmp.append(chinfo)
+            tmp.append(chan)
 
         ret["channels"] = tmp
 
@@ -81,6 +82,12 @@ class PluginDevinfo(IPluginText):
 
         return True
 
-    def result(self) -> dict[str, str] | None:
+    def result(self) -> str:
         """Get devinfo plugin result."""
-        return self._return
+        assert self._return
+        s = "\nDevice common:\n"
+        s += pprint.pformat(self._return["cmn"])
+        s += "\nDevice channels:\n"
+        s += pprint.pformat(self._return["channels"])
+        s += "\n"
+        return s
