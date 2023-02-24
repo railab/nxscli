@@ -8,7 +8,7 @@ from nxscli.iplugin import IPluginPlotStatic
 from nxscli.logger import logger
 from nxscli.main.environment import Environment, pass_environment
 from nxscli.main.types import Samples, plot_options
-from nxscli.plot_mpl import PluginPlotMpl
+from nxscli.plot_mpl import MplManager, PluginPlotMpl
 from nxscli.pluginthr import PluginThread
 
 if TYPE_CHECKING:
@@ -137,9 +137,12 @@ class PluginCapture(PluginThread, IPluginPlotStatic):
         """Get capture plugin result."""
         assert self._plot
 
+        # plot all data
+        for pdata in self._plot.plist:
+            pdata.plot()
+
         if self._write:  # pragma: no cover
-            for pdata in self._plot.plist:
-                pdata.plot()
             self._plot.fig.savefig(self._write)
 
+        MplManager.show(block=False)
         return self._plot

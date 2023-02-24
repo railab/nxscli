@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 from nxscli.iplugin import IPluginPlotDynamic
 from nxscli.logger import logger
 from nxscli.plot_mpl import (
+    MplManager,
     PlotDataAxesMpl,
     PluginAnimationCommonMpl,
     PluginPlotMpl,
@@ -108,4 +109,5 @@ class IPluginAnimation(IPluginPlotDynamic):
     def result(self) -> "PluginPlotMpl":
         """Get animation plugin result."""
         assert self._plot
+        MplManager.show(block=False)
         return self._plot
