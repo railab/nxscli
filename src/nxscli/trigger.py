@@ -329,7 +329,7 @@ class TriggerHandler(object):
             pass
         if remove_self:
             if self in self._instances:
-                self._instances.remove(self)
+                self._instances.remove(self)  # pragma: no cover
 
     def source_set(self, inst: "TriggerHandler") -> None:
         """Set source instance."""

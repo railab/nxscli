@@ -12,8 +12,6 @@ requires-python = ">=3.10"
 classifiers = ["License :: OSI Approved :: Apache Software License"]
 dependencies = [
          "nxslib @ git+https://github.com/railab/nxslib.git",
-         "numpy>=1.24.2",
-         "matplotlib>=3.6",
          "click>=8.1"
 ]
 

@@ -8,24 +8,31 @@ Compatible with Python 3.10+.
 
 ## Features
 
-* Save data to CSV files
-* Save data to NumPy files (`.npy`)
-* NumPy `numpy.memmap()` support
-* Plotting with [Matplotlib](https://github.com/matplotlib/matplotlib),
-  * Capture data on a static plot
-  * Real-time animation plot (can be written as `gif` or `mp4` file)
+* Plugins architecture, extendable through ``nxscli.extensions`` entrypoint
 * Client-based triggering (global and per-channel triggers)
+* Save data to CSV files
+* Print samples
 
 ## Features Planned
 
-* Plugins as Python modules (decoupling from Matplotlib and Numpy dependencies)
-* Stream data as audio (inspired by audio knock detection systems)
 * More triggering types
 * Boolean operations on triggers
 * Virtual channels and math operations on channels data
 * Improve `pdevinfo` output (human-readable prints)
-* Stream metadata as X-axis
 * Interactive mode
+
+## Plugins
+
+By default, we only support features that depend on the standard Python libraries.
+
+Plugins:
+
+* [nxscli-mpl](https://github.com/railab/nxscli-mpl) - Matplotlib extension
+* [nxscli-np](https://github.com/railab/nxscli-np) - Numpy extension
+
+## Plugins Planned
+
+* Stream data as audio (inspired by audio knock detection systems)
 * Maybe support for PyQtGraph ?
 
 ## Instalation

@@ -296,7 +296,7 @@ class PluginHandler:
         """
         # get data from plugin private dict or global dict
         if src:
-            array = src
+            array = src  # pragma: no cover
         else:
             array = self._triggers
 
@@ -321,7 +321,7 @@ class PluginHandler:
         chanlist = []
         if channels and channels[0] != -1:
             # plugin specific channels configuration
-            for chan in self.chanlist:
+            for chan in self.chanlist:  # pragma: no cover
                 if chan.data.chan in channels:
                     chanlist.append(chan)
                 else:  # pragma: no cover
@@ -390,7 +390,7 @@ class PluginHandler:
         trgs: list[tuple[int, DTriggerConfigReq]] = []
         if triggers:
             # plugin specific triggers
-            for chan in chanlist:
+            for chan in chanlist:  # pragma: no cover
                 tcfg = self.trigger_get(chan.data.chan, triggers)
                 trgs.append((chan.data.chan, tcfg))
         else:
