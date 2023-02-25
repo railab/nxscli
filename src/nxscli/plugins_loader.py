@@ -1,19 +1,19 @@
 """Plugins loader."""
 
-import importlib
 from importlib.metadata import entry_points
+
+import nxscli.plugin
 
 plugins_list = []
 configs_list = []
-
-# load default plugins
-module = "nxscli._plugins"
-mod = importlib.import_module(module)
+interfaces_list = []
 
 # default plugins
-plugins_list.extend(mod.plugins_list)
+plugins_list.extend(nxscli.plugin.plugins_list)
 # default configuration commands
-configs_list.extend(mod.configs_list)
+configs_list.extend(nxscli.plugin.configs_list)
+# default interfaces commands
+interfaces_list.extend(nxscli.plugin.interfaces_list)
 
 # load external plugins
 eps = entry_points(group="nxscli.extensions")

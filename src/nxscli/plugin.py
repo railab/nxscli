@@ -1,9 +1,9 @@
-"""Default plugins."""
+"""Default plugins and commands."""
 
-# TODO: dynamic load
-from nxscli.cli.cmd_config import cmd_chan, cmd_trig
+from nxscli.commands.cmd_config import cmd_chan, cmd_trig
 from nxscli.commands.cmd_csv import cmd_pcsv
 from nxscli.commands.cmd_devinfo import cmd_pdevinfo
+from nxscli.commands.cmd_interface import cmd_dummy, cmd_serial
 from nxscli.commands.cmd_none import cmd_pnone
 from nxscli.commands.cmd_printer import cmd_printer
 from nxscli.iplugin import DPluginDescription
@@ -20,3 +20,4 @@ plugins_list = [
 ]
 
 configs_list = [cmd_chan, cmd_trig]
+interfaces_list = [cmd_serial, cmd_dummy]
