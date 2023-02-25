@@ -1,24 +1,39 @@
 """Plugins loader."""
 
 from importlib.metadata import entry_points
+from typing import TYPE_CHECKING
 
-import nxscli.plugin
+import nxscli.ext_commands
+import nxscli.ext_interfaces
+import nxscli.ext_plugins
+from nxscli.logger import logger
 
-plugins_list = []
-configs_list = []
-interfaces_list = []
+if TYPE_CHECKING:
+    import click
+
+    from nxscli.iplugin import DPluginDescription
+
+plugins_list: list["DPluginDescription"] = []
+commands_list: list["click.Command"] = []
+interfaces_list: list["click.Group"] = []
 
 # default plugins
-plugins_list.extend(nxscli.plugin.plugins_list)
-# default configuration commands
-configs_list.extend(nxscli.plugin.configs_list)
-# default interfaces commands
-interfaces_list.extend(nxscli.plugin.interfaces_list)
+plugins_list.extend(nxscli.ext_plugins.plugins_list)
+# default commands
+commands_list.extend(nxscli.ext_commands.commands_list)
+# default interfaces
+interfaces_list.extend(nxscli.ext_interfaces.interfaces_list)
 
 # load external plugins
 eps = entry_points(group="nxscli.extensions")
 for entry in eps:  # pragma: no cover
-    print("loading ", entry.name, "...")
-    plugin = eps[entry.name].load()
-    plugins_list.extend(plugin.plugins_list)
-    configs_list.extend(plugin.configs_list)
+    logger.info("loading %s %s ...", entry.name, entry.value)
+    plugin = entry.load()
+    if entry.name == "plugins":
+        plugins_list.extend(plugin.plugins_list)
+    elif entry.name == "commands":
+        commands_list.extend(plugin.commands_list)
+    elif entry.name == "interfaces":
+        interfaces_list.extend(plugin.interfaces_list)
+    else:
+        raise AssertionError("Unsupported entry name")
