@@ -6,8 +6,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    import click
-
     from nxscli.phandler import PluginHandler
 
 ###############################################################################
@@ -36,7 +34,6 @@ class DPluginDescription:
 
     name: str
     plugin: type["IPlugin"]
-    command: "click.Command | None" = None
 
 
 ###############################################################################

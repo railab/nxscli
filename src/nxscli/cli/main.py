@@ -10,7 +10,7 @@ from nxscli.cli.environment import Environment, pass_environment
 from nxscli.iplugin import EPluginType, IPlugin
 from nxscli.logger import logger
 from nxscli.phandler import PluginHandler
-from nxscli.plugins_loader import configs_list, interfaces_list, plugins_list
+from nxscli.plugins_loader import commands_list, interfaces_list, plugins_list
 
 ###############################################################################
 # Function: main
@@ -173,24 +173,14 @@ def cli_on_close(ctx: Environment) -> bool:
 
 def click_final_init() -> None:
     """Handle final Click initialization."""
-    # interface commands
+    # add interfaces
     for intf in interfaces_list:
         main.add_command(intf)
 
-    # configuration commands
+    # add commands to interfaces
     for group in interfaces_list:
-        for cmd in configs_list:
+        for cmd in commands_list:
             group.add_command(cmd)
-
-    # plugin commands
-    for group in interfaces_list:
-        for plug in plugins_list:
-            if plug.command:
-                group.add_command(plug.command)
-            else:  # pragma: no cover
-                logger.error(
-                    "no command implementation for plugin %s", plug.name
-                )
 
 
 # final click initialization
