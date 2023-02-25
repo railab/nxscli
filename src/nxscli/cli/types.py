@@ -1,4 +1,4 @@
-"""Module containint the Click types."""
+"""Module containing the Click types."""
 
 from typing import Any
 
@@ -88,9 +88,9 @@ class Samples(click.ParamType):
         """Convert samples argument."""
         if value.isnumeric():
             return int(value)
-        elif value == "i":  # pragma: no cover
+        elif value == "i":
             return -1
-        else:  # pragma: no cover
+        else:
             raise click.BadParameter("samples must be a valid integer or 'i'")
 
 
@@ -216,7 +216,7 @@ class StringList(click.ParamType):
 ###############################################################################
 
 
-class StringList2(click.ParamType):
+class StringList2(click.ParamType):  # pragma: no cover
     """Parse a string list argument (2 separators)."""
 
     name = "stringlist2"
@@ -246,49 +246,6 @@ divider_option_help = """Configure divider for a given channels.
                           the same divider value, or use a list of integers
                           (separated by commas) to directly configure the
                           channels."""
-fmt_option_help = """Plugin specific Matplotlib format string configuration.
-                     Channels separated by a semicolon (;),
-                     vectors separated by a commas (?).
-                     Example: 'r?g?b; -r?; r?b'
-                     Defalut: Matplotlib default.
-                      """  # noqa: D301
-
-
-###############################################################################
-# Decorator: plot_options
-###############################################################################
-
-
-# common plot options
-_plot_options = (
-    click.option(
-        "--chan",
-        default=None,
-        type=Channels(),
-        help=channels_option_help,
-    ),
-    click.option(
-        "--trig",
-        default=None,
-        type=Trigger(),
-        help=trigger_option_help,
-    ),
-    click.option("--dpi", type=int, default=100),
-    click.option(
-        "--fmt",
-        default="",
-        type=StringList2(ch1="?"),
-        help=fmt_option_help,
-    ),
-    click.option("--write", type=click.Path(resolve_path=False), default=""),
-)
-
-
-def plot_options(fn: Any) -> Any:
-    """Decorate command with common plot options decorator."""
-    for decorator in reversed(_plot_options):
-        fn = decorator(fn)
-    return fn
 
 
 ###############################################################################

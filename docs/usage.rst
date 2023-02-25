@@ -25,7 +25,7 @@ the same time.
 For commands details use ``--help`` option.
 
 The following example illustrates how to run multiple plugins simultaneously
-with various channel configurations:
+with various channel configurations (based on ``pcap`` from ``nxscli-mpl``):
 
 .. code-block:: bash
 
@@ -72,32 +72,15 @@ Available configuration commands:
 
   Triggers can be configured per channel with the option ``--trig``.
 
-* ``mpl`` - Matplotlib configuration.
-
-  Optional, at default:
-
-  - style = "ggplot,fast"
-
 
 Plugin commands
 ===============
 
-One day, there should be available only basic plugins that don't need any extra
-requirements. Other plugins will be placed in their own python modules (take
-``pytest`` as an example).
-
-We shouldn't require users to install any other external libraries except Nxslib.
-and Click.
-
 Plugins supported so far:
 
-* ``pani1`` - infinite animation plot (no X-axis limits)
-* ``pani2`` - animation plot with X-axis saturation
-* ``pcap`` - static plot (capture data and plot)
 * ``pcsv`` - store samples in CSV files
 * ``pdevinfo`` - show information about the connected NxScope device
 * ``pnone`` - capture data and do nothing with them
-* ``pnpmem`` - stream data via Numpy memmap files
-* ``pnpsave`` - store data in Numpy files
+* ``pprinter`` - capture data and print samples
 
 For more information, use the plugin's ``--help`` option.

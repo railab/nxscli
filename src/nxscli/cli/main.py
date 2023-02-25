@@ -6,14 +6,12 @@ from typing import Any
 import click
 from nxslib.proto.parse import Parser
 
-from nxscli.cli.cmd_config import cmd_chan, cmd_trig
 from nxscli.cli.cmd_interface import cmd_dummy, cmd_serial
 from nxscli.cli.environment import Environment, pass_environment
 from nxscli.iplugin import EPluginType, IPlugin
 from nxscli.logger import logger
-from nxscli.mpl.commands.cmd_mpl import cmd_mpl
 from nxscli.phandler import PluginHandler
-from nxscli.plugins_loader import plugins_list
+from nxscli.plugins_loader import configs_list, plugins_list
 
 ###############################################################################
 # Function: main
@@ -58,11 +56,11 @@ def handle_plugin(plugin: IPlugin) -> tuple[EPluginType, Any] | None:
         print(plugin.result())
         return None
 
-    elif plugin.ptype == EPluginType.STATIC:
+    elif plugin.ptype == EPluginType.STATIC:  # pragma: no cover
         plot = plugin.result()
         return (EPluginType.STATIC, plot)
 
-    elif plugin.ptype == EPluginType.ANIMATION:
+    elif plugin.ptype == EPluginType.ANIMATION:  # pragma: no cover
         plot = plugin.result()
         return (EPluginType.ANIMATION, plot)
 
@@ -181,10 +179,9 @@ def click_final_init() -> None:
     for intf in interfaces:
         main.add_command(intf)
 
-    # config commands
-    config = [cmd_chan, cmd_trig, cmd_mpl]
+    # configuration commands
     for group in interfaces:
-        for cmd in config:
+        for cmd in configs_list:
             group.add_command(cmd)
 
     # plugin commands

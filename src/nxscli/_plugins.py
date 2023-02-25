@@ -1,6 +1,7 @@
 """Default plugins."""
 
 # TODO: dynamic load
+from nxscli.cli.cmd_config import cmd_chan, cmd_trig
 from nxscli.commands.cmd_csv import cmd_pcsv
 from nxscli.commands.cmd_devinfo import cmd_pdevinfo
 from nxscli.commands.cmd_none import cmd_pnone
@@ -17,3 +18,5 @@ plugins_list = [
     DPluginDescription("none", PluginNone, cmd_pnone),
     DPluginDescription("printer", PluginPrinter, cmd_printer),
 ]
+
+configs_list = [cmd_chan, cmd_trig]
