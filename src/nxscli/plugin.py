@@ -1,11 +1,13 @@
 """Default plugins and commands."""
 
-from nxscli.commands.cmd_config import cmd_chan, cmd_trig
 from nxscli.commands.cmd_csv import cmd_pcsv
 from nxscli.commands.cmd_devinfo import cmd_pdevinfo
-from nxscli.commands.cmd_interface import cmd_dummy, cmd_serial
 from nxscli.commands.cmd_none import cmd_pnone
 from nxscli.commands.cmd_printer import cmd_printer
+from nxscli.commands.config.cmd_chan import cmd_chan
+from nxscli.commands.config.cmd_trig import cmd_trig
+from nxscli.commands.interface.cmd_dummy import cmd_dummy
+from nxscli.commands.interface.cmd_serial import cmd_serial
 from nxscli.iplugin import DPluginDescription
 from nxscli.plugins.csv import PluginCsv
 from nxscli.plugins.devinfo import PluginDevinfo
