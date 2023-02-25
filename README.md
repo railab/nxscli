@@ -24,8 +24,10 @@ Compatible with Python 3.10+.
 ## Plugins
 
 By default, we only support features that depend on the standard Python libraries.
+The functionality is expadned by installing plugins.
+Plugins are automatically deteceted by Nxscli.
 
-Plugins:
+Available plugins:
 
 * [nxscli-mpl](https://github.com/railab/nxscli-mpl) - Matplotlib extension
 * [nxscli-np](https://github.com/railab/nxscli-np) - Numpy extension
@@ -33,7 +35,7 @@ Plugins:
 ## Plugins Planned
 
 * Stream data as audio (inspired by audio knock detection systems)
-* Maybe support for PyQtGraph ?
+* PyQtGraph support
 
 ## Instalation
 
