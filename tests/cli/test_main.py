@@ -136,6 +136,28 @@ def test_main_pprinter(runner):
     assert result.exit_code == 0
 
 
+def test_main_pudp(runner):
+    args = ["chan", "1", "pudp", "1"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 2
+
+    # args = ["dummy", "pudp", "1"]
+    # result = runner.invoke(main, args)
+    # assert result.exit_code == 1
+
+    args = ["dummy", "chan", "1", "pudp", "1"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+    args = ["dummy", "chan", "9", "pudp", "1"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+    args = ["dummy", "chan", "1", "pudp", "1000"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+
 def test_main_trig(runner):
     args = ["dummy", "chan", "1", "trig", "xxx"]
     result = runner.invoke(main, args)
