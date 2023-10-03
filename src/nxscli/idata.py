@@ -72,6 +72,11 @@ class PluginQueueData:
         return self._channel.data.chan
 
     @property
+    def channame(self) -> str:
+        """Get channel name."""
+        return self._channel.data.name
+
+    @property
     def is_numerical(self) -> bool:
         """Return true if this channel is numerical."""
         return self._channel.data.is_numerical
