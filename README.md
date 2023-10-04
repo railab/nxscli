@@ -12,6 +12,8 @@ Compatible with Python 3.10+.
 * Client-based triggering (global and per-channel triggers)
 * Save data to CSV files
 * Print samples
+* Stream data over UDP (compatible with [PlotJuggler](https://github.com/facontidavide/PlotJuggler))
+* NxScope protocol via serial port or Segger RTT interface
 
 ## Features Planned
 
