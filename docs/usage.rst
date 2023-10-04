@@ -54,6 +54,8 @@ Supported interface commands:
 
 * ``serial`` - select serial port NxScope interface
 
+* ``rtt`` - select Segger RTT as NxScope interface
+
 Configuratio commands
 =====================
 
@@ -82,5 +84,6 @@ Plugins supported so far:
 * ``pdevinfo`` - show information about the connected NxScope device
 * ``pnone`` - capture data and do nothing with them
 * ``pprinter`` - capture data and print samples
+* ``pudp`` - stream data over UDP
 
 For more information, use the plugin's ``--help`` option.
