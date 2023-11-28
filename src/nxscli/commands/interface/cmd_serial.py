@@ -13,8 +13,8 @@ from nxscli.cli.environment import Environment, pass_environment
 
 @click.group(name="serial", chain=True)
 @click.argument("path", type=click.Path(resolve_path=False), required=True)
-@click.option("--baud", default=115200)
-@click.option("--writepadding", default=0)
+@click.option("--baud", default=115200, help="Default: 115200")
+@click.option("--writepadding", default=0, help="Default: 0")
 @pass_environment
 def cmd_serial(
     ctx: Environment, path: str, baud: int, writepadding: bool
