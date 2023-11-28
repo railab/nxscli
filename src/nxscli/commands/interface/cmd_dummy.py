@@ -14,10 +14,10 @@ from nxscli.cli.environment import Environment, pass_environment
 @click.group(name="dummy", chain=True)
 @click.option("--writepadding", default=0)
 @click.option(
-    "--streamsleep", type=float, default=0.001, help="dummy dev parameter"
+    "--streamsleep", type=float, default=0.001, help="dummy dev parameter. Default: 0.001"
 )
 @click.option(
-    "--samplesnum", type=int, default=100, help="dummy dev parameter"
+    "--samplesnum", type=int, default=100, help="dummy dev parameter. Default: 100"
 )
 @pass_environment
 def cmd_dummy(
