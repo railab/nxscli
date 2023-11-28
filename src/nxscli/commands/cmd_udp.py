@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     "--address",
     type=str,
     default="127.0.0.1",
-    help="destinantion port. Default: 127.0.0.1",
+    help="destinantion address. Default: 127.0.0.1",
 )
 @click.option(
     "--port", type=int, default=9870, help="destination port. Default: 9870"
