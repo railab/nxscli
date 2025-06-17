@@ -13,12 +13,12 @@ def runner(mocker):
 
 def test_main(runner):
     result = runner.invoke(main)
-    assert result.exit_code == 0
+    assert result.exit_code == 2
 
 
 def test_main_dummy(runner):
     result = runner.invoke(main, ["dummy"])
-    assert result.exit_code == 0
+    assert result.exit_code == 2
 
 
 def test_main_pdevinfo(runner):

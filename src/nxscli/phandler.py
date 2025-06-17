@@ -349,7 +349,7 @@ class PluginHandler:
         """
         assert self._nxs
 
-        logger.info("configure channels = %s divider = %d", str(channels), div)
+        logger.info("configure channels = %s divider = %s", str(channels), str(div))
 
         self._chanlist = self._chanlist_gen(channels)
         if not self._chanlist:
