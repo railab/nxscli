@@ -32,10 +32,10 @@ def cmd_printer(
 ) -> bool:
     """[plugin] Print data from stream.
 
-    If SAMPLES argument is set to 'i' then we capture data until enter
+    If SAMPLES argument is set to '0' then we capture data until enter
     is press.
     """  # noqa: D301
-    # wait for enter if samples set to 'i'
+    # wait for enter if samples set to '0'
     assert ctx.phandler
     if samples == 0:  # pragma: no cover
         ctx.waitenter = True
