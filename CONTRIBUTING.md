@@ -31,7 +31,43 @@ source venv/bin/activate
 
 ### Code style and running tests
 
-Code formatting is ensured by [black](https://github.com/psf/black) and [isort](https://github.com/PyCQA/isort).
+#### Docstring Format
+
+This project uses Sphinx-style docstrings exclusively.
+Do not use Google-style or NumPy-style docstrings.
+
+Correct (Sphinx style):
+```python
+def example_function(param1, param2):
+    """Brief description of function.
+
+    Longer description if needed.
+
+    :param param1: description of param1
+    :param param2: description of param2
+    :return: description of return value
+    :raises ValueError: description of when this is raised
+    """
+```
+
+Incorrect (Google style) - DO NOT USE:
+```python
+def example_function(param1, param2):
+    """Brief description of function.
+
+    Args:
+        param1: description of param1
+        param2: description of param2
+
+    Returns:
+        description of return value
+    """
+```
+
+#### Code Formatting
+
+Code formatting is ensured by [black](https://github.com/psf/black)
+and [isort](https://github.com/PyCQA/isort).
 To reformat your changes, use:
 
 ```
