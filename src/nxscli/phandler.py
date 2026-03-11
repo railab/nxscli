@@ -26,7 +26,7 @@ class PluginHandler:
 
         :param plugins: a list with plugins
         """
-        self._nxs: "NxscopeHandler" | None = None
+        self._nxs: "NxscopeHandler" | None = None  # noqa: TC010
         self._plugins = {}
 
         if plugins:
@@ -349,7 +349,9 @@ class PluginHandler:
         """
         assert self._nxs
 
-        logger.info("configure channels = %s divider = %s", str(channels), str(div))
+        logger.info(
+            "configure channels = %s divider = %s", str(channels), str(div)
+        )
 
         self._chanlist = self._chanlist_gen(channels)
         if not self._chanlist:

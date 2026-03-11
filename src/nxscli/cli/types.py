@@ -1,4 +1,4 @@
-"""Module containing the Click types."""
+"""Module containing the Click types."""  # noqa: A005
 
 from typing import Any
 

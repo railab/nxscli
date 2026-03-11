@@ -138,7 +138,7 @@ class TriggerHandler(object):
         self._triger_done = False
 
         # trigger source channel reference
-        self._src: "TriggerHandler" | None = None
+        self._src: "TriggerHandler" | None = None  # noqa: TC010
         # connected cross channels
         self._cross: list["TriggerHandler"] = []
         self._src_configured = False
@@ -197,7 +197,7 @@ class TriggerHandler(object):
     def _pairwise(
         self, iterable: list["DNxscopeStream"]
     ) -> Iterator[tuple["DNxscopeStream", "DNxscopeStream"]]:
-        (a, b) = itertools.tee(iterable)
+        a, b = itertools.tee(iterable)
         next(b, None)
         return zip(a, b)
 
