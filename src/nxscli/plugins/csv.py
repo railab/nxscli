@@ -1,4 +1,4 @@
-"""Module containing CSV plugin."""
+"""Module containing CSV plugin."""  # noqa: A005
 
 import csv
 from typing import TYPE_CHECKING, Any

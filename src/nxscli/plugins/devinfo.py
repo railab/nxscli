@@ -38,23 +38,27 @@ class PluginDevinfo(IPluginText):
         assert self._phandler
         assert self._phandler.dev
 
-        dev = self._phandler.dev
-
         ret: Any = {}
-        ret["cmn"] = {}
-        ret["cmn"]["chmax"] = dev.data.chmax
-        ret["cmn"]["flags"] = dev.data.flags
-        ret["cmn"]["rxpadding"] = dev.data.rxpadding
+        ret["cmn"] = vars(self._phandler.get_device_capabilities())
+        ret["stream"] = vars(self._phandler.get_stream_stats())
+        ret["channels_state_applied"] = vars(
+            self._phandler.get_channels_state(applied=True)
+        )
+        ret["channels_state_buffered"] = vars(
+            self._phandler.get_channels_state(applied=False)
+        )
 
         tmp = []
-        for chid in range(dev.data.chmax):
-            chinfo = dev.channel_get(chid)
+        for chid in range(ret["cmn"]["chmax"]):
+            chinfo = self._phandler.nxscope.dev_channel_get(chid)
             assert chinfo
             chan: Any = {}
             chan["chan"] = chinfo.data.chan
             chan["type"] = chinfo.data._type
             chan["vdim"] = chinfo.data.vdim
             chan["name"] = chinfo.data.name
+            chan["enabled"] = chinfo.data.en
+            chan["divider"] = self._phandler.get_channel_divider(chid)
 
             tmp.append(chan)
 
@@ -69,6 +73,12 @@ class PluginDevinfo(IPluginText):
         assert self._return
         s = "\nDevice common:\n"
         s += pprint.pformat(self._return["cmn"])
+        s += "\nStream stats:\n"
+        s += pprint.pformat(self._return["stream"])
+        s += "\nChannels state (applied):\n"
+        s += pprint.pformat(self._return["channels_state_applied"])
+        s += "\nChannels state (buffered):\n"
+        s += pprint.pformat(self._return["channels_state_buffered"])
         s += "\nDevice channels:\n"
         s += pprint.pformat(self._return["channels"])
         s += "\n"
