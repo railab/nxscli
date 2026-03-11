@@ -58,3 +58,35 @@ def test_nxsclipdata_init():
     assert gdata.qdlist[0].mlen == 0
 
     TriggerHandler.cls_cleanup()
+
+
+def test_nxsclipdata_queue_deinit_unsubscribes_all():
+    unsubscribed: list[queue.Queue[list]] = []
+    queues = [queue.Queue(), queue.Queue(), queue.Queue()]
+
+    def stream_sub(ch):  # noqa: ANN001
+        return queues[ch]
+
+    def stream_unsub(q):  # noqa: ANN001
+        unsubscribed.append(q)
+
+    channels = [
+        DeviceChannel(0, 0, 1, "chan0"),
+        DeviceChannel(1, 0, 1, "chan1"),
+        DeviceChannel(2, 0, 1, "chan2"),
+    ]
+    dtc = DTriggerConfig(ETriggerType.ALWAYS_OFF)
+    trig = [
+        TriggerHandler(0, dtc),
+        TriggerHandler(1, dtc),
+        TriggerHandler(2, dtc),
+    ]
+    cb = PluginDataCb(stream_sub, stream_unsub)
+    pdata = PluginData(channels, trig, cb)
+
+    assert len(pdata.qdlist) == 3
+    pdata._queue_deinit()
+
+    assert len(pdata.qdlist) == 0
+    assert unsubscribed == queues
+    TriggerHandler.cls_cleanup()

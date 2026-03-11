@@ -157,9 +157,9 @@ class PluginData:
 
     def _queue_deinit(self) -> None:
         """Deinitialize queue."""
-        for i, pdata in enumerate(self._qdlist):
+        for pdata in self._qdlist:
             self._cb.stream_unsub(pdata.queue)
-            self._qdlist.pop(i)
+        self._qdlist.clear()
 
         # clean up triggers
         # TODO: revisit where this beleong, here or in plugins ?
