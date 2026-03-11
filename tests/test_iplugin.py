@@ -48,3 +48,6 @@ def test_nxscliplugin_init():
 
     # at default plugins dont need to wait
     assert p1.wait_for_plugin() is True
+
+    # at default plugins return None for inputhook
+    assert p1.get_inputhook() is None

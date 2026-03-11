@@ -427,3 +427,179 @@ def test_phandler_trigger():
 
     # clean up
     p.cleanup()
+
+
+def test_phandler_collect_inputhooks():  # noqa: C901
+    """Test collect_inputhooks method."""
+
+    class PluginWithHook(IPlugin):  # pragma: no cover
+        def __init__(self):
+            super().__init__(EPluginType.ANIMATION)
+
+        @property
+        def stream(self) -> bool:
+            return True
+
+        def stop(self) -> None:
+            pass
+
+        def data_wait(self, timeout=None) -> bool:
+            return True
+
+        def start(self, kwargs) -> bool:
+            return True
+
+        def result(self):
+            return None
+
+        @classmethod
+        def get_inputhook(cls):
+            def hook(context):
+                pass
+
+            return hook
+
+    class PluginWithoutHook(IPlugin):  # pragma: no cover
+        def __init__(self):
+            super().__init__(EPluginType.TEXT)
+
+        @property
+        def stream(self) -> bool:
+            return False
+
+        def stop(self) -> None:
+            pass
+
+        def data_wait(self, timeout=None) -> bool:
+            return True
+
+        def start(self, kwargs) -> bool:
+            return True
+
+        def result(self):
+            return None
+
+    # Create plugin handler with plugins
+    plugins = [
+        DPluginDescription("with_hook", PluginWithHook),
+        DPluginDescription("without_hook", PluginWithoutHook),
+    ]
+    p = PluginHandler(plugins)
+
+    # Collect inputhooks
+    hooks = p.collect_inputhooks()
+
+    # Should find one hook (from PluginWithHook)
+    assert len(hooks) == 1
+    assert callable(hooks[0])
+
+    # clean up
+    p.cleanup()
+
+
+def test_phandler_plugin_start_stop_dynamic(nxscope):
+    """Test plugin_start_dynamic and plugin_stop_dynamic methods."""
+    nxscope.connect()
+    plugins = [DPluginDescription("plugin1", MockPlugin1)]
+    p = PluginHandler(plugins=plugins)
+    p.nxscope_connect(nxscope)
+
+    # Start plugin dynamically (no chanlist configured)
+    pid = p.plugin_start_dynamic("plugin1", channels=[0, 1])
+    assert pid == 0
+    assert len(p._started) == 1
+
+    # Get started plugins
+    started = p.get_started_plugins()
+    assert len(started) == 1
+    assert started[0] == (0, "plugin1")
+
+    # Stop plugin dynamically
+    p.plugin_stop_dynamic(pid)
+    assert len(p._started) == 0
+
+    # Test invalid PID
+    with pytest.raises(IndexError):
+        p.plugin_stop_dynamic(99)
+
+    # clean up
+    p.cleanup()
+
+
+def test_phandler_get_started_plugins_unregistered():
+    """Test get_started_plugins with unregistered plugin class."""
+    plugins = [DPluginDescription("plugin1", MockPlugin1)]
+    p = PluginHandler(plugins=plugins)
+
+    # Manually create a plugin instance not in _plugins
+    plugin = MockPlugin2()
+    p._started.append((plugin, {}))
+
+    # Should fall back to class name
+    started = p.get_started_plugins()
+    assert len(started) == 1
+    assert started[0] == (0, "MockPlugin2")
+
+    # clean up
+    p.cleanup()
+
+
+def test_phandler_plugin_start_dynamic_all_channels(nxscope):
+    """Test plugin_start_dynamic with -1 (all channels)."""
+    nxscope.connect()
+    plugins = [DPluginDescription("plugin1", MockPlugin1)]
+    p = PluginHandler(plugins=plugins)
+    p.nxscope_connect(nxscope)
+
+    # Start plugin with -1 to select all channels
+    pid = p.plugin_start_dynamic("plugin1", channels=[-1])
+    assert pid == 0
+
+    # Stop plugin
+    p.plugin_stop_dynamic(pid)
+
+    # clean up
+    p.cleanup()
+
+
+def test_phandler_plugin_start_dynamic_plot_plugin(nxscope):
+    """Test plugin_start_dynamic for plot plugin branch."""
+    nxscope.connect()
+    plugins = [DPluginDescription("plugin3", MockPlugin3)]
+    p = PluginHandler(plugins=plugins)
+    p.nxscope_connect(nxscope)
+
+    pid = p.plugin_start_dynamic("plugin3", channels=[0])
+    assert pid == 0
+    assert len(p._started) == 1
+
+    p.plugin_stop_dynamic(pid)
+    p.cleanup()
+
+
+def test_phandler_chanlist_plugin_dynamic_mode(nxscope):
+    """Test chanlist_plugin in dynamic mode (no chanlist configured)."""
+    nxscope.connect()
+    p = PluginHandler()
+    p.nxscope_connect(nxscope)
+
+    # Don't configure channels - this puts us in dynamic mode
+    # _chanlist should be empty
+
+    # Test with -1 (all channels)
+    chanlist = p.chanlist_plugin([-1])
+    assert len(chanlist) > 0
+    assert all(ch.data.is_valid for ch in chanlist)
+
+    # Test with specific channels
+    chanlist = p.chanlist_plugin([0, 1, 2])
+    assert len(chanlist) <= 3
+    assert all(ch.data.is_valid for ch in chanlist)
+
+    # Test with a channel that might not exist (high channel ID)
+    # This tests the branch where ch might be None or not valid
+    chanlist = p.chanlist_plugin([0, 999])
+    assert len(chanlist) <= 2
+
+    # clean up
+    p.cleanup()
