@@ -25,7 +25,9 @@ def cmd_serial(
 
     # initialize nxslib communication handler
     assert ctx.parser
-    ctx.nxscope = NxscopeHandler(intf, ctx.parser)
+    ctx.nxscope = NxscopeHandler(
+        intf, ctx.parser, enable_bitrate_tracking=True
+    )
 
     ctx.interface = True
 
