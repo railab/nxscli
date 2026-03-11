@@ -123,6 +123,40 @@ class PluginHandler:
         """Get enabled plugins."""
         return self._enabled
 
+    @property
+    def nxscope(self) -> "NxscopeHandler":
+        """Get NxScope handler.
+
+        :return: NxscopeHandler instance
+        :raises AssertionError: If nxscope is not connected
+        """
+        assert self._nxs
+        return self._nxs
+
+    def get_enabled_channels(self, applied: bool = True) -> tuple[int, ...]:
+        """Get enabled channels from NxScope."""
+        return self.nxscope.get_enabled_channels(applied=applied)
+
+    def get_channel_divider(self, chid: int, applied: bool = True) -> int:
+        """Get channel divider from NxScope."""
+        return self.nxscope.get_channel_divider(chid, applied=applied)
+
+    def get_channel_dividers(self, applied: bool = True) -> tuple[int, ...]:
+        """Get channel dividers from NxScope."""
+        return self.nxscope.get_channel_dividers(applied=applied)
+
+    def get_channels_state(self, applied: bool = True) -> Any:
+        """Get channels state snapshot from NxScope."""
+        return self.nxscope.get_channels_state(applied=applied)
+
+    def get_device_capabilities(self) -> Any:
+        """Get device capabilities snapshot from NxScope."""
+        return self.nxscope.get_device_capabilities()
+
+    def get_stream_stats(self) -> Any:
+        """Get stream stats snapshot from NxScope."""
+        return self.nxscope.get_stream_stats()
+
     def collect_inputhooks(self) -> list[Any]:
         """Collect inputhooks from all loaded plugins.
 
@@ -404,16 +438,37 @@ class PluginHandler:
 
         :param chanlist: a list with plugin channels
         """
+        assert self._nxs
+        assert self.dev
+
         chanlist = []
-        if channels and channels[0] != -1:
-            # plugin specific channels configuration
-            for chan in self.chanlist:  # pragma: no cover
-                if chan.data.chan in channels:
-                    chanlist.append(chan)
-                else:  # pragma: no cover
-                    pass
+
+        # If no channels configured in phandler (dynamic mode),
+        # get them directly from device
+        if not self._chanlist:
+            if channels and channels[0] == -1:
+                # All channels
+                for chid in range(self.dev.data.chmax):
+                    ch = self._nxs.dev_channel_get(chid)
+                    if ch and ch.data.is_valid:
+                        chanlist.append(ch)
+            else:
+                # Specific channels
+                for chid in channels:
+                    ch = self._nxs.dev_channel_get(chid)
+                    if ch and ch.data.is_valid:
+                        chanlist.append(ch)
         else:
-            chanlist = self.chanlist
+            # Normal mode: filter from configured chanlist
+            if channels and channels[0] != -1:
+                # plugin specific channels configuration
+                for chan in self.chanlist:  # pragma: no cover
+                    if chan.data.chan in channels:
+                        chanlist.append(chan)
+                    else:  # pragma: no cover
+                        pass
+            else:
+                chanlist = self.chanlist
 
         return chanlist
 

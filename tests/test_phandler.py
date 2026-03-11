@@ -177,6 +177,52 @@ def test_phandler_connect(nxscope):
     p.cleanup()
 
 
+def test_phandler_nxscope_property(nxscope):
+    """Test nxscope property access."""
+    plugins = [
+        DPluginDescription("plugin1", MockPlugin1),
+    ]
+    p = PluginHandler(plugins=plugins)
+
+    # Test assertion when not connected
+    with pytest.raises(AssertionError):
+        _ = p.nxscope
+
+    # Connect and test successful access
+    p.nxscope_connect(nxscope)
+    assert p.nxscope is not None
+    assert p.nxscope == nxscope
+
+    # Cleanup
+    p.cleanup()
+
+
+def test_phandler_nxscope_status_interfaces(nxscope):
+    """Test status and capabilities interfaces from PluginHandler."""
+    plugins = [DPluginDescription("plugin1", MockPlugin1)]
+    p = PluginHandler(plugins=plugins)
+    p.nxscope_connect(nxscope)
+
+    caps = p.get_device_capabilities()
+    assert caps.chmax > 0
+
+    enabled = p.get_enabled_channels()
+    assert enabled == ()
+
+    dividers = p.get_channel_dividers()
+    assert len(dividers) == caps.chmax
+
+    state = p.get_channels_state()
+    assert state.enabled_channels == ()
+    assert len(state.dividers) == caps.chmax
+
+    stats = p.get_stream_stats()
+    assert stats.connected is True
+    assert stats.stream_started is False
+
+    p.cleanup()
+
+
 def test_phandler_enable():
     plugins = [
         DPluginDescription("plugin1", MockPlugin1),
