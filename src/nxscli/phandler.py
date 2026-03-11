@@ -123,6 +123,92 @@ class PluginHandler:
         """Get enabled plugins."""
         return self._enabled
 
+    def collect_inputhooks(self) -> list[Any]:
+        """Collect inputhooks from all loaded plugins.
+
+        :return: list of inputhook functions from plugins that provide them
+        """
+        hooks = []
+        for plugin_cls in self._plugins.values():
+            hook = plugin_cls.get_inputhook()
+            if hook is not None:
+                hooks.append(hook)
+        return hooks
+
+    def plugin_start_dynamic(self, name: str, **kwargs: Any) -> int:
+        """Start a plugin dynamically at runtime.
+
+        :param name: Plugin name
+        :param kwargs: Plugin-specific configuration
+
+        :return: Plugin ID for later reference
+        """
+        from nxscli.iplugin import EPluginType
+
+        # Get plugin class
+        cls = self._plugins[name]
+
+        # Create plugin instance
+        plugin = cls()  # type: ignore
+
+        # Connect to plugin handler
+        plugin.connect_phandler(self)
+
+        # Start the plugin
+        if not plugin.start(kwargs):  # pragma: no cover
+            logger.error("failed to start plugin %s", str(plugin))
+            return -1
+
+        # For plot plugins (STATIC/ANIMATION), call result() to show the plot
+        # This is equivalent to what handle_plugin() does in the normal flow
+        if plugin.ptype in (EPluginType.STATIC, EPluginType.ANIMATION):
+            plugin.result()
+
+        # Add to started list
+        self._started.append((plugin, kwargs))
+        pid = len(self._started) - 1
+
+        logger.info("dynamically started %s with pid=%d", str(plugin), pid)
+        return pid
+
+    def plugin_stop_dynamic(self, pid: int) -> None:
+        """Stop a running plugin by ID.
+
+        :param pid: Plugin ID from plugin_start_dynamic()
+
+        :raises IndexError: If plugin ID is invalid
+        """
+        if pid < 0 or pid >= len(self._started):
+            raise IndexError(f"Invalid plugin ID: {pid}")
+
+        plugin, _ = self._started[pid]
+        plugin.stop()
+        logger.info("stopped plugin with pid=%d", pid)
+
+        # Remove from started list
+        self._started.pop(pid)
+
+    def get_started_plugins(self) -> tuple[tuple[int, str], ...]:
+        """Get list of started plugins.
+
+        :return: Tuple of (pid, plugin_name) pairs where plugin_name
+            is the registered name (not class name)
+        """
+        result = []
+        for i, (plugin, _) in enumerate(self._started):
+            # Find registered name for this plugin class
+            plugin_class = type(plugin)
+            name = None
+            for reg_name, reg_class in self._plugins.items():
+                if reg_class == plugin_class:
+                    name = reg_name
+                    break
+            if name is None:
+                # Fallback to class name if not found
+                name = plugin_class.__name__
+            result.append((i, name))
+        return tuple(result)
+
     def cleanup(self) -> None:
         """Clean up - must be called after instance use."""
         # disconnect nxscope if connected

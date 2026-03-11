@@ -75,6 +75,18 @@ class IPlugin(ABC):
         """Return True if plugin is dont't need to wait."""
         return True
 
+    @classmethod
+    def get_inputhook(cls) -> Any:
+        """Get inputhook function for GUI event processing.
+
+        Plugin classes that use GUI frameworks (matplotlib, Qt, etc.) should
+        override this method to return a function that processes GUI events
+        while waiting for user input in interactive mode.
+
+        :return: inputhook function or None if no GUI event processing needed
+        """
+        return None
+
     @property
     @abstractmethod
     def stream(self) -> bool:
