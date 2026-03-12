@@ -4,6 +4,11 @@
 Nxscli is a command-line client package for the [Apache NuttX](https://nuttx.apache.org/)
 NxScope real-time logging module.
 
+It is also a reusable Python runtime layer for NxScope streaming, channel
+control, triggers, and plugin orchestration. The `nxscli` internals are used
+by other tools (for example GUI applications) to build more advanced workflows
+without re-implementing NxScope communication logic.
+
 Compatible with Python 3.10+.
 
 ## Features
@@ -51,10 +56,22 @@ To install latest development version, use:
 
 Look at [docs/usage](docs/usage.rst).
 
+## Reuse as a Library
+
+`nxscli` is not only a CLI frontend. It can be imported and reused by external
+applications that need:
+
+* NxScope connection handling (serial/RTT and compatible interfaces)
+* channel configuration and stream lifecycle control
+* plugin loading and runtime execution
+* trigger and data-processing orchestration
+
+This makes `nxscli` the integration layer for higher-level tools such as
+custom dashboards, GUIs, and automation scripts.
+
 
 ## Contributing
 
 All contributions are welcome to this project. 
 
 To get started with developing Nxscli, see [CONTRIBUTING.md](CONTRIBUTING.md).
-

@@ -32,6 +32,9 @@ with various channel configurations (based on ``pcap`` from ``nxscli-mpl``):
 
    python -m nxscli dummy chan 1,2,3,4 pcap --chan 1 100 pcap --chan 2,3 200 pcap 300
 
+Library integration guide:
+
+* :doc:`library`
 
 Interface Commands
 ------------------
