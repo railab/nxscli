@@ -4,6 +4,7 @@ from typing import Any
 
 import click
 
+from nxscli.channelref import ChannelRef
 from nxscli.trigger import DTriggerConfigReq
 
 ###############################################################################
@@ -53,23 +54,29 @@ class Channels(click.ParamType):
 
     name = "channels"
 
-    def convert(self, value: Any, param: Any, ctx: Any) -> list[int]:
+    def convert(self, value: Any, param: Any, ctx: Any) -> list[ChannelRef]:
         """Convert channels argument."""
-        lint = []
+        lint: list[ChannelRef] = []
         if value == "all":
             # special case to indicate all channels
-            lint.append(-1)
+            lint.append(ChannelRef.all_channels())
             return lint
 
         lstr = get_list_from_str(value)
         for ch in lstr:
+            if ch.startswith("v"):
+                virt = ch[1:]
+                assert virt.isnumeric(), "virtual channel id must be numeric"
+                lint.append(ChannelRef.virtual(int(virt)))
+                continue
+
             assert ch.isnumeric(), "channel id must be a valid integer"
             chan = int(ch)
             if chan < 0 or chan > 255:
                 raise click.BadParameter(
                     "channel id must be in range [0, 255]"
                 )
-            lint.append(chan)
+            lint.append(ChannelRef.physical(chan))
 
         return lint
 

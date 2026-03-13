@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from nxslib.dev import DeviceChannel
     from nxslib.nxscope import DNxscopeStream
 
+    from nxscli.channelref import ChannelRef
     from nxscli.trigger import TriggerHandler
 
 ###############################################################################
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 class PluginDataCb:
     """Plugin data callbacks."""
 
-    stream_sub: "Callable[[int], queue.Queue[Any]]"
+    stream_sub: "Callable[[ChannelRef], queue.Queue[Any]]"
     stream_unsub: "Callable[[queue.Queue[Any]], None]"
 
 
@@ -145,10 +146,23 @@ class PluginData:
             pass
 
     def _qdlist_init(self) -> list[PluginQueueData]:
+        from nxscli.channelref import ChannelRef
+
         ret = []
         for i, channel in enumerate(self._chanlist):
             # get queue with data
-            que = self._cb.stream_sub(channel.data.chan)
+            if channel.data.chan >= 0:
+                cref = ChannelRef.physical(channel.data.chan)
+            else:
+                name = channel.data.name
+                if name.startswith("v") and name[1:].isnumeric():
+                    cref = ChannelRef.virtual(int(name[1:]))
+                else:
+                    raise ValueError(
+                        "invalid virtual channel name "
+                        f"for stream subscription: {name}"
+                    )
+            que = self._cb.stream_sub(cref)
             # initialize queue handler
             pdata = PluginQueueData(que, channel, self._trig[i])
             # add hanler to a list

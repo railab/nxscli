@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from nxslib.nxscope import NxscopeHandler
     from nxslib.proto.parse import Parser
 
+    from nxscli.channelref import ChannelRef
     from nxscli.phandler import PluginHandler
     from nxscli.trigger import DTriggerConfigReq
 
@@ -28,7 +29,7 @@ class DEnvironmentData:
     parser: "Parser | None" = None
     interface: bool = False
     needchannels: bool = False
-    channels: tuple[list[int], Any] | None = None
+    channels: tuple[list["ChannelRef"], Any] | None = None
     phandler: "PluginHandler | None" = None
     triggers: dict[int, "DTriggerConfigReq"] | None = None
 

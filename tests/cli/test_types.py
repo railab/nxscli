@@ -2,6 +2,7 @@ import click
 import pytest
 
 from nxscli.cli.types import (
+    Channels,
     Samples,
     StringList,
     StringList2,
@@ -30,6 +31,25 @@ def test_samples():
 
     with pytest.raises(click.BadParameter):
         s.convert("a", None, None)
+
+
+def test_channels() -> None:
+    ch = Channels()
+
+    all_ch = ch.convert("all", None, None)
+    assert len(all_ch) == 1 and all_ch[0].is_all
+
+    phy = ch.convert("0,1", None, None)
+    assert [x.physical_id() for x in phy] == [0, 1]
+
+    virt = ch.convert("v0,v12", None, None)
+    assert [x.virtual_name() for x in virt] == ["v0", "v12"]
+
+    with pytest.raises(click.BadParameter):
+        ch.convert("256", None, None)
+
+    with pytest.raises(AssertionError):
+        ch.convert("vA", None, None)
 
 
 def test_trigger():

@@ -1,11 +1,14 @@
 """Module containint the channels configuration command for CLI."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 
 from nxscli.cli.environment import Environment, pass_environment
 from nxscli.cli.types import Channels, Divider, divider_option_help
+
+if TYPE_CHECKING:
+    from nxscli.channelref import ChannelRef
 
 ###############################################################################
 # Command: cmd_chan
@@ -18,7 +21,9 @@ from nxscli.cli.types import Channels, Divider, divider_option_help
     "--divider", default="0", type=Divider(), help=divider_option_help
 )
 @pass_environment
-def cmd_chan(ctx: Environment, channels: list[int], divider: Any) -> bool:
+def cmd_chan(
+    ctx: Environment, channels: list["ChannelRef"], divider: Any
+) -> bool:
     """[config] Channels declaration and configuration.
 
     This command configure and enable given channels.
