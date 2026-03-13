@@ -1,17 +1,16 @@
 """Module containing Nxscli stream data trigger logic."""
 
-import itertools
 import weakref
 from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Iterator
+from typing import Any
+
+import numpy as np
+from nxslib.nxscope import DNxscopeStreamBlock
 
 from nxscli.logger import logger
-
-if TYPE_CHECKING:
-    from nxslib.nxscope import DNxscopeStream
 
 ###############################################################################
 # Enum: ETriggerType
@@ -132,7 +131,7 @@ class TriggerHandler(object):
     def __init__(self, chan: int, config: DTriggerConfig) -> None:
         """Initialize a stream data trigger handler."""
         self._config = config
-        self._cache: list["DNxscopeStream"] = []
+        self._cache: list[Any] = []
         self._chan: int = chan
         self._trigger: DTriggerState = DTriggerState(False, 0)
         self._triger_done = False
@@ -194,57 +193,71 @@ class TriggerHandler(object):
         for inst in tmp:
             TriggerHandler._wait_for_src.remove(inst)
 
-    def _pairwise(
-        self, iterable: list["DNxscopeStream"]
-    ) -> Iterator[tuple["DNxscopeStream", "DNxscopeStream"]]:
-        a, b = itertools.tee(iterable)
-        next(b, None)
-        return zip(a, b)
+    @staticmethod
+    def _is_block_payload(data: list[Any]) -> bool:
+        return bool(data) and isinstance(data[0], DNxscopeStreamBlock)
 
-    def _alwaysoff(self, _: list["DNxscopeStream"]) -> DTriggerState:
+    def _alwaysoff(self, _: list[Any]) -> DTriggerState:
         # reset cache
         self._cache = []
         return DTriggerState(False, 0)
 
-    def _alwayson(self, _: list["DNxscopeStream"]) -> DTriggerState:
+    def _alwayson(self, _: list[Any]) -> DTriggerState:
         return DTriggerState(True, 0)
 
+    def _combined_vector_np(
+        self, combined: list[Any], vect: int
+    ) -> np.ndarray[Any, Any]:
+        if not combined:
+            return np.empty((0,), dtype=np.float64)
+
+        if self._is_block_payload(combined):
+            parts: list[np.ndarray[Any, Any]] = []
+            for block in combined:
+                parts.append(
+                    np.asarray(block.data[:, vect], dtype=np.float64).reshape(
+                        -1
+                    )
+                )
+            if not parts:  # pragma: no cover
+                return np.empty((0,), dtype=np.float64)
+            if len(parts) == 1:
+                return parts[0]
+            return np.concatenate(parts)
+
+        return np.fromiter(
+            (float(sample.data[vect]) for sample in combined),
+            dtype=np.float64,
+            count=len(combined),
+        )
+
+    def _combined_vector(self, combined: list[Any], vect: int) -> list[float]:
+        return [float(v) for v in self._combined_vector_np(combined, vect)]
+
     def _edgerising(
-        self, combined: list["DNxscopeStream"], vect: int, level: float
+        self, combined: list[Any], vect: int, level: float
     ) -> DTriggerState:
-        ret = False
-        idx = 0
-        for a, b in self._pairwise(combined):
-            if a.data[vect] <= level < b.data[vect]:
-                ret = True
-                idx = idx
-                break
-            idx += 1
-
-        if not ret:
-            idx = 0
-
-        return DTriggerState(ret, idx)
+        vec = self._combined_vector_np(combined, vect)
+        if vec.size < 2:
+            return DTriggerState(False, 0)
+        hits = np.flatnonzero((vec[:-1] <= level) & (vec[1:] > level))
+        if hits.size > 0:
+            return DTriggerState(True, int(hits[0]))
+        return DTriggerState(False, 0)
 
     def _edgefalling(
-        self, combined: list["DNxscopeStream"], vect: int, level: float
+        self, combined: list[Any], vect: int, level: float
     ) -> DTriggerState:
-        ret = False
-        idx = 0
-        for a, b in self._pairwise(combined):
-            if a.data[vect] >= level > b.data[vect]:
-                ret = True
-                idx = idx
-                break
-            idx += 1
-
-        if not ret:
-            idx = 0
-
-        return DTriggerState(ret, idx)
+        vec = self._combined_vector_np(combined, vect)
+        if vec.size < 2:
+            return DTriggerState(False, 0)
+        hits = np.flatnonzero((vec[:-1] >= level) & (vec[1:] < level))
+        if hits.size > 0:
+            return DTriggerState(True, int(hits[0]))
+        return DTriggerState(False, 0)
 
     def _is_self_trigger(
-        self, combined: list["DNxscopeStream"], config: DTriggerConfig
+        self, combined: list[Any], config: DTriggerConfig
     ) -> DTriggerState:
         if config.ttype is ETriggerType.ALWAYS_OFF:
             return self._alwaysoff(combined)
@@ -259,7 +272,7 @@ class TriggerHandler(object):
         else:
             raise AssertionError
 
-    def _is_triggered(self, combined: list["DNxscopeStream"]) -> DTriggerState:
+    def _is_triggered(self, combined: list[Any]) -> DTriggerState:
         if self._trigger.state:
             # make sure that idx is 0
             return DTriggerState(True, 0)
@@ -274,7 +287,7 @@ class TriggerHandler(object):
         # self-triggered
         return self._is_self_trigger(combined, self._config)
 
-    def _cross_channel_handle(self, combined: list["DNxscopeStream"]) -> None:
+    def _cross_channel_handle(self, combined: list[Any]) -> None:
         for cross in self._cross:
             if cross.cross_trigger.state is True:
                 continue
@@ -354,9 +367,42 @@ class TriggerHandler(object):
             if cross is inst:  # pragma: no cover
                 self._cross.pop(i)
 
-    def data_triggered(
-        self, data: list["DNxscopeStream"]
-    ) -> list["DNxscopeStream"]:
+    def _slice_from(self, combined: list[Any], start: int) -> list[Any]:
+        if start <= 0:
+            return combined
+        if not combined:
+            return []
+        if not self._is_block_payload(combined):
+            return combined[start:]
+
+        ret: list[Any] = []
+        offset = start
+        for block in combined:
+            rows = int(block.data.shape[0])
+            if offset >= rows:
+                offset -= rows
+                continue
+            if offset == 0:
+                ret.append(block)
+            else:
+                data = block.data[offset:, :]
+                meta = None if block.meta is None else block.meta[offset:, :]
+                ret.append(DNxscopeStreamBlock(data=data, meta=meta))
+            offset = 0
+        return ret
+
+    def _cache_tail(self, combined: list[Any], hoffset: int) -> list[Any]:
+        if hoffset <= 0:
+            return combined
+        if not combined:
+            return []
+        if not self._is_block_payload(combined):
+            return combined[-hoffset:]
+        total = sum(int(block.data.shape[0]) for block in combined)
+        start = max(total - hoffset, 0)
+        return self._slice_from(combined, start)
+
+    def data_triggered(self, data: list[Any]) -> list[Any]:
         """Get triggered data.
 
         :param data: stream data
@@ -372,8 +418,17 @@ class TriggerHandler(object):
             # not triggered yet
             ret = []
             # update cache
-            clen = len(self._cache)
-            self._cache = combined[clen - self._config.hoffset :]
+            if self._is_block_payload(combined):
+                if self._config.hoffset <= 0:
+                    # keep only current block batch when no history is needed
+                    self._cache = data
+                else:
+                    self._cache = self._cache_tail(
+                        combined, self._config.hoffset
+                    )
+            else:
+                clen = len(self._cache)
+                self._cache = combined[clen - self._config.hoffset :]
         else:
             # one time hoffset for trigger
             if not self._triger_done:
@@ -383,7 +438,7 @@ class TriggerHandler(object):
                 hoffset = 0
 
             # return data with a configured horisontal offset
-            ret = combined[self._trigger.idx - hoffset :]
+            ret = self._slice_from(combined, self._trigger.idx - hoffset)
             # reset cache
             self._cache = []
 

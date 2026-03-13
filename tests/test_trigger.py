@@ -1,7 +1,8 @@
 from threading import Lock
 
+import numpy as np
 import pytest  # type: ignore
-from nxslib.nxscope import DNxscopeStream
+from nxslib.nxscope import DNxscopeStream, DNxscopeStreamBlock
 
 from nxscli.trigger import (
     DTriggerConfig,
@@ -978,6 +979,69 @@ def test_triggerhandle_chanxtochany_hoffset():
         ]
 
         # clean up
+        TriggerHandler.cls_cleanup()
+
+
+def test_triggerhandler_block_helpers_and_cache_paths() -> None:
+    with global_lock:
+        dtc = DTriggerConfig(ETriggerType.EDGE_RISING, hoffset=2, level=5.0)
+        th = TriggerHandler(0, dtc)
+
+        assert th._combined_vector([], 0) == []
+        assert th._edgerising([], 0, 0.0).state is False
+        assert th._edgefalling([], 0, 0.0).state is False
+        assert th._slice_from([], 1) == []
+
+        block = DNxscopeStreamBlock(data=np.array([[0.0], [2.0]]), meta=None)
+        out = th.data_triggered([block])
+        assert out == []
+        assert th._cache
+
+        sliced = th._slice_from([block], 1)
+        assert len(sliced) == 1
+        assert sliced[0].data.shape[0] == 1
+        assert sliced[0].meta is None
+
+        tail = th._cache_tail([block], 1)
+        assert len(tail) == 1
+        assert tail[0].data.shape[0] == 1
+
+        assert th._cache_tail([block], 0) == [block]
+        assert th._cache_tail([], 1) == []
+        assert th._cache_tail([DNxscopeStream((1,), ())], 1) == [
+            DNxscopeStream((1,), ())
+        ]
+
+        block0 = DNxscopeStreamBlock(data=np.array([[0.0], [1.0]]), meta=None)
+        block1 = DNxscopeStreamBlock(data=np.array([[2.0]]), meta=None)
+        assert th._slice_from([block0, block1], 2) == [block1]
+
+        scalar_block = DNxscopeStreamBlock(data=np.array([[7.0]]), meta=None)
+        assert th._combined_vector([scalar_block], 0) == [7.0]
+
+        list_block = DNxscopeStreamBlock(
+            data=np.array([[1.0], [2.0]]), meta=None
+        )
+        assert th._combined_vector([list_block], 0) == [1.0, 2.0]
+
+        concat0 = DNxscopeStreamBlock(data=np.array([[0.0]]), meta=None)
+        concat1 = DNxscopeStreamBlock(data=np.array([[1.0]]), meta=None)
+        assert th._combined_vector([concat0, concat1], 0) == [0.0, 1.0]
+
+        TriggerHandler.cls_cleanup()
+
+
+def test_triggerhandler_block_cache_hoffset_zero_keeps_current_batch() -> None:
+    with global_lock:
+        dtc = DTriggerConfig(ETriggerType.EDGE_RISING, hoffset=0, level=5.0)
+        th = TriggerHandler(0, dtc)
+        block = DNxscopeStreamBlock(data=np.array([[0.0], [2.0]]), meta=None)
+        payload = [block]
+
+        out = th.data_triggered(payload)
+
+        assert out == []
+        assert th._cache is payload
         TriggerHandler.cls_cleanup()
 
 

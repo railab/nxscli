@@ -2,7 +2,9 @@ import queue
 from types import SimpleNamespace
 from typing import Any
 
+import numpy as np
 from nxslib.dev import DeviceChannel
+from nxslib.nxscope import DNxscopeStreamBlock
 
 
 class FakeNxscope:
@@ -66,9 +68,11 @@ class FakeNxscope:
 
     def stream_sub(self, chid: int) -> queue.Queue[Any]:
         q: queue.Queue[Any] = queue.Queue()
-        sample = SimpleNamespace(data=[float(chid)], meta=[0])
-        # One large batch keeps plugin loops deterministic and fast.
-        q.put([sample for _ in range(1200)])
+        data = np.full((1200, 1), float(chid))
+        meta = np.zeros((1200, 1), dtype=np.uint32)
+        block = DNxscopeStreamBlock(data=data, meta=meta)
+        # One large block keeps plugin loops deterministic and fast.
+        q.put([block])
         return q
 
     def stream_unsub(self, _: queue.Queue[Any]) -> None:

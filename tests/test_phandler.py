@@ -1,8 +1,10 @@
 import queue
 from types import SimpleNamespace
 
+import numpy as np
 import pytest  # type: ignore
 from nxslib.dev import DeviceChannel
+from nxslib.nxscope import DNxscopeStreamBlock
 
 from nxscli.channelref import ChannelRef
 from nxscli.iplugin import (
@@ -847,7 +849,12 @@ def test_pluginthread_common_not_done_path() -> None:
     class _QD:
         def queue_get(self, block, timeout=1.0):
             del block, timeout
-            return [SimpleNamespace(data=[1.0], meta=[0])]
+            return [
+                DNxscopeStreamBlock(
+                    data=np.array([[1.0]], dtype=float),
+                    meta=np.array([[0]], dtype=np.uint32),
+                )
+            ]
 
     plugin = PluginNone()
     plugin._samples = 2
@@ -856,4 +863,26 @@ def test_pluginthread_common_not_done_path() -> None:
     plugin._plugindata = SimpleNamespace(qdlist=[_QD()])
 
     plugin._thread_common()
+    assert plugin._datalen == [1]
+
+
+def test_pluginnone_handle_blocks_empty_and_done_path() -> None:
+    pdata = type("Q", (), {"vdim": 1})()
+    plugin = PluginNone()
+    plugin._samples = 1
+    plugin._nostop = False
+    plugin._datalen = [0]
+
+    empty_block = DNxscopeStreamBlock(data=np.empty((0, 1)), meta=None)
+    plugin._handle_blocks([empty_block], pdata, 0)
+    assert plugin._datalen == [0]
+
+    full_block = DNxscopeStreamBlock(data=np.array([[1.0]]), meta=None)
+    plugin._datalen = [1]
+    plugin._handle_blocks([full_block], pdata, 0)
+    assert plugin._datalen == [1]
+
+    plugin._nostop = True
+    plugin._datalen = [0]
+    plugin._handle_blocks([full_block], pdata, 0)
     assert plugin._datalen == [1]

@@ -1,15 +1,13 @@
 """Module containing dummy capture plugin."""
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
+
+import numpy as np
 
 from nxscli.idata import PluginData, PluginQueueData
 from nxscli.iplugin import IPluginNone
 from nxscli.logger import logger
-from nxscli.pluginthr import PluginThread
-
-if TYPE_CHECKING:
-    from nxslib.nxscope import DNxscopeStream
-
+from nxscli.pluginthr import PluginThread, StreamBlocks
 
 ###############################################################################
 # Class: PluginNone
@@ -32,12 +30,21 @@ class PluginNone(PluginThread, IPluginNone):
     def _final(self) -> None:
         logger.info("None DONE")
 
-    def _handle_samples(
-        self, data: list["DNxscopeStream"], pdata: "PluginQueueData", j: int
+    def _handle_blocks(
+        self, data: StreamBlocks, pdata: "PluginQueueData", j: int
     ) -> None:
-        for _ in data:
-            # get data len
-            self._datalen[j] += 1
+        for block in data:
+            block_data = block.data
+            assert isinstance(block_data, np.ndarray)
+            rows = int(block_data.shape[0])
+            if rows == 0:
+                continue
+            if not self._nostop:
+                remaining = self._samples - self._datalen[j]
+                if remaining <= 0:
+                    break
+                rows = min(rows, remaining)
+            self._datalen[j] += rows
 
     def start(self, kwargs: Any) -> bool:
         """Start none plugin.
