@@ -196,3 +196,9 @@ def test_main_help(runner):
     args = ["dummy", "trig", "--help"]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
+
+
+def test_main_udp_help(runner):
+    args = ["udp", "--help"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
