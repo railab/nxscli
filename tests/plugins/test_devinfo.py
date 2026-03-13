@@ -18,21 +18,20 @@ def test_plugindevinfo_init():
 def test_plugindevinfo_content():
     intf = DummyDev()
     parse = Parser()
-    nxscope = NxscopeHandler(intf, parse, enable_bitrate_tracking=True)
+    with NxscopeHandler(intf, parse, enable_bitrate_tracking=True) as nxscope:
+        with PluginHandler(
+            [DPluginDescription("pdevinfo", PluginDevinfo)]
+        ) as phandler:
+            phandler.nxscope_connect(nxscope)
 
-    phandler = PluginHandler([DPluginDescription("pdevinfo", PluginDevinfo)])
-    phandler.nxscope_connect(nxscope)
+            plugin = PluginDevinfo()
+            plugin.connect_phandler(phandler)
 
-    plugin = PluginDevinfo()
-    plugin.connect_phandler(phandler)
+            assert plugin.start({}) is True
+            out = plugin.result()
 
-    assert plugin.start({}) is True
-    out = plugin.result()
-
-    assert "Device common" in out
-    assert "Channels state (applied)" in out
-    assert "Channels state (buffered)" in out
-    assert "stream_started" in out
-    assert "bitrate" in out
-
-    phandler.cleanup()
+            assert "Device common" in out
+            assert "Channels state (applied)" in out
+            assert "Channels state (buffered)" in out
+            assert "stream_started" in out
+            assert "bitrate" in out
