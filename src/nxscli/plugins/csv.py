@@ -1,16 +1,14 @@
 """Module containing CSV plugin."""  # noqa: A005
 
 import csv
-from typing import TYPE_CHECKING, Any
+from typing import Any
+
+import numpy as np
 
 from nxscli.idata import PluginData, PluginQueueData
 from nxscli.iplugin import IPluginFile
 from nxscli.logger import logger
-from nxscli.pluginthr import PluginThread
-
-if TYPE_CHECKING:
-    from nxslib.nxscope import DNxscopeStream
-
+from nxscli.pluginthr import PluginThread, StreamBlocks
 
 ###############################################################################
 # Class: PluginCsv
@@ -47,13 +45,6 @@ class PluginCsv(PluginThread, IPluginFile):
 
         return csvwriters
 
-    def _sample_row_get(self, sample: "DNxscopeStream") -> tuple[Any, Any]:
-        # covert to string
-        if self._meta_string:
-            return (sample.data, bytes(list(sample.meta)).decode())
-        else:
-            return sample.data, sample.meta
-
     def _init(self) -> None:
         assert self._phandler
         # open writers
@@ -66,21 +57,39 @@ class PluginCsv(PluginThread, IPluginFile):
 
         logger.info("csv capture DONE")
 
-    def _handle_samples(
-        self, data: list["DNxscopeStream"], pdata: "PluginQueueData", j: int
+    def _handle_blocks(
+        self, data: StreamBlocks, pdata: "PluginQueueData", j: int
     ) -> None:
-        # store data
-        for sample in data:
+        writer = self._csvwriters[j][0]
+        for block in data:
+            block_data = block.data
+            assert isinstance(block_data, np.ndarray)
+            rows = int(block_data.shape[0])
+            if rows == 0:
+                continue
+
             if not self._nostop:  # pragma: no cover
-                # ignore data if capture done for channel
-                if self._datalen[j] >= self._samples:
+                remaining = self._samples - self._datalen[j]
+                if remaining <= 0:
+                    break
+                rows = min(rows, remaining)
+                if rows <= 0:  # pragma: no cover
                     break
 
-            # write row
-            self._csvwriters[j][0].writerow(self._sample_row_get(sample))
+            data_rows = (tuple(row) for row in block_data[:rows])
+            meta_rows: Any
+            if block.meta is None:
+                meta_rows = (() for _ in range(rows))
+            elif self._meta_string:
+                meta_rows = (
+                    bytes(np.asarray(mrow, dtype=np.uint8)).decode()
+                    for mrow in block.meta[:rows]
+                )
+            else:
+                meta_rows = (tuple(mrow) for mrow in block.meta[:rows])
 
-            # one sample
-            self._datalen[j] += 1
+            writer.writerows(zip(data_rows, meta_rows))
+            self._datalen[j] += rows
 
     def start(self, kwargs: Any) -> bool:
         """Start CSV plugin.

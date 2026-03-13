@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from nxslib.dev import DeviceChannel
-    from nxslib.nxscope import DNxscopeStream
 
     from nxscli.channelref import ChannelRef
     from nxscli.trigger import TriggerHandler
@@ -92,9 +91,7 @@ class PluginQueueData:
         """Return stream metadata dimension."""
         return self._channel.data.mlen
 
-    def queue_get(
-        self, block: bool, timeout: float = 1.0
-    ) -> list["DNxscopeStream"]:
+    def queue_get(self, block: bool, timeout: float = 1.0) -> Any:
         """Get data from a stream queue.
 
         :param block: blocking operation
@@ -106,6 +103,7 @@ class PluginQueueData:
             ret = self._queue.get(block=block, timeout=timeout)
         except queue.Empty:
             pass
+
         return self._trigger.data_triggered(ret)
 
 

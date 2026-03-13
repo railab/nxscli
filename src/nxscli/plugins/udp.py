@@ -2,16 +2,14 @@
 
 import json
 import socket
-from typing import TYPE_CHECKING, Any
+from typing import Any
+
+import numpy as np
 
 from nxscli.idata import PluginData, PluginQueueData
 from nxscli.iplugin import IPluginFile
 from nxscli.logger import logger
-from nxscli.pluginthr import PluginThread
-
-if TYPE_CHECKING:
-    from nxslib.nxscope import DNxscopeStream
-
+from nxscli.pluginthr import PluginThread, StreamBlocks
 
 ###############################################################################
 # Class: PluginUdp
@@ -41,39 +39,48 @@ class PluginUdp(PluginThread, IPluginFile):
         self._sock.close()
         logger.info("UDP capture DONE")
 
-    def _handle_samples(
-        self, data: list["DNxscopeStream"], pdata: "PluginQueueData", j: int
+    def _handle_blocks(
+        self, data: StreamBlocks, pdata: "PluginQueueData", j: int
     ) -> None:
-        # store data
-        for sample in data:
+        if pdata.vdim > 1:
+            keys = [pdata.channame + "_" + str(i) for i in range(pdata.vdim)]
+        else:
+            keys = [pdata.channame]
+
+        dumps = json.dumps
+        sendto = self._sock.sendto
+        endpoint = (self._address, self._port)
+
+        for block in data:
+            block_data = block.data
+            assert isinstance(block_data, np.ndarray)
+            rows = int(block_data.shape[0])
+            if rows == 0:
+                continue
+
             if not self._nostop:  # pragma: no cover
-                # ignore data if capture done for channel
-                if self._datalen[j] >= self._samples:
+                remaining = self._samples - self._datalen[j]
+                if remaining <= 0:
+                    break
+                rows = min(rows, remaining)
+                if rows <= 0:  # pragma: no cover
                     break
 
-            # get data
-            temp: Any = {}
-            temp["timestamp"] = self._datalen[j]
+            start = self._datalen[j]
+            for offs, row in enumerate(block_data[:rows]):
+                temp: dict[str, Any] = {"timestamp": start + offs}
+                for key, val in zip(keys, row):
+                    temp[key] = float(val)
 
-            # TODO: optimise
-            for i, val in enumerate(sample.data):
-                if pdata.vdim > 1:
-                    s = pdata.channame + "_" + str(i)
-                else:
-                    s = pdata.channame
+                # encode data
+                if self._data_format == "json":
+                    encoded = dumps(temp).encode()
+                else:  # pragma: no cover
+                    raise ValueError("not supported data format")
 
-                temp[s] = val
+                sendto(encoded, endpoint)
 
-            # encode data
-            if self._data_format == "json":
-                encoded = json.dumps(temp).encode()
-            else:  # pragma: no cover
-                raise ValueError("not supported data format")
-
-            self._sock.sendto(encoded, (self._address, self._port))
-
-            # one sample
-            self._datalen[j] += 1
+            self._datalen[j] += rows
 
     def start(self, kwargs: Any) -> bool:
         """Start UDP plugin.

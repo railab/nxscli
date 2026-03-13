@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     import queue
 
     from nxslib.dev import DeviceChannel
-    from nxslib.nxscope import DNxscopeStream, NxscopeHandler
+    from nxslib.nxscope import DNxscopeStreamBlock, NxscopeHandler
 
     from nxscli.channelref import ChannelRef
 
@@ -39,10 +39,12 @@ class IStreamProvider(Protocol):
 
     def stream_sub(
         self, channel: "ChannelRef"
-    ) -> "queue.Queue[list[DNxscopeStream]] | None":
+    ) -> "queue.Queue[list[DNxscopeStreamBlock]] | None":
         """Subscribe to a provider-managed channel queue."""
 
-    def stream_unsub(self, subq: "queue.Queue[list[DNxscopeStream]]") -> bool:
+    def stream_unsub(
+        self, subq: "queue.Queue[list[DNxscopeStreamBlock]]"
+    ) -> bool:
         """Unsubscribe queue. Return ``True`` if queue belonged here."""
 
 

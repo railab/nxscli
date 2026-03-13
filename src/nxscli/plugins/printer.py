@@ -2,16 +2,12 @@
 
 import queue
 from threading import Event
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from nxscli.idata import PluginData, PluginQueueData
 from nxscli.iplugin import IPluginText
 from nxscli.logger import logger
-from nxscli.pluginthr import PluginThread
-
-if TYPE_CHECKING:
-    from nxslib.nxscope import DNxscopeStream
-
+from nxscli.pluginthr import PluginThread, StreamBlocks
 
 ###############################################################################
 # Class: PluginPrinter
@@ -39,18 +35,18 @@ class PluginPrinter(PluginThread, IPluginText):
     def _final(self) -> None:
         logger.info("printer DONE")
 
-    def _handle_samples(
-        self, data: list["DNxscopeStream"], pdata: "PluginQueueData", j: int
+    def _handle_blocks(
+        self, data: StreamBlocks, pdata: "PluginQueueData", j: int
     ) -> None:
-        for sample in data:
+        for data_t, meta_t in self._block_rows(data, pdata, j):
             if self._datalen[j] < self._samples:
                 d: dict[str, Any] = dict()
                 d["chan"] = self._data.qdlist[j].chan
-                d["data"] = sample.data
+                d["data"] = data_t
                 if self._meta_string:
-                    d["meta"] = bytes(list(sample.meta)).decode()
+                    d["meta"] = bytes(list(meta_t)).decode()
                 else:
-                    d["meta"] = sample.meta
+                    d["meta"] = meta_t
                 self._q.put(d)
                 self._datalen[j] += 1
 

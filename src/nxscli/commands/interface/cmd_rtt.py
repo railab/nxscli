@@ -45,7 +45,10 @@ def cmd_rtt(
     # initialize nxslib communication handler
     assert ctx.parser
     ctx.nxscope = NxscopeHandler(
-        intf, ctx.parser, enable_bitrate_tracking=True
+        intf,
+        ctx.parser,
+        enable_bitrate_tracking=True,
+        stream_decode_mode="numpy",
     )
 
     ctx.interface = True
