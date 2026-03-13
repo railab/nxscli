@@ -111,34 +111,30 @@ class MockPlugin4(IPluginPlotStatic):
 
 def test_phandler_init():
     # no plugins at the beginning
-    p = PluginHandler([])
-    assert isinstance(p, PluginHandler)
-    assert p.names == []
-    p.cleanup()
+    with PluginHandler([]) as p:
+        assert isinstance(p, PluginHandler)
+        assert p.names == []
 
     # valid data
     plugins = [
         DPluginDescription("plugin1", MockPlugin1),
         DPluginDescription("plugin2", MockPlugin2),
     ]
-    p = PluginHandler(plugins=plugins)
-    assert isinstance(p, PluginHandler)
-    assert p.names == ["plugin1", "plugin2"]
-    assert p.plugin_get("plugin1") == MockPlugin1
-    assert p.plugin_get("plugin2") == MockPlugin2
-    assert p.names == ["plugin1", "plugin2"]
+    with PluginHandler(plugins=plugins) as p:
+        assert isinstance(p, PluginHandler)
+        assert p.names == ["plugin1", "plugin2"]
+        assert p.plugin_get("plugin1") == MockPlugin1
+        assert p.plugin_get("plugin2") == MockPlugin2
+        assert p.names == ["plugin1", "plugin2"]
 
-    # add plugin = valid data
-    p.plugin_add(("plugin3", MockPlugin3))
-    assert p.names == ["plugin1", "plugin2", "plugin3"]
+        # add plugin = valid data
+        p.plugin_add(("plugin3", MockPlugin3))
+        assert p.names == ["plugin1", "plugin2", "plugin3"]
 
-    # plugins instances
-    assert isinstance(p.plugins["plugin1"](), MockPlugin1)
-    assert isinstance(p.plugins["plugin2"](), MockPlugin2)
-    assert isinstance(p.plugins["plugin3"](), MockPlugin3)
-
-    # clean up
-    p.cleanup()
+        # plugins instances
+        assert isinstance(p.plugins["plugin1"](), MockPlugin1)
+        assert isinstance(p.plugins["plugin2"](), MockPlugin2)
+        assert isinstance(p.plugins["plugin3"](), MockPlugin3)
 
 
 @pytest.fixture
@@ -146,7 +142,8 @@ def nxscope():
     intf = DummyDev()
     parse = Parser()
     nxscope = NxscopeHandler(intf, parse)
-    return nxscope
+    yield nxscope
+    nxscope.disconnect()
 
 
 def test_phandler_connect(nxscope):
@@ -154,31 +151,27 @@ def test_phandler_connect(nxscope):
         DPluginDescription("plugin1", MockPlugin1),
         DPluginDescription("plugin2", MockPlugin2),
     ]
-    p = PluginHandler(plugins=plugins)
+    with PluginHandler(plugins=plugins) as p:
+        # nxs not connected
+        with pytest.raises(AssertionError):
+            _ = p.dev
+        with pytest.raises(AssertionError):
+            _ = p.stream_start()
+        with pytest.raises(AssertionError):
+            _ = p.stream_stop()
+        with pytest.raises(AssertionError):
+            _ = p.channels_configure([])
 
-    # nxs not connected
-    with pytest.raises(AssertionError):
-        _ = p.dev
-    with pytest.raises(AssertionError):
-        _ = p.stream_start()
-    with pytest.raises(AssertionError):
-        _ = p.stream_stop()
-    with pytest.raises(AssertionError):
-        _ = p.channels_configure([])
+        # connect nxslib instance
+        p.nxscope_connect(nxscope)
 
-    # connect nxslib instance
-    p.nxscope_connect(nxscope)
+        # nxscope should be connected
+        assert p.dev is not None
 
-    # nxscope should be connected
-    assert p.dev is not None
-
-    # chanlist
-    p.channels_configure([])
-    p.channels_configure([-1], 1)
-    p.channels_configure([1, 2], [1, 2], writenow=True)
-
-    # clean up
-    p.cleanup()
+        # chanlist
+        p.channels_configure([])
+        p.channels_configure([-1], 1)
+        p.channels_configure([1, 2], [1, 2], writenow=True)
 
 
 def test_phandler_nxscope_property(nxscope):
@@ -186,45 +179,39 @@ def test_phandler_nxscope_property(nxscope):
     plugins = [
         DPluginDescription("plugin1", MockPlugin1),
     ]
-    p = PluginHandler(plugins=plugins)
+    with PluginHandler(plugins=plugins) as p:
+        # Test assertion when not connected
+        with pytest.raises(AssertionError):
+            _ = p.nxscope
 
-    # Test assertion when not connected
-    with pytest.raises(AssertionError):
-        _ = p.nxscope
-
-    # Connect and test successful access
-    p.nxscope_connect(nxscope)
-    assert p.nxscope is not None
-    assert p.nxscope == nxscope
-
-    # Cleanup
-    p.cleanup()
+        # Connect and test successful access
+        p.nxscope_connect(nxscope)
+        assert p.nxscope is not None
+        assert p.nxscope == nxscope
 
 
 def test_phandler_nxscope_status_interfaces(nxscope):
     """Test status and capabilities interfaces from PluginHandler."""
     plugins = [DPluginDescription("plugin1", MockPlugin1)]
-    p = PluginHandler(plugins=plugins)
-    p.nxscope_connect(nxscope)
+    with PluginHandler(plugins=plugins) as p:
+        p.nxscope_connect(nxscope)
 
-    caps = p.get_device_capabilities()
-    assert caps.chmax > 0
+        caps = p.get_device_capabilities()
+        assert caps.chmax > 0
 
-    enabled = p.get_enabled_channels()
-    assert enabled == ()
+        enabled = p.get_enabled_channels()
+        assert enabled == ()
 
-    dividers = p.get_channel_dividers()
-    assert len(dividers) == caps.chmax
+        dividers = p.get_channel_dividers()
+        assert len(dividers) == caps.chmax
 
-    state = p.get_channels_state()
-    assert state.enabled_channels == ()
-    assert len(state.dividers) == caps.chmax
+        state = p.get_channels_state()
+        assert state.enabled_channels == ()
+        assert len(state.dividers) == caps.chmax
 
-    stats = p.get_stream_stats()
-    assert stats.connected is True
-    assert stats.stream_started is False
-
-    p.cleanup()
+        stats = p.get_stream_stats()
+        assert stats.connected is True
+        assert stats.stream_started is False
 
 
 def test_phandler_enable():
@@ -232,75 +219,71 @@ def test_phandler_enable():
         DPluginDescription("plugin1", MockPlugin1),
         DPluginDescription("plugin2", MockPlugin2),
     ]
-    p = PluginHandler(plugins=plugins)
+    with PluginHandler(plugins=plugins) as p:
+        # no plugins enabled at default
+        assert len(p.enabled) == 0
 
-    # no plugins enabled at default
-    assert len(p.enabled) == 0
+        pid1 = p.enable("plugin2", **{})
+        assert len(p.enabled) == 1
+        assert pid1 == 0
+        assert p.enabled[0][0] == 0
+        assert p.enabled[0][1] == MockPlugin2
+        assert p.enabled[0][2] == {}
 
-    pid1 = p.enable("plugin2", **{})
-    assert len(p.enabled) == 1
-    assert pid1 == 0
-    assert p.enabled[0][0] == 0
-    assert p.enabled[0][1] == MockPlugin2
-    assert p.enabled[0][2] == {}
+        pid2 = p.enable("plugin1", **{"arg1": 1})
+        assert len(p.enabled) == 2
+        assert pid2 == 1
+        assert p.enabled[0][0] == 0
+        assert p.enabled[0][1] == MockPlugin2
+        assert p.enabled[0][2] == {}
 
-    pid2 = p.enable("plugin1", **{"arg1": 1})
-    assert len(p.enabled) == 2
-    assert pid2 == 1
-    assert p.enabled[0][0] == 0
-    assert p.enabled[0][1] == MockPlugin2
-    assert p.enabled[0][2] == {}
+        assert p.enabled[0][2] == {}
+        assert p.enabled[1][0] == 1
+        assert p.enabled[1][1] == MockPlugin1
+        assert p.enabled[1][2]["arg1"] == 1
 
-    assert p.enabled[0][2] == {}
-    assert p.enabled[1][0] == 1
-    assert p.enabled[1][1] == MockPlugin1
-    assert p.enabled[1][2]["arg1"] == 1
+        # we can enable plugins multiple times
+        pid3 = p.enable("plugin1", **{"arg1": "test"})
+        assert len(p.enabled) == 3
+        assert pid3 == 2
+        assert p.enabled[0][0] == 0
+        assert p.enabled[0][1] == MockPlugin2
+        assert p.enabled[0][2] == {}
 
-    # we can enable plugins multiple times
-    pid3 = p.enable("plugin1", **{"arg1": "test"})
-    assert len(p.enabled) == 3
-    assert pid3 == 2
-    assert p.enabled[0][0] == 0
-    assert p.enabled[0][1] == MockPlugin2
-    assert p.enabled[0][2] == {}
+        assert p.enabled[1][0] == 1
+        assert p.enabled[1][1] == MockPlugin1
+        assert p.enabled[1][2]["arg1"] == 1
 
-    assert p.enabled[1][0] == 1
-    assert p.enabled[1][1] == MockPlugin1
-    assert p.enabled[1][2]["arg1"] == 1
+        assert p.enabled[2][0] == 2
+        assert p.enabled[2][1] == MockPlugin1
+        assert p.enabled[2][2]["arg1"] == "test"
 
-    assert p.enabled[2][0] == 2
-    assert p.enabled[2][1] == MockPlugin1
-    assert p.enabled[2][2]["arg1"] == "test"
-
-    # disable plugin1
-    p.disable(pid1)
-    assert len(p.enabled) == 2
-    assert p.enabled[0][0] == 1
-    assert p.enabled[1][0] == 2
-
-    # once again disable plugin1
-    with pytest.raises(AttributeError):
+        # disable plugin1
         p.disable(pid1)
+        assert len(p.enabled) == 2
+        assert p.enabled[0][0] == 1
+        assert p.enabled[1][0] == 2
 
-    # disable plugin2
-    p.disable(pid2)
-    assert len(p.enabled) == 1
-    assert p.enabled[0][0] == 2
+        # once again disable plugin1
+        with pytest.raises(AttributeError):
+            p.disable(pid1)
 
-    # once again disable plugin2
-    with pytest.raises(AttributeError):
+        # disable plugin2
         p.disable(pid2)
+        assert len(p.enabled) == 1
+        assert p.enabled[0][0] == 2
 
-    # disable plugin3
-    p.disable(pid3)
-    assert len(p.enabled) == 0
+        # once again disable plugin2
+        with pytest.raises(AttributeError):
+            p.disable(pid2)
 
-    # once again disable plugin3
-    with pytest.raises(AttributeError):
+        # disable plugin3
         p.disable(pid3)
+        assert len(p.enabled) == 0
 
-    # clean up
-    p.cleanup()
+        # once again disable plugin3
+        with pytest.raises(AttributeError):
+            p.disable(pid3)
 
 
 def test_phandler_start_ready(nxscope):
@@ -309,31 +292,28 @@ def test_phandler_start_ready(nxscope):
         DPluginDescription("plugin2", MockPlugin2),
         DPluginDescription("plugin3", MockPlugin3),
     ]
-    p = PluginHandler(plugins=plugins)
-    p.nxscope_connect(nxscope)
+    with PluginHandler(plugins=plugins) as p:
+        p.nxscope_connect(nxscope)
 
-    # enable all plugins
-    p.enable("plugin1", **{})
-    p.enable("plugin2", **{})
-    p.enable("plugin3", **{})
-    assert len(p.enabled) == 3
+        # enable all plugins
+        p.enable("plugin1", **{})
+        p.enable("plugin2", **{})
+        p.enable("plugin3", **{})
+        assert len(p.enabled) == 3
 
-    # start plugins
-    p.start()
+        # start plugins
+        p.start()
 
-    ret = p.ready()
-    assert ret[0].result() == "1"
-    assert ret[1].result() == "2"
-    assert ret[2].result() is None
+        ret = p.ready()
+        assert ret[0].result() == "1"
+        assert ret[1].result() == "2"
+        assert ret[2].result() is None
 
-    # plugins not need to wait
-    assert p.wait_for_plugins() is None
+        # plugins not need to wait
+        assert p.wait_for_plugins() is None
 
-    # stop plugins
-    p.stop()
-
-    # clean up
-    p.cleanup()
+        # stop plugins
+        p.stop()
 
 
 def test_phandler_start_poll(nxscope):
@@ -342,141 +322,131 @@ def test_phandler_start_poll(nxscope):
         DPluginDescription("plugin2", MockPlugin2),
         DPluginDescription("plugin3", MockPlugin3),
     ]
-    p = PluginHandler(plugins=plugins)
-    p.nxscope_connect(nxscope)
+    with PluginHandler(plugins=plugins) as p:
+        p.nxscope_connect(nxscope)
 
-    # enable all plugins
-    p.enable("plugin1", **{})
-    p.enable("plugin2", **{})
-    p.enable("plugin3", **{})
-    assert len(p.enabled) == 3
+        # enable all plugins
+        p.enable("plugin1", **{})
+        p.enable("plugin2", **{})
+        p.enable("plugin3", **{})
+        assert len(p.enabled) == 3
 
-    # start plugins
-    p.start()
+        # start plugins
+        p.start()
 
-    # poll
-    ret = p.poll()
-    assert ret[0].result() == "1"
-    assert ret[1].result() == "2"
-    assert ret[2].result() is None
+        # poll
+        ret = p.poll()
+        assert ret[0].result() == "1"
+        assert ret[1].result() == "2"
+        assert ret[2].result() is None
 
-    # poll once again but all handled
-    ret = p.poll()
-    assert ret is None
+        # poll once again but all handled
+        ret = p.poll()
+        assert ret is None
 
-    # plugins not need to wait
-    assert p.wait_for_plugins() is None
+        # plugins not need to wait
+        assert p.wait_for_plugins() is None
 
-    # stop plugins
-    p.stop()
-
-    # clean up
-    p.cleanup()
+        # stop plugins
+        p.stop()
 
 
 def test_phandler_start_nostream(nxscope):
     plugins = [DPluginDescription("plugin1", MockPlugin1)]
-    p = PluginHandler(plugins=plugins)
-    p.nxscope_connect(nxscope)
+    with PluginHandler(plugins=plugins) as p:
+        p.nxscope_connect(nxscope)
 
-    # enable all plugins
-    p.enable("plugin1", **{})
-    assert len(p.enabled) == 1
+        # enable all plugins
+        p.enable("plugin1", **{})
+        assert len(p.enabled) == 1
 
-    # start plugins
-    p.start()
+        # start plugins
+        p.start()
 
-    ret = p.ready()
-    assert ret[0].result() == "1"
+        ret = p.ready()
+        assert ret[0].result() == "1"
 
-    # plugins not need to wait
-    assert p.wait_for_plugins() is None
+        # plugins not need to wait
+        assert p.wait_for_plugins() is None
 
-    # stop plugins
-    p.stop()
-
-    # clean up
-    p.cleanup()
+        # stop plugins
+        p.stop()
 
 
 def test_phandler_start_noready(nxscope):
     plugins = [DPluginDescription("plugin4", MockPlugin4)]
-    p = PluginHandler(plugins=plugins)
-    p.nxscope_connect(nxscope)
+    with PluginHandler(plugins=plugins) as p:
+        p.nxscope_connect(nxscope)
 
-    # enable all plugins
-    p.enable("plugin4", **{})
-    assert len(p.enabled) == 1
+        # enable all plugins
+        p.enable("plugin4", **{})
+        assert len(p.enabled) == 1
 
-    # start plugins
-    p.start()
+        # start plugins
+        p.start()
 
-    # always not ready
-    ret = p.ready()
-    assert ret == []
+        # always not ready
+        ret = p.ready()
+        assert ret == []
 
-    # always not ready
-    ret = p.poll()
-    assert ret == []
+        # always not ready
+        ret = p.poll()
+        assert ret == []
 
-    # plugins not need to wait
-    assert p.wait_for_plugins() is None
+        # plugins not need to wait
+        assert p.wait_for_plugins() is None
 
-    # stop plugins
-    p.stop()
-
-    # clean up
-    p.cleanup()
+        # stop plugins
+        p.stop()
 
 
 def test_phandler_trigger():
-    p = PluginHandler()
+    with PluginHandler() as p:
+        # default all on
+        dt = p.trigger_get(0)
+        assert dt.ttype == "on"
+        assert dt.srcchan is None
+        assert dt.params is None
+        dt = p.trigger_get(1)
+        assert dt.ttype == "on"
+        assert dt.srcchan is None
+        assert dt.params is None
 
-    # default all on
-    dt = p.trigger_get(0)
-    assert dt.ttype == "on"
-    assert dt.srcchan is None
-    assert dt.params is None
-    dt = p.trigger_get(1)
-    assert dt.ttype == "on"
-    assert dt.srcchan is None
-    assert dt.params is None
+        trg = {-1: DTriggerConfigReq("off", None)}
+        p.triggers_configure(trg)
+        dt = p.trigger_get(0)
+        assert dt.ttype == "off"
+        assert dt.srcchan is None
+        assert dt.params is None
+        dt = p.trigger_get(1)
+        assert dt.ttype == "off"
+        assert dt.srcchan is None
+        assert dt.params is None
 
-    trg = {-1: DTriggerConfigReq("off", None)}
-    p.triggers_configure(trg)
-    dt = p.trigger_get(0)
-    assert dt.ttype == "off"
-    assert dt.srcchan is None
-    assert dt.params is None
-    dt = p.trigger_get(1)
-    assert dt.ttype == "off"
-    assert dt.srcchan is None
-    assert dt.params is None
+        trg = {-1: DTriggerConfigReq("on", None)}
+        p.triggers_configure(trg)
+        dt = p.trigger_get(0)
+        assert dt.ttype == "on"
+        assert dt.srcchan is None
+        assert dt.params is None
+        dt = p.trigger_get(1)
+        assert dt.ttype == "on"
+        assert dt.srcchan is None
+        assert dt.params is None
 
-    trg = {-1: DTriggerConfigReq("on", None)}
-    p.triggers_configure(trg)
-    dt = p.trigger_get(0)
-    assert dt.ttype == "on"
-    assert dt.srcchan is None
-    assert dt.params is None
-    dt = p.trigger_get(1)
-    assert dt.ttype == "on"
-    assert dt.srcchan is None
-    assert dt.params is None
-
-    trg = {0: DTriggerConfigReq("on", None), 1: DTriggerConfigReq("off", None)}
-    p.triggers_configure(trg)
-    dt = p.trigger_get(0)
-    assert dt.ttype == "on"
-    assert dt.srcchan is None
-    assert dt.params is None
-    dt = p.trigger_get(1)
-    assert dt.ttype == "off"
-    assert dt.srcchan is None
-    assert dt.params is None
-
-    # clean up
-    p.cleanup()
+        trg = {
+            0: DTriggerConfigReq("on", None),
+            1: DTriggerConfigReq("off", None),
+        }
+        p.triggers_configure(trg)
+        dt = p.trigger_get(0)
+        assert dt.ttype == "on"
+        assert dt.srcchan is None
+        assert dt.params is None
+        dt = p.trigger_get(1)
+        assert dt.ttype == "off"
+        assert dt.srcchan is None
+        assert dt.params is None
 
 
 def test_phandler_collect_inputhooks():  # noqa: C901
@@ -534,133 +504,114 @@ def test_phandler_collect_inputhooks():  # noqa: C901
         DPluginDescription("with_hook", PluginWithHook),
         DPluginDescription("without_hook", PluginWithoutHook),
     ]
-    p = PluginHandler(plugins)
+    with PluginHandler(plugins) as p:
+        # Collect inputhooks
+        hooks = p.collect_inputhooks()
 
-    # Collect inputhooks
-    hooks = p.collect_inputhooks()
-
-    # Should find one hook (from PluginWithHook)
-    assert len(hooks) == 1
-    assert callable(hooks[0])
-
-    # clean up
-    p.cleanup()
+        # Should find one hook (from PluginWithHook)
+        assert len(hooks) == 1
+        assert callable(hooks[0])
 
 
 def test_phandler_plugin_start_stop_dynamic(nxscope):
     """Test plugin_start_dynamic and plugin_stop_dynamic methods."""
-    nxscope.connect()
-    plugins = [DPluginDescription("plugin1", MockPlugin1)]
-    p = PluginHandler(plugins=plugins)
-    p.nxscope_connect(nxscope)
+    with nxscope:
+        plugins = [DPluginDescription("plugin1", MockPlugin1)]
+        with PluginHandler(plugins=plugins) as p:
+            p.nxscope_connect(nxscope)
 
-    # Start plugin dynamically (no chanlist configured)
-    pid = p.plugin_start_dynamic("plugin1", channels=[0, 1])
-    assert pid == 0
-    assert len(p._started) == 1
+            # Start plugin dynamically (no chanlist configured)
+            pid = p.plugin_start_dynamic("plugin1", channels=[0, 1])
+            assert pid == 0
+            assert len(p._started) == 1
 
-    # Get started plugins
-    started = p.get_started_plugins()
-    assert len(started) == 1
-    assert started[0] == (0, "plugin1")
+            # Get started plugins
+            started = p.get_started_plugins()
+            assert len(started) == 1
+            assert started[0] == (0, "plugin1")
 
-    # Stop plugin dynamically
-    p.plugin_stop_dynamic(pid)
-    assert len(p._started) == 0
+            # Stop plugin dynamically
+            p.plugin_stop_dynamic(pid)
+            assert len(p._started) == 0
 
-    # Test invalid PID
-    with pytest.raises(IndexError):
-        p.plugin_stop_dynamic(99)
-
-    # clean up
-    p.cleanup()
+            # Test invalid PID
+            pytest.raises(IndexError, p.plugin_stop_dynamic, 99)
 
 
 def test_phandler_get_started_plugins_unregistered():
     """Test get_started_plugins with unregistered plugin class."""
     plugins = [DPluginDescription("plugin1", MockPlugin1)]
-    p = PluginHandler(plugins=plugins)
+    with PluginHandler(plugins=plugins) as p:
+        # Manually create a plugin instance not in _plugins
+        plugin = MockPlugin2()
+        p._started.append((plugin, {}))
 
-    # Manually create a plugin instance not in _plugins
-    plugin = MockPlugin2()
-    p._started.append((plugin, {}))
-
-    # Should fall back to class name
-    started = p.get_started_plugins()
-    assert len(started) == 1
-    assert started[0] == (0, "MockPlugin2")
-
-    # clean up
-    p.cleanup()
+        # Should fall back to class name
+        started = p.get_started_plugins()
+        assert len(started) == 1
+        assert started[0] == (0, "MockPlugin2")
 
 
 def test_phandler_plugin_start_dynamic_all_channels(nxscope):
     """Test plugin_start_dynamic with -1 (all channels)."""
-    nxscope.connect()
-    plugins = [DPluginDescription("plugin1", MockPlugin1)]
-    p = PluginHandler(plugins=plugins)
-    p.nxscope_connect(nxscope)
+    with nxscope:
+        plugins = [DPluginDescription("plugin1", MockPlugin1)]
+        with PluginHandler(plugins=plugins) as p:
+            p.nxscope_connect(nxscope)
 
-    # Start plugin with -1 to select all channels
-    pid = p.plugin_start_dynamic("plugin1", channels=[-1])
-    assert pid == 0
+            # Start plugin with -1 to select all channels
+            pid = p.plugin_start_dynamic("plugin1", channels=[-1])
+            assert pid == 0
 
-    # Stop plugin
-    p.plugin_stop_dynamic(pid)
-
-    # clean up
-    p.cleanup()
+            # Stop plugin
+            p.plugin_stop_dynamic(pid)
 
 
 def test_phandler_plugin_start_dynamic_plot_plugin(nxscope):
     """Test plugin_start_dynamic for plot plugin branch."""
-    nxscope.connect()
-    plugins = [DPluginDescription("plugin3", MockPlugin3)]
-    p = PluginHandler(plugins=plugins)
-    p.nxscope_connect(nxscope)
+    with nxscope:
+        plugins = [DPluginDescription("plugin3", MockPlugin3)]
+        with PluginHandler(plugins=plugins) as p:
+            p.nxscope_connect(nxscope)
 
-    pid = p.plugin_start_dynamic("plugin3", channels=[0])
-    assert pid == 0
-    assert len(p._started) == 1
+            pid = p.plugin_start_dynamic("plugin3", channels=[0])
+            assert pid == 0
+            assert len(p._started) == 1
 
-    p.plugin_stop_dynamic(pid)
-    p.cleanup()
+            p.plugin_stop_dynamic(pid)
 
 
 def test_phandler_chanlist_plugin_dynamic_mode(nxscope):
     """Test chanlist_plugin in dynamic mode (no chanlist configured)."""
-    nxscope.connect()
-    p = PluginHandler()
-    p.nxscope_connect(nxscope)
+    with nxscope:
+        with PluginHandler() as p:
+            p.nxscope_connect(nxscope)
 
-    # Don't configure channels - this puts us in dynamic mode
-    # _chanlist should be empty
+            # Don't configure channels - this puts us in dynamic mode
+            # _chanlist should be empty
 
-    # Test with -1 (all channels)
-    chanlist = p.chanlist_plugin([ChannelRef.all_channels()])
-    assert len(chanlist) > 0
-    assert all(ch.data.is_valid for ch in chanlist)
+            # Test with -1 (all channels)
+            chanlist = p.chanlist_plugin([ChannelRef.all_channels()])
+            assert len(chanlist) > 0
+            assert all(ch.data.is_valid for ch in chanlist)
 
-    # Test with specific channels
-    chanlist = p.chanlist_plugin(
-        [
-            ChannelRef.physical(0),
-            ChannelRef.physical(1),
-            ChannelRef.physical(2),
-        ]
-    )
-    assert len(chanlist) <= 3
-    assert all(ch.data.is_valid for ch in chanlist)
+            # Test with specific channels
+            chanlist = p.chanlist_plugin(
+                [
+                    ChannelRef.physical(0),
+                    ChannelRef.physical(1),
+                    ChannelRef.physical(2),
+                ]
+            )
+            assert len(chanlist) <= 3
+            assert all(ch.data.is_valid for ch in chanlist)
 
-    # Test with a channel that might not exist (high channel ID)
-    # This tests the branch where ch might be None or not valid
-    chanlist = p.chanlist_plugin(
-        [ChannelRef.physical(0), ChannelRef.physical(999)]
-    )
-    assert len(chanlist) <= 2
-
-    # clean up
-    p.cleanup()
+            # Test with a channel that might not exist (high channel ID)
+            # This tests the branch where ch might be None or not valid
+            chanlist = p.chanlist_plugin(
+                [ChannelRef.physical(0), ChannelRef.physical(999)]
+            )
+            assert len(chanlist) <= 2
 
 
 class _MockProvider:
@@ -709,153 +660,138 @@ class _MockProvider:
 
 
 def test_phandler_stream_provider(nxscope):
-    p = PluginHandler()
-    provider = _MockProvider()
-    provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
-    provider.channels["vinvalid"] = DeviceChannel(-4, 0, 1, "vinvalid")
+    with PluginHandler() as p:
+        provider = _MockProvider()
+        provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
+        provider.channels["vinvalid"] = DeviceChannel(-4, 0, 1, "vinvalid")
 
-    p.stream_provider_add(provider)
-    p.service_set("k", "v")
-    assert p.service_get("k") == "v"
-    assert p.channel_get(ChannelRef.virtual(0)) is not None
+        p.stream_provider_add(provider)
+        p.service_set("k", "v")
+        assert p.service_get("k") == "v"
+        assert p.channel_get(ChannelRef.virtual(0)) is not None
 
-    p.nxscope_connect(nxscope)
-    provider2 = _MockProvider()
-    provider2.channels["v1"] = DeviceChannel(-3, 10, 1, "v1")
-    p.stream_provider_add(provider2)
-    assert p.channel_get(ChannelRef.virtual(1)) is not None
-    assert provider.connected is True
-    all_channels = p.chanlist_plugin([ChannelRef.all_channels()])
-    assert any(ch.data.chan == -2 for ch in all_channels)
-    p.channels_configure([ChannelRef.virtual(0)], div=1, writenow=True)
-    p.channels_configure([ChannelRef.virtual(0)], div=[1], writenow=True)
-    p._chanlist_enable()
-    p.stream_start()
-    assert provider.started is True
+        p.nxscope_connect(nxscope)
+        provider2 = _MockProvider()
+        provider2.channels["v1"] = DeviceChannel(-3, 10, 1, "v1")
+        p.stream_provider_add(provider2)
+        assert p.channel_get(ChannelRef.virtual(1)) is not None
+        assert provider.connected is True
+        all_channels = p.chanlist_plugin([ChannelRef.all_channels()])
+        assert any(ch.data.chan == -2 for ch in all_channels)
+        p.channels_configure([ChannelRef.virtual(0)], div=1, writenow=True)
+        p.channels_configure([ChannelRef.virtual(0)], div=[1], writenow=True)
+        p._chanlist_enable()
+        p.stream_start()
+        assert provider.started is True
 
-    sub = p.stream_sub(ChannelRef.virtual(0))
-    assert isinstance(sub, queue.Queue)
-    p.stream_unsub(sub)
+        sub = p.stream_sub(ChannelRef.virtual(0))
+        assert isinstance(sub, queue.Queue)
+        p.stream_unsub(sub)
 
-    p.stream_stop()
-    assert provider.started is False
-    p.cleanup()
+        p.stream_stop()
+        assert provider.started is False
 
 
 def test_phandler_stream_unsub_fallback(nxscope):
-    p = PluginHandler()
-    provider = _MockProvider()
-    p.stream_provider_add(provider)
-    p.nxscope_connect(nxscope)
-    subq = p.stream_sub(ChannelRef.physical(0))
-    p.stream_unsub(subq)
-    p.cleanup()
+    with PluginHandler() as p:
+        provider = _MockProvider()
+        p.stream_provider_add(provider)
+        p.nxscope_connect(nxscope)
+        subq = p.stream_sub(ChannelRef.physical(0))
+        p.stream_unsub(subq)
 
 
 def test_phandler_provider_channel_get_fallbacks(nxscope):
-    p = PluginHandler()
-    p.nxscope_connect(nxscope)
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
 
-    provider1 = _MockProvider()
-    provider2 = _MockProvider()
-    provider2.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
+        provider1 = _MockProvider()
+        provider2 = _MockProvider()
+        provider2.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
 
-    p.stream_provider_add(provider1)
-    p.stream_provider_add(provider2)
+        p.stream_provider_add(provider1)
+        p.stream_provider_add(provider2)
 
-    assert p.channel_get(ChannelRef.virtual(0)) is not None
-    assert p.channel_get(ChannelRef.virtual(42)) is None
-    p.cleanup()
+        assert p.channel_get(ChannelRef.virtual(0)) is not None
+        assert p.channel_get(ChannelRef.virtual(42)) is None
 
 
 def test_phandler_enable_and_div_skip_virtual(nxscope):
-    p = PluginHandler()
-    p.nxscope_connect(nxscope)
-    phys = p.channel_get(ChannelRef.physical(0))
-    assert phys is not None
-    virt = DeviceChannel(-2, 10, 1, "v0")
-    p._chanlist = [virt, phys]
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
+        phys = p.channel_get(ChannelRef.physical(0))
+        assert phys is not None
+        virt = DeviceChannel(-2, 10, 1, "v0")
+        p._chanlist = [virt, phys]
 
-    p._chanlist_enable()
-    enabled = p.get_enabled_channels(applied=False)
-    assert 0 in enabled
+        p._chanlist_enable()
+        enabled = p.get_enabled_channels(applied=False)
+        assert 0 in enabled
 
-    p._chanlist_div(1)
-    p._chanlist_div([0, 1])
-    assert p.get_channel_divider(0, applied=False) == 1
-    p.cleanup()
+        p._chanlist_div(1)
+        p._chanlist_div([0, 1])
+        assert p.get_channel_divider(0, applied=False) == 1
 
 
 def test_phandler_channel_ref_parser_branches() -> None:
-    p = PluginHandler()
+    with PluginHandler() as p:
+        assert p._channel_ref(-1).is_all
+        assert p._channel_ref("2").physical_id() == 2
+        assert p._channel_ref("v7").virtual_name() == "v7"
+        assert p._channel_refs(None, default_all=False) == []
 
-    assert p._channel_ref(-1).is_all
-    assert p._channel_ref("2").physical_id() == 2
-    assert p._channel_ref("v7").virtual_name() == "v7"
-    assert p._channel_refs(None, default_all=False) == []
+        with pytest.raises(ValueError):
+            p._channel_ref("vA")
 
-    with pytest.raises(ValueError):
-        p._channel_ref("vA")
-
-    with pytest.raises(ValueError):
-        p._channel_ref("bad")
-
-    p._cleanup_done = True
+        with pytest.raises(ValueError):
+            p._channel_ref("bad")
 
 
 def test_phandler_stream_sub_nonphysical_raises(nxscope) -> None:
-    p = PluginHandler()
-    p.nxscope_connect(nxscope)
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
 
-    with pytest.raises(ValueError):
-        p.stream_sub(ChannelRef.virtual(99))
-
-    p.cleanup()
+        with pytest.raises(ValueError):
+            p.stream_sub(ChannelRef.virtual(99))
 
 
 def test_phandler_enable_div_skip_nonexistent_channels(nxscope) -> None:
-    p = PluginHandler()
-    p.nxscope_connect(nxscope)
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
 
-    missing = DeviceChannel(999, 10, 1, "missing")
-    p._chanlist = [missing]
-    p._chanlist_enable()
-    p._chanlist_div(1)
-    p._chanlist_div([1])
-
-    p.cleanup()
+        missing = DeviceChannel(999, 10, 1, "missing")
+        p._chanlist = [missing]
+        p._chanlist_enable()
+        p._chanlist_div(1)
+        p._chanlist_div([1])
 
 
 def test_phandler_chanlist_plugin_virtual_in_configured_mode(nxscope) -> None:
-    p = PluginHandler()
-    p.nxscope_connect(nxscope)
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
 
-    provider = _MockProvider()
-    provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
-    p.stream_provider_add(provider)
-    p.channels_configure([ChannelRef.physical(0)], div=0, writenow=False)
+        provider = _MockProvider()
+        provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
+        p.stream_provider_add(provider)
+        p.channels_configure([ChannelRef.physical(0)], div=0, writenow=False)
 
-    chanlist = p.chanlist_plugin([ChannelRef.virtual(0)])
-    assert any(ch.data.chan == -2 for ch in chanlist)
-
-    p.cleanup()
+        chanlist = p.chanlist_plugin([ChannelRef.virtual(0)])
+        assert any(ch.data.chan == -2 for ch in chanlist)
 
 
 def test_phandler_chanlist_plugin_virtual_multi_refs(nxscope) -> None:
-    p = PluginHandler()
-    p.nxscope_connect(nxscope)
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
 
-    provider = _MockProvider()
-    provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
-    p.stream_provider_add(provider)
-    p.channels_configure([ChannelRef.physical(0)], div=0, writenow=False)
+        provider = _MockProvider()
+        provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
+        p.stream_provider_add(provider)
+        p.channels_configure([ChannelRef.physical(0)], div=0, writenow=False)
 
-    chanlist = p.chanlist_plugin(
-        [ChannelRef.virtual(42), ChannelRef.virtual(0)]
-    )
-    assert any(ch.data.chan == -2 for ch in chanlist)
-
-    p.cleanup()
+        chanlist = p.chanlist_plugin(
+            [ChannelRef.virtual(42), ChannelRef.virtual(0)]
+        )
+        assert any(ch.data.chan == -2 for ch in chanlist)
 
 
 def test_mock_provider_non_virtual_paths() -> None:
@@ -866,18 +802,16 @@ def test_mock_provider_non_virtual_paths() -> None:
 
 
 def test_phandler_chanlist_plugin_mixed_refs(nxscope) -> None:
-    p = PluginHandler()
-    p.nxscope_connect(nxscope)
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
 
-    provider = _MockProvider()
-    provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
-    p.stream_provider_add(provider)
-    p.channels_configure([ChannelRef.physical(0)], div=0, writenow=False)
+        provider = _MockProvider()
+        provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
+        p.stream_provider_add(provider)
+        p.channels_configure([ChannelRef.physical(0)], div=0, writenow=False)
 
-    chanlist = p.chanlist_plugin(
-        [ChannelRef.physical(0), ChannelRef.virtual(0)]
-    )
-    assert any(ch.data.chan == -2 for ch in chanlist)
-    assert any(ch.data.chan == 0 for ch in chanlist)
-
-    p.cleanup()
+        chanlist = p.chanlist_plugin(
+            [ChannelRef.physical(0), ChannelRef.virtual(0)]
+        )
+        assert any(ch.data.chan == -2 for ch in chanlist)
+        assert any(ch.data.chan == 0 for ch in chanlist)

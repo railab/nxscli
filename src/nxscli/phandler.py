@@ -55,6 +55,14 @@ class PluginHandler:
         if not self._cleanup_done:
             raise AssertionError("PluginHandler not cleaned")
 
+    def __enter__(self) -> "PluginHandler":
+        """Return self on context manager entry."""
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        """Clean up on context manager exit."""
+        self.cleanup()
+
     def _chanlist_gen(
         self, channels: Sequence[ChannelRef] | None
     ) -> list["DeviceChannel"]:

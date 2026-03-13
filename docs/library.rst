@@ -25,18 +25,20 @@ Minimal example
 
    intf = DummyDev()
    parse = Parser()
-   nxscope = NxscopeHandler(intf, parse)
 
-   phandler = PluginHandler(plugins_list)
-   phandler.nxscope_connect(nxscope)
+   with NxscopeHandler(intf, parse) as nxscope:
+       with PluginHandler(plugins_list) as phandler:
+           phandler.nxscope_connect(nxscope)
 
-   # Configure and run as needed by your application.
-   # Example:
-   # nxscope.ch_enable([0], writenow=True)
-   # nxscope.stream_start()
-   # pid = phandler.plugin_start_dynamic("pprinter", channels=[0])
+           # Configure and run as needed by your application:
+           nxscope.ch_enable([0], writenow=True)
+           nxscope.stream_start()
+           pid = phandler.plugin_start_dynamic("pprinter", channels=[0])
 
-   # Cleanup:
-   # phandler.plugin_stop_dynamic(pid)
-   # phandler.nxscope_disconnect()
+           # ... do work ...
+
+           phandler.plugin_stop_dynamic(pid)
+           nxscope.stream_stop()
+       # phandler.cleanup() called automatically on exit
+   # nxscope.disconnect() called automatically on exit
 

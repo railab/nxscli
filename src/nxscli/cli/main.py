@@ -118,50 +118,48 @@ def wait_for_plugins(ctx: Environment) -> None:  # pragma: no cover
 def cli_on_close(ctx: Environment) -> bool:
     """Handle requested plugins on click close."""
     assert ctx.phandler
-    # do not show any errors if it was help request
-    if "--help" in sys.argv:  # pragma: no cover
-        ctx.phandler.cleanup()
-        return True
+    with ctx.phandler:
+        # do not show any errors if it was help request
+        if "--help" in sys.argv:  # pragma: no cover
+            return True
 
-    if ctx.interface is False:
-        ctx.phandler.cleanup()
-        return False
-
-    if len(ctx.phandler.enabled) == 0:
-        click.secho("ERROR: No plugins selected !", err=True, fg="red")
-        ctx.phandler.cleanup()
-        return False
-
-    if ctx.needchannels:
-        if ctx.channels is None:  # pragma: no cover
-            click.secho("ERROR: No channels selected !", err=True, fg="red")
-            ctx.phandler.cleanup()
+        if ctx.interface is False:
             return False
 
-    # connect nxscope to phandler
-    assert ctx.nxscope
-    ctx.phandler.nxscope_connect(ctx.nxscope)
+        if len(ctx.phandler.enabled) == 0:
+            click.secho("ERROR: No plugins selected !", err=True, fg="red")
+            return False
 
-    # configure channles after connected to nxscope
-    if ctx.needchannels and ctx.channels:
-        ctx.phandler.channels_configure(ctx.channels[0], ctx.channels[1])
+        if ctx.needchannels:
+            if ctx.channels is None:  # pragma: no cover
+                click.secho(
+                    "ERROR: No channels selected !", err=True, fg="red"
+                )
+                return False
 
-    # start plugins
-    ctx.phandler.start()
+        # connect nxscope to phandler
+        assert ctx.nxscope
+        ctx.phandler.nxscope_connect(ctx.nxscope)
 
-    if ctx.waitenter:  # pragma: no cover
-        _ = input("wait for Enter key...")
+        # configure channles after connected to nxscope
+        if ctx.needchannels and ctx.channels:
+            ctx.phandler.channels_configure(ctx.channels[0], ctx.channels[1])
 
-    # plugins loop
-    plugin_loop(ctx)
+        # start plugins
+        ctx.phandler.start()
 
-    # wait for plugin
-    wait_for_plugins(ctx)
+        if ctx.waitenter:  # pragma: no cover
+            _ = input("wait for Enter key...")
 
-    print("closing...")
-    ctx.phandler.stop()
-    ctx.phandler.nxscope_disconnect()
-    ctx.phandler.cleanup()
+        # plugins loop
+        plugin_loop(ctx)
+
+        # wait for plugin
+        wait_for_plugins(ctx)
+
+        print("closing...")
+        ctx.phandler.stop()
+        ctx.phandler.nxscope_disconnect()
 
     return True
 
