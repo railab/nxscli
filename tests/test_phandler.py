@@ -1,8 +1,12 @@
+import queue
+
 import pytest  # type: ignore
+from nxslib.dev import DeviceChannel
 from nxslib.intf.dummy import DummyDev
 from nxslib.nxscope import NxscopeHandler
 from nxslib.proto.parse import Parser
 
+from nxscli.channelref import ChannelRef
 from nxscli.iplugin import (
     DPluginDescription,
     EPluginType,
@@ -633,18 +637,26 @@ def test_phandler_chanlist_plugin_dynamic_mode(nxscope):
     # _chanlist should be empty
 
     # Test with -1 (all channels)
-    chanlist = p.chanlist_plugin([-1])
+    chanlist = p.chanlist_plugin([ChannelRef.all_channels()])
     assert len(chanlist) > 0
     assert all(ch.data.is_valid for ch in chanlist)
 
     # Test with specific channels
-    chanlist = p.chanlist_plugin([0, 1, 2])
+    chanlist = p.chanlist_plugin(
+        [
+            ChannelRef.physical(0),
+            ChannelRef.physical(1),
+            ChannelRef.physical(2),
+        ]
+    )
     assert len(chanlist) <= 3
     assert all(ch.data.is_valid for ch in chanlist)
 
     # Test with a channel that might not exist (high channel ID)
     # This tests the branch where ch might be None or not valid
-    chanlist = p.chanlist_plugin([0, 999])
+    chanlist = p.chanlist_plugin(
+        [ChannelRef.physical(0), ChannelRef.physical(999)]
+    )
     assert len(chanlist) <= 2
 
     # clean up
