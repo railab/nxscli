@@ -649,3 +649,223 @@ def test_phandler_chanlist_plugin_dynamic_mode(nxscope):
 
     # clean up
     p.cleanup()
+
+
+class _MockProvider:
+    def __init__(self) -> None:
+        self.connected = False
+        self.started = False
+        self.channels = {}
+        self.subs = []
+
+    def on_connect(self, nxscope) -> None:
+        del nxscope
+        self.connected = True
+
+    def on_disconnect(self) -> None:
+        self.connected = False
+
+    def on_stream_start(self) -> None:
+        self.started = True
+
+    def on_stream_stop(self) -> None:
+        self.started = False
+
+    def channel_get(self, channel):
+        if channel.is_virtual:
+            return self.channels.get(channel.virtual_name())
+        return None
+
+    def channel_list(self):
+        return tuple(self.channels.values())
+
+    def stream_sub(self, channel):
+        if not channel.is_virtual:
+            return None
+        chan = channel.virtual_name()
+        if chan not in self.channels:
+            return None
+        q = queue.Queue()
+        self.subs.append(q)
+        return q
+
+    def stream_unsub(self, subq) -> bool:
+        if subq in self.subs:
+            self.subs.remove(subq)
+            return True
+        return False
+
+
+def test_phandler_stream_provider(nxscope):
+    p = PluginHandler()
+    provider = _MockProvider()
+    provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
+    provider.channels["vinvalid"] = DeviceChannel(-4, 0, 1, "vinvalid")
+
+    p.stream_provider_add(provider)
+    p.service_set("k", "v")
+    assert p.service_get("k") == "v"
+    assert p.channel_get(ChannelRef.virtual(0)) is not None
+
+    p.nxscope_connect(nxscope)
+    provider2 = _MockProvider()
+    provider2.channels["v1"] = DeviceChannel(-3, 10, 1, "v1")
+    p.stream_provider_add(provider2)
+    assert p.channel_get(ChannelRef.virtual(1)) is not None
+    assert provider.connected is True
+    all_channels = p.chanlist_plugin([ChannelRef.all_channels()])
+    assert any(ch.data.chan == -2 for ch in all_channels)
+    p.channels_configure([ChannelRef.virtual(0)], div=1, writenow=True)
+    p.channels_configure([ChannelRef.virtual(0)], div=[1], writenow=True)
+    p._chanlist_enable()
+    p.stream_start()
+    assert provider.started is True
+
+    sub = p.stream_sub(ChannelRef.virtual(0))
+    assert isinstance(sub, queue.Queue)
+    p.stream_unsub(sub)
+
+    p.stream_stop()
+    assert provider.started is False
+    p.cleanup()
+
+
+def test_phandler_stream_unsub_fallback(nxscope):
+    p = PluginHandler()
+    provider = _MockProvider()
+    p.stream_provider_add(provider)
+    p.nxscope_connect(nxscope)
+    subq = p.stream_sub(ChannelRef.physical(0))
+    p.stream_unsub(subq)
+    p.cleanup()
+
+
+def test_phandler_provider_channel_get_fallbacks(nxscope):
+    p = PluginHandler()
+    p.nxscope_connect(nxscope)
+
+    provider1 = _MockProvider()
+    provider2 = _MockProvider()
+    provider2.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
+
+    p.stream_provider_add(provider1)
+    p.stream_provider_add(provider2)
+
+    assert p.channel_get(ChannelRef.virtual(0)) is not None
+    assert p.channel_get(ChannelRef.virtual(42)) is None
+    p.cleanup()
+
+
+def test_phandler_enable_and_div_skip_virtual(nxscope):
+    p = PluginHandler()
+    p.nxscope_connect(nxscope)
+    phys = p.channel_get(ChannelRef.physical(0))
+    assert phys is not None
+    virt = DeviceChannel(-2, 10, 1, "v0")
+    p._chanlist = [virt, phys]
+
+    p._chanlist_enable()
+    enabled = p.get_enabled_channels(applied=False)
+    assert 0 in enabled
+
+    p._chanlist_div(1)
+    p._chanlist_div([0, 1])
+    assert p.get_channel_divider(0, applied=False) == 1
+    p.cleanup()
+
+
+def test_phandler_channel_ref_parser_branches() -> None:
+    p = PluginHandler()
+
+    assert p._channel_ref(-1).is_all
+    assert p._channel_ref("2").physical_id() == 2
+    assert p._channel_ref("v7").virtual_name() == "v7"
+    assert p._channel_refs(None, default_all=False) == []
+
+    with pytest.raises(ValueError):
+        p._channel_ref("vA")
+
+    with pytest.raises(ValueError):
+        p._channel_ref("bad")
+
+    p._cleanup_done = True
+
+
+def test_phandler_stream_sub_nonphysical_raises(nxscope) -> None:
+    p = PluginHandler()
+    p.nxscope_connect(nxscope)
+
+    with pytest.raises(ValueError):
+        p.stream_sub(ChannelRef.virtual(99))
+
+    p.cleanup()
+
+
+def test_phandler_enable_div_skip_nonexistent_channels(nxscope) -> None:
+    p = PluginHandler()
+    p.nxscope_connect(nxscope)
+
+    missing = DeviceChannel(999, 10, 1, "missing")
+    p._chanlist = [missing]
+    p._chanlist_enable()
+    p._chanlist_div(1)
+    p._chanlist_div([1])
+
+    p.cleanup()
+
+
+def test_phandler_chanlist_plugin_virtual_in_configured_mode(nxscope) -> None:
+    p = PluginHandler()
+    p.nxscope_connect(nxscope)
+
+    provider = _MockProvider()
+    provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
+    p.stream_provider_add(provider)
+    p.channels_configure([ChannelRef.physical(0)], div=0, writenow=False)
+
+    chanlist = p.chanlist_plugin([ChannelRef.virtual(0)])
+    assert any(ch.data.chan == -2 for ch in chanlist)
+
+    p.cleanup()
+
+
+def test_phandler_chanlist_plugin_virtual_multi_refs(nxscope) -> None:
+    p = PluginHandler()
+    p.nxscope_connect(nxscope)
+
+    provider = _MockProvider()
+    provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
+    p.stream_provider_add(provider)
+    p.channels_configure([ChannelRef.physical(0)], div=0, writenow=False)
+
+    chanlist = p.chanlist_plugin(
+        [ChannelRef.virtual(42), ChannelRef.virtual(0)]
+    )
+    assert any(ch.data.chan == -2 for ch in chanlist)
+
+    p.cleanup()
+
+
+def test_mock_provider_non_virtual_paths() -> None:
+    provider = _MockProvider()
+    assert provider.channel_get(ChannelRef.physical(0)) is None
+    assert provider.stream_sub(ChannelRef.physical(0)) is None
+    assert provider.stream_sub(ChannelRef.virtual(0)) is None
+
+
+def test_phandler_chanlist_plugin_mixed_refs(nxscope) -> None:
+    p = PluginHandler()
+    p.nxscope_connect(nxscope)
+
+    provider = _MockProvider()
+    provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
+    p.stream_provider_add(provider)
+    p.channels_configure([ChannelRef.physical(0)], div=0, writenow=False)
+
+    chanlist = p.chanlist_plugin(
+        [ChannelRef.physical(0), ChannelRef.virtual(0)]
+    )
+    assert any(ch.data.chan == -2 for ch in chanlist)
+    assert any(ch.data.chan == 0 for ch in chanlist)
+
+    p.cleanup()
