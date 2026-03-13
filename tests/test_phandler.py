@@ -1,10 +1,8 @@
 import queue
+from types import SimpleNamespace
 
 import pytest  # type: ignore
 from nxslib.dev import DeviceChannel
-from nxslib.intf.dummy import DummyDev
-from nxslib.nxscope import NxscopeHandler
-from nxslib.proto.parse import Parser
 
 from nxscli.channelref import ChannelRef
 from nxscli.iplugin import (
@@ -16,7 +14,9 @@ from nxscli.iplugin import (
     IPluginText,
 )
 from nxscli.phandler import PluginHandler
+from nxscli.plugins.none import PluginNone
 from nxscli.trigger import DTriggerConfigReq
+from tests.fake_nxscope import FakeNxscope
 
 
 class MockPlugin1(IPlugin):
@@ -139,9 +139,7 @@ def test_phandler_init():
 
 @pytest.fixture
 def nxscope():
-    intf = DummyDev()
-    parse = Parser()
-    nxscope = NxscopeHandler(intf, parse)
+    nxscope = FakeNxscope()
     yield nxscope
     nxscope.disconnect()
 
@@ -815,3 +813,47 @@ def test_phandler_chanlist_plugin_mixed_refs(nxscope) -> None:
         )
         assert any(ch.data.chan == -2 for ch in chanlist)
         assert any(ch.data.chan == 0 for ch in chanlist)
+
+
+def test_phandler_stream_unsub_without_nxscope() -> None:
+    with PluginHandler() as p:
+        p.stream_unsub(queue.Queue())
+
+
+def test_phandler_chanlist_plugin_all_skips_missing_channel(nxscope) -> None:
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
+        dev_channel_get = nxscope.dev_channel_get
+
+        def wrapped(chid: int):
+            if chid == 1:
+                return None
+            return dev_channel_get(chid)
+
+        nxscope.dev_channel_get = wrapped
+
+        chanlist = p.chanlist_plugin([ChannelRef.all_channels()])
+        assert all(ch.data.chan != 1 for ch in chanlist)
+
+
+def test_pluginthread_is_done_partial() -> None:
+    plugin = PluginNone()
+    plugin._samples = 2
+    plugin._nostop = False
+    assert plugin._is_done([1]) is False
+
+
+def test_pluginthread_common_not_done_path() -> None:
+    class _QD:
+        def queue_get(self, block, timeout=1.0):
+            del block, timeout
+            return [SimpleNamespace(data=[1.0], meta=[0])]
+
+    plugin = PluginNone()
+    plugin._samples = 2
+    plugin._nostop = False
+    plugin._datalen = [0]
+    plugin._plugindata = SimpleNamespace(qdlist=[_QD()])
+
+    plugin._thread_common()
+    assert plugin._datalen == [1]
