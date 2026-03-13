@@ -1,16 +1,20 @@
 """Module containt the nxscli handler implementation."""
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Sequence
 
+from nxscli.channelref import ChannelRef
 from nxscli.idata import PluginDataCb
 from nxscli.logger import logger
 from nxscli.trigger import DTriggerConfigReq, TriggerHandler, trigger_from_req
 
 if TYPE_CHECKING:
+    import queue
+
     from nxslib.dev import Device, DeviceChannel
     from nxslib.nxscope import NxscopeHandler
 
     from nxscli.iplugin import DPluginDescription, IPlugin
+    from nxscli.istream import IStreamProvider
 
 
 ###############################################################################
@@ -43,27 +47,34 @@ class PluginHandler:
         self._stream = False
 
         self._cleanup_done = False
+        self._providers: list["IStreamProvider"] = []
+        self._services: dict[str, Any] = {}
 
     def __del__(self) -> None:
         """Raise assertion if not cleaned."""
         if not self._cleanup_done:
             raise AssertionError("PluginHandler not cleaned")
 
-    def _chanlist_gen(self, channels: list[int]) -> list["DeviceChannel"]:
-        assert self._nxs
+    def _chanlist_gen(
+        self, channels: Sequence[ChannelRef] | None
+    ) -> list["DeviceChannel"]:
         assert self.dev
+        refs = self._channel_refs(channels, default_all=False)
         # convert special keys for all channels
-        if channels and channels[0] == -1:  # pragma: no cover
-            chanlist = list(range(self.dev.data.chmax))
-        else:
-            assert all(isinstance(x, int) for x in channels)
-            chanlist = channels
-
         # get channels data
-        ret = []
-        for chan in chanlist:
-            channel = self._nxs.dev_channel_get(chan)
-            assert channel
+        ret: list["DeviceChannel"] = []
+        for ref in refs:
+            if ref.is_all:  # pragma: no cover
+                for chid in range(self.dev.data.chmax):
+                    channel = self.channel_get(ChannelRef.physical(chid))
+                    if channel is None:
+                        raise AssertionError
+                    ret.append(channel)
+                continue
+
+            channel = self.channel_get(ref)
+            if channel is None:
+                raise AssertionError
             ret.append(channel)
 
         return ret
@@ -78,6 +89,12 @@ class PluginHandler:
                 )
                 continue
 
+            if channel.data.chan < 0:
+                continue
+
+            if self._nxs.dev_channel_get(channel.data.chan) is None:
+                continue
+
             # enable channel
             self._nxs.ch_enable(channel.data.chan)
 
@@ -85,12 +102,52 @@ class PluginHandler:
         assert self._nxs
         if isinstance(div, int):
             for channel in self._chanlist:
-                self._nxs.ch_divider(channel.data.chan, div)
+                if channel.data.chan < 0:
+                    continue
+                if self._nxs.dev_channel_get(channel.data.chan) is not None:
+                    self._nxs.ch_divider(channel.data.chan, div)
         else:
             # divider list configuration must cover all configured channels
             assert len(div) == len(self._chanlist)
             for i, channel in enumerate(self._chanlist):
-                self._nxs.ch_divider(channel.data.chan, div[i])
+                if channel.data.chan < 0:
+                    continue
+                if self._nxs.dev_channel_get(channel.data.chan) is not None:
+                    self._nxs.ch_divider(channel.data.chan, div[i])
+
+    def _provider_channels(self) -> list["DeviceChannel"]:
+        channels: list["DeviceChannel"] = []
+        for provider in self._providers:
+            channels.extend(provider.channel_list())
+        return channels
+
+    def _channel_ref(self, value: Any) -> ChannelRef:
+        if isinstance(value, ChannelRef):
+            return value
+        if isinstance(value, int):
+            if value == -1:
+                return ChannelRef.all_channels()
+            return ChannelRef.physical(value)
+        token = value.strip()
+        if token.startswith("v"):
+            vnum = token[1:]
+            if not vnum.isnumeric():
+                raise ValueError(f"Invalid virtual channel: {value}")
+            return ChannelRef.virtual(int(vnum))
+        if token.isnumeric():
+            return ChannelRef.physical(int(token))
+        raise ValueError(f"Invalid channel token: {value}")
+
+    def _channel_refs(
+        self,
+        channels: Sequence[ChannelRef] | None,
+        default_all: bool,
+    ) -> list[ChannelRef]:
+        if channels is None:
+            if default_all:
+                return [ChannelRef.all_channels()]
+            return []
+        return [self._channel_ref(x) for x in channels]
 
     @property
     def chanlist(self) -> list["DeviceChannel"]:
@@ -253,16 +310,64 @@ class PluginHandler:
 
     def cb_get(self) -> PluginDataCb:
         """Get callbacks for plugins."""
+        return PluginDataCb(self.stream_sub, self.stream_unsub)
+
+    def service_set(self, name: str, service: Any) -> None:
+        """Register named service for extensions."""
+        self._services[name] = service
+
+    def service_get(self, name: str) -> Any:
+        """Get named service for extensions."""
+        return self._services.get(name)
+
+    def stream_provider_add(self, provider: "IStreamProvider") -> None:
+        """Register stream provider."""
+        self._providers.append(provider)
+        if self._nxs is not None:
+            provider.on_connect(self._nxs)
+
+    def channel_get(self, channel: ChannelRef) -> "DeviceChannel | None":
+        """Get channel from device or registered providers."""
+        if self._nxs is not None and channel.is_physical:
+            ch = self._nxs.dev_channel_get(channel.physical_id())
+            if ch is not None:
+                return ch
+        for provider in self._providers:
+            ch = provider.channel_get(channel)
+            if ch is not None:
+                return ch
+        return None
+
+    def stream_sub(self, channel: ChannelRef) -> "queue.Queue[Any]":
+        """Subscribe queue for device/provider channel."""
         assert self._nxs
-        return PluginDataCb(self._nxs.stream_sub, self._nxs.stream_unsub)
+        for provider in self._providers:
+            subq = provider.stream_sub(channel)
+            if subq is not None:
+                return subq
+        if not channel.is_physical:
+            raise ValueError(f"Unknown channel: {channel}")
+        return self._nxs.stream_sub(channel.physical_id())
+
+    def stream_unsub(self, subq: "queue.Queue[Any]") -> None:
+        """Unsubscribe queue from device/provider channel."""
+        for provider in self._providers:
+            if provider.stream_unsub(subq):
+                return
+        if self._nxs is not None:
+            self._nxs.stream_unsub(subq)
 
     def stream_start(self) -> None:
         """Start stream."""
         assert self._nxs
         self._nxs.stream_start()
+        for provider in self._providers:
+            provider.on_stream_start()
 
     def stream_stop(self) -> None:
         """Stop stream."""
+        for provider in self._providers:
+            provider.on_stream_stop()
         assert self._nxs
         self._nxs.stream_stop()
 
@@ -270,6 +375,8 @@ class PluginHandler:
         """Disconnect from NxScope device."""
         if self._nxs:
             logger.info("disconnecting from nxs device...")
+            for provider in self._providers:
+                provider.on_disconnect()
             # connect nxscope device
             self._nxs.disconnect()
             logger.info("disconnected!")
@@ -284,6 +391,8 @@ class PluginHandler:
         logger.info("connecting to nxs device...")
         # connect nxscope device
         self._nxs.connect()
+        for provider in self._providers:
+            provider.on_connect(self._nxs)
         logger.info("connected!")
 
     def plugin_add(self, cls: tuple[str, type["IPlugin"]]) -> None:
@@ -433,40 +542,53 @@ class PluginHandler:
                 trg = DTriggerConfigReq("on", None)
         return trg
 
-    def chanlist_plugin(self, channels: list[int]) -> list["DeviceChannel"]:
+    def chanlist_plugin(  # noqa: C901
+        self, channels: Sequence[ChannelRef] | None
+    ) -> list["DeviceChannel"]:
         """Prepare channels list for a plugin.
 
         :param chanlist: a list with plugin channels
         """
-        assert self._nxs
         assert self.dev
 
+        refs = self._channel_refs(channels, default_all=True)
         chanlist = []
 
         # If no channels configured in phandler (dynamic mode),
         # get them directly from device
         if not self._chanlist:
-            if channels and channels[0] == -1:
+            if refs and refs[0].is_all:
                 # All channels
                 for chid in range(self.dev.data.chmax):
-                    ch = self._nxs.dev_channel_get(chid)
+                    ch = self.channel_get(ChannelRef.physical(chid))
                     if ch and ch.data.is_valid:
+                        chanlist.append(ch)
+                for ch in self._provider_channels():
+                    if ch.data.is_valid:
                         chanlist.append(ch)
             else:
                 # Specific channels
-                for chid in channels:
-                    ch = self._nxs.dev_channel_get(chid)
+                for ref in refs:
+                    ch = self.channel_get(ref)
                     if ch and ch.data.is_valid:
                         chanlist.append(ch)
         else:
             # Normal mode: filter from configured chanlist
-            if channels and channels[0] != -1:
+            if refs and not refs[0].is_all:
                 # plugin specific channels configuration
                 for chan in self.chanlist:  # pragma: no cover
-                    if chan.data.chan in channels:
+                    if any(
+                        ref.is_physical and ref.value == chan.data.chan
+                        for ref in refs
+                    ):
                         chanlist.append(chan)
                     else:  # pragma: no cover
                         pass
+                for ref in refs:
+                    if ref.is_virtual:
+                        ch = self.channel_get(ref)
+                        if ch and ch.data.is_valid and ch not in chanlist:
+                            chanlist.append(ch)
             else:
                 chanlist = self.chanlist
 
@@ -474,7 +596,7 @@ class PluginHandler:
 
     def channels_configure(
         self,
-        channels: list[int],
+        channels: Sequence[ChannelRef] | None,
         div: int | list[int] = 0,
         writenow: bool = False,
     ) -> None:
@@ -494,7 +616,9 @@ class PluginHandler:
             "configure channels = %s divider = %s", str(channels), str(div)
         )
 
-        self._chanlist = self._chanlist_gen(channels)
+        refs = self._channel_refs(channels, default_all=False)
+        physical_channels = [x for x in refs if x.is_physical]
+        self._chanlist = self._chanlist_gen(physical_channels)
         if not self._chanlist:
             return
 
