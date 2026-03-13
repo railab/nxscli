@@ -3,11 +3,17 @@ from click.testing import CliRunner
 
 import nxscli
 from nxscli.cli.main import main
+from tests.fake_nxscope import FakeNxscope
 
 
 @pytest.fixture
 def runner(mocker):
     mocker.patch.object(nxscli.cli.main, "wait_for_plugins", autospec=True)
+    mocker.patch.object(
+        nxscli.commands.interface.cmd_dummy,
+        "NxscopeHandler",
+        FakeNxscope,
+    )
     return CliRunner()
 
 
