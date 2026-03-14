@@ -1,8 +1,9 @@
+=====
 Usage
------
+=====
 
 Commands
----------
+========
 
 You can run Nxscli as a Python module:
 
@@ -32,8 +33,8 @@ with various channel configurations (based on ``pcap`` from ``nxscli-mpl``):
    python -m nxscli dummy chan 1,2,3,4 pcap --chan 1 100 pcap --chan 2,3 200 pcap 300
 
 
-Interace commands
-=================
+Interface Commands
+------------------
 
 Supported interface commands:
 
@@ -56,8 +57,8 @@ Supported interface commands:
 
 * ``rtt`` - select Segger RTT as NxScope interface
 
-Configuratio commands
-=====================
+Configuration Commands
+----------------------
 
 Available configuration commands:
 
@@ -75,8 +76,8 @@ Available configuration commands:
   Triggers can be configured per channel with the option ``--trig``.
 
 
-Plugin commands
-===============
+Plugin Commands
+---------------
 
 Plugins supported so far:
 
@@ -87,3 +88,51 @@ Plugins supported so far:
 * ``pudp`` - stream data over UDP
 
 For more information, use the plugin's ``--help`` option.
+
+Dummy Device Cheatsheet
+=======================
+
+Use these commands for quick local testing without hardware.
+All examples use the ``dummy`` interface and channel ``0``.
+
+Device info
+===========
+
+.. code-block:: bash
+
+   python -m nxscli dummy pdevinfo
+
+Print stream samples
+====================
+
+.. code-block:: bash
+
+   python -m nxscli dummy chan 0 pprinter 50
+
+Capture and discard samples
+===========================
+
+.. code-block:: bash
+
+   python -m nxscli dummy chan 0 pnone 50000
+
+Store samples to CSV
+====================
+
+.. code-block:: bash
+
+   python -m nxscli dummy chan 0 pcsv 200 /tmp/nxscope_csv
+
+Stream samples over UDP
+=======================
+
+.. code-block:: bash
+
+   python -m nxscli dummy chan 0 pudp 2000 --address 127.0.0.1 --port 9870
+
+Run multiple plugins in one command
+===================================
+
+.. code-block:: bash
+
+   python -m nxscli dummy chan 0 pprinter 20 pcsv 20 /tmp/nxscope_csv pudp 20
