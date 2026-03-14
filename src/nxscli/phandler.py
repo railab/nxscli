@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Sequence
 from nxscli.channelref import ChannelRef
 from nxscli.idata import PluginDataCb
 from nxscli.logger import logger
+from nxscli.stream_hub import SharedStreamProvider
 from nxscli.trigger import DTriggerConfigReq, TriggerHandler, trigger_from_req
 
 if TYPE_CHECKING:
@@ -47,7 +48,7 @@ class PluginHandler:
         self._stream = False
 
         self._cleanup_done = False
-        self._providers: list["IStreamProvider"] = []
+        self._providers: list["IStreamProvider"] = [SharedStreamProvider()]
         self._services: dict[str, Any] = {}
 
     def __del__(self) -> None:
