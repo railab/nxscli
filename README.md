@@ -19,12 +19,13 @@ Compatible with Python 3.10+.
 * Print samples
 * Stream data over UDP (compatible with [PlotJuggler](https://github.com/facontidavide/PlotJuggler))
 * NxScope protocol via serial port or Segger RTT interface
+* Virtual channels and math operations on channels data
+
 
 ## Features Planned
 
 * More triggering types
 * Boolean operations on triggers
-* Virtual channels and math operations on channels data
 * Improve `pdevinfo` output (human-readable prints)
 * Interactive mode
 

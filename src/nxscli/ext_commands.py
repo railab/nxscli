@@ -9,6 +9,7 @@ from nxscli.commands.cmd_printer import cmd_printer
 from nxscli.commands.cmd_udp import cmd_pudp
 from nxscli.commands.config.cmd_chan import cmd_chan
 from nxscli.commands.config.cmd_trig import cmd_trig
+from nxscli.commands.config.cmd_vadd import cmd_vadd
 
 if TYPE_CHECKING:
     import click
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 commands_list: list["click.Command"] = [
     cmd_chan,
     cmd_trig,
+    cmd_vadd,
     cmd_pdevinfo,
     cmd_pcsv,
     cmd_pnone,
