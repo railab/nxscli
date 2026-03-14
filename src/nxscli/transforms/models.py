@@ -41,3 +41,11 @@ class XyResult:
 
     x: Any
     y: Any
+
+
+@dataclass(frozen=True)
+class PolarResult:
+    """Polar relation result model."""
+
+    theta: Any
+    radius: Any

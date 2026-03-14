@@ -7,6 +7,7 @@ import numpy as np
 from nxscli.transforms.models import (
     FftResult,
     HistogramResult,
+    PolarResult,
     WindowCursor,
     XyResult,
 )
@@ -105,6 +106,33 @@ def xy_relation(
     return XyResult(x=xa[-size:], y=ya[-size:])
 
 
+def polar_relation(
+    x_samples: Sequence[float],
+    y_samples: Sequence[float],
+    *,
+    window: int,
+    align_policy: str = "truncate",
+) -> PolarResult:
+    """Build polar relation from two sample series."""
+    rel = xy_relation(
+        x_samples,
+        y_samples,
+        window=window,
+        align_policy=align_policy,
+    )
+    if int(rel.x.size) == 0 or int(rel.y.size) == 0:
+        return PolarResult(
+            theta=np.asarray([], dtype=np.float64),
+            radius=np.asarray([], dtype=np.float64),
+        )
+    theta = np.arctan2(rel.y, rel.x)
+    radius = np.hypot(rel.x, rel.y)
+    return PolarResult(
+        theta=theta.astype(np.float64),
+        radius=radius.astype(np.float64),
+    )
+
+
 def windowed_fft(
     series: Sequence[float],
     *,
@@ -167,6 +195,32 @@ def windowed_xy(
     if not should_recompute(total, cfg, cursor):
         return None
     return xy_relation(
+        x_series,
+        y_series,
+        window=cfg.window,
+        align_policy=align_policy,
+    )
+
+
+def windowed_polar(
+    x_series: Sequence[float],
+    y_series: Sequence[float],
+    *,
+    window: int,
+    hop: int | None,
+    align_policy: str,
+    cursor: WindowCursor,
+    total_count: int | None = None,
+) -> PolarResult | None:
+    """Compute polar relation only when hop criteria is satisfied."""
+    cfg = normalize_window_config(window, hop)
+    if total_count is None:
+        total = min(len(x_series), len(y_series))
+    else:
+        total = int(total_count)
+    if not should_recompute(total, cfg, cursor):
+        return None
+    return polar_relation(
         x_series,
         y_series,
         window=cfg.window,
