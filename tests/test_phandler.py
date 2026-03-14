@@ -799,6 +799,7 @@ def test_mock_provider_non_virtual_paths() -> None:
     assert provider.channel_get(ChannelRef.physical(0)) is None
     assert provider.stream_sub(ChannelRef.physical(0)) is None
     assert provider.stream_sub(ChannelRef.virtual(0)) is None
+    assert provider.stream_unsub(queue.Queue()) is False
 
 
 def test_phandler_chanlist_plugin_mixed_refs(nxscope) -> None:
@@ -820,6 +821,15 @@ def test_phandler_chanlist_plugin_mixed_refs(nxscope) -> None:
 def test_phandler_stream_unsub_without_nxscope() -> None:
     with PluginHandler() as p:
         p.stream_unsub(queue.Queue())
+
+
+def test_phandler_stream_fallback_to_nxscope(nxscope) -> None:
+    with PluginHandler() as p:
+        # Force direct Nxscope fallback path.
+        p._providers = []
+        p.nxscope_connect(nxscope)
+        subq = p.stream_sub(ChannelRef.physical(0))
+        p.stream_unsub(subq)
 
 
 def test_phandler_chanlist_plugin_all_skips_missing_channel(nxscope) -> None:
