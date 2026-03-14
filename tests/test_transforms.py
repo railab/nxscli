@@ -6,8 +6,10 @@ from nxscli.transforms.operators_sample import apply_scale_offset, binary_op
 from nxscli.transforms.operators_window import (
     fft_spectrum,
     histogram_counts,
+    polar_relation,
     windowed_fft,
     windowed_histogram,
+    windowed_polar,
     windowed_xy,
     xy_relation,
 )
@@ -79,6 +81,44 @@ def test_xy_relation_errors_and_empty() -> None:
     assert res.y.tolist() == []
     with pytest.raises(ValueError):
         xy_relation([1.0], [1.0], window=2, align_policy="pad")
+
+
+def test_polar_relation_converts_xy() -> None:
+    res = polar_relation([1.0, 0.0], [0.0, 1.0], window=16)
+    assert np.allclose(res.theta, np.asarray([0.0, np.pi / 2.0]))
+    assert np.allclose(res.radius, np.asarray([1.0, 1.0]))
+
+
+def test_polar_relation_empty_input() -> None:
+    res = polar_relation([], [], window=4)
+    assert res.theta.tolist() == []
+    assert res.radius.tolist() == []
+
+
+def test_windowed_polar_hop_gating() -> None:
+    cursor = WindowCursor()
+    assert (
+        windowed_polar(
+            [1.0, 2.0],
+            [3.0, 4.0],
+            window=16,
+            hop=2,
+            align_policy="truncate",
+            cursor=cursor,
+        )
+        is not None
+    )
+    assert (
+        windowed_polar(
+            [1.0, 2.0, 3.0],
+            [3.0, 4.0, 5.0],
+            window=16,
+            hop=2,
+            align_policy="truncate",
+            cursor=cursor,
+        )
+        is None
+    )
 
 
 def test_windowed_fft_hop_gating() -> None:
@@ -173,6 +213,20 @@ def test_windowed_total_count_and_window_helpers() -> None:
             hop=2,
             align_policy="truncate",
             cursor=cursor2,
+            total_count=2,
+        )
+        is not None
+    )
+
+    cursor3 = WindowCursor()
+    assert (
+        windowed_polar(
+            [1.0, 2.0],
+            [3.0, 4.0],
+            window=2,
+            hop=2,
+            align_policy="truncate",
+            cursor=cursor3,
             total_count=2,
         )
         is not None
