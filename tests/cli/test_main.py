@@ -204,6 +204,34 @@ def test_main_help(runner):
     assert result.exit_code == 0
 
 
+def test_main_vadd(runner):
+    args = ["dummy", "vadd", "--operator", "scale_offset", "0", "0"]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+
+def test_main_vadd_pprinter_virtual_output(runner):
+    args = [
+        "dummy",
+        "vadd",
+        "--operator",
+        "scale_offset",
+        "--params",
+        "scale=2,offset=1",
+        "100",
+        "0",
+        "pprinter",
+        "--chan",
+        "v100",
+        "3",
+    ]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+    assert "virtual output v100 -> channel v100" in result.output
+    assert "'chan': -1" in result.output
+    assert "1:" in result.output
+
+
 def test_main_udp_help(runner):
     args = ["udp", "--help"]
     result = runner.invoke(main, args)

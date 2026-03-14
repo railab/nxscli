@@ -78,6 +78,24 @@ Available configuration commands:
 
   Triggers can be configured per channel with the option ``--trig``.
 
+* ``vadd`` - add virtual channel in `nxscli` virtual runtime.
+
+  This command declares a derived channel from one or more inputs.
+  The command is non-interactive and can be chained with plugin commands.
+  Use ``--operator`` to select transform and ``--params`` for
+  comma-separated ``key=value`` operator arguments.
+
+  Example command form:
+
+  .. code-block:: bash
+
+     python -m nxscli dummy vadd --operator scale_offset --params scale=2,offset=1 100 0 pprinter --chan v100 10
+
+  In command chaining, place command options before positional arguments.
+  For virtual data output, select virtual channel explicitly via plugin
+  ``--chan vNN`` (for example ``--chan v100``).
+  Source physical channels from ``vadd`` inputs are auto-configured.
+
 
 Plugin Commands
 ---------------
