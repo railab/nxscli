@@ -25,6 +25,13 @@ the same time.
 
 For commands details use ``--help`` option.
 
+Global options include:
+
+* ``--control-server`` - enable optional control server plugin
+  (disabled by default).
+* ``--control-endpoint`` - server endpoint
+  (``unix://``, ``unix-abstract://`` or ``tcp://``).
+
 The following example illustrates how to run multiple plugins simultaneously
 with various channel configurations (based on ``pcap`` from ``nxscli-mpl``):
 
