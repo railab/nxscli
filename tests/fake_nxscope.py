@@ -13,6 +13,7 @@ class FakeNxscope:
     def __init__(self, *_: Any, **__: Any) -> None:
         self.connected = False
         self._stream_started = False
+        self._registered_plugins: dict[str, Any] = {}
         self._channels = []
         for i in range(10):
             if i == 8:
@@ -41,6 +42,18 @@ class FakeNxscope:
     def disconnect(self) -> None:
         self.connected = False
         self._stream_started = False
+
+    def register_plugin(self, plugin: Any, frame_ids: Any = None) -> str:
+        del frame_ids
+        name = getattr(plugin, "name", plugin.__class__.__name__)
+        self._registered_plugins[name] = plugin
+        return str(name)
+
+    def unregister_plugin(self, name: str) -> bool:
+        if name in self._registered_plugins:
+            self._registered_plugins.pop(name)
+            return True
+        return False
 
     def dev_channel_get(self, chid: int) -> DeviceChannel | None:
         if 0 <= chid < len(self._channels):

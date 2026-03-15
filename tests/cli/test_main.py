@@ -27,6 +27,18 @@ def test_main_dummy(runner):
     assert result.exit_code == 2
 
 
+def test_main_control_server_enabled(runner):
+    args = [
+        "--control-server",
+        "--control-endpoint",
+        "unix-abstract://nxscli-test-control",
+        "dummy",
+        "pdevinfo",
+    ]
+    result = runner.invoke(main, args)
+    assert result.exit_code == 0
+
+
 def test_main_pdevinfo(runner):
     args = ["dummy", "pdevinfo"]
     result = runner.invoke(main, args)

@@ -32,6 +32,7 @@ class DEnvironmentData:
     channels: tuple[list["ChannelRef"], Any] | None = None
     phandler: "PluginHandler | None" = None
     triggers: dict[int, "DTriggerConfigReq"] | None = None
+    nxscope_plugins: list[Any] | None = None
 
 
 ###############################################################################

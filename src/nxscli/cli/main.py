@@ -7,6 +7,7 @@ import click
 from nxslib.proto.parse import Parser
 
 from nxscli.cli.environment import Environment, pass_environment
+from nxscli.control_server import ControlServerPlugin
 from nxscli.iplugin import EPluginType, IPlugin
 from nxscli.logger import logger
 from nxscli.phandler import PluginHandler
@@ -24,8 +25,23 @@ from nxscli.plugins_loader import commands_list, interfaces_list, plugins_list
     is_flag=True,
     envvar="NXSCLI_DEBUG",
 )
+@click.option(
+    "--control-server/--no-control-server",
+    default=False,
+    help="Enable nxscli control server plugin (default: disabled).",
+)
+@click.option(
+    "--control-endpoint",
+    default="unix-abstract://nxscli-control",
+    help="Control server endpoint: unix://, unix-abstract:// or tcp://.",
+)
 @pass_environment
-def main(ctx: Environment, debug: bool) -> bool:
+def main(
+    ctx: Environment,
+    debug: bool,
+    control_server: bool,
+    control_endpoint: str,
+) -> bool:
     """Nxscli - Command-line clinet to the NxScope."""
     ctx.debug = debug
     if debug:  # pragma: no cover
@@ -37,6 +53,9 @@ def main(ctx: Environment, debug: bool) -> bool:
     parse = Parser()
     ctx.parser = parse
     ctx.triggers = {}
+    ctx.nxscope_plugins = []
+    if control_server:
+        ctx.nxscope_plugins.append(ControlServerPlugin(control_endpoint))
 
     click.get_current_context().call_on_close(cli_on_close)
 
@@ -109,6 +128,23 @@ def wait_for_plugins(ctx: Environment) -> None:  # pragma: no cover
     ctx.phandler.wait_for_plugins()
 
 
+def _cli_validate_ready(ctx: Environment) -> bool:
+    """Validate common preconditions before plugin start."""
+    assert ctx.phandler
+    if ctx.interface is False:
+        return False
+
+    if len(ctx.phandler.enabled) == 0:
+        click.secho("ERROR: No plugins selected !", err=True, fg="red")
+        return False
+
+    if ctx.needchannels and ctx.channels is None:  # pragma: no cover
+        click.secho("ERROR: No channels selected !", err=True, fg="red")
+        return False
+
+    return True
+
+
 ###############################################################################
 # Function: cli_on_close
 ###############################################################################
@@ -118,48 +154,49 @@ def wait_for_plugins(ctx: Environment) -> None:  # pragma: no cover
 def cli_on_close(ctx: Environment) -> bool:
     """Handle requested plugins on click close."""
     assert ctx.phandler
+    reg_names: list[str] = []
     with ctx.phandler:
         # do not show any errors if it was help request
         if "--help" in sys.argv:  # pragma: no cover
             return True
 
-        if ctx.interface is False:
+        if _cli_validate_ready(ctx) is False:
             return False
-
-        if len(ctx.phandler.enabled) == 0:
-            click.secho("ERROR: No plugins selected !", err=True, fg="red")
-            return False
-
-        if ctx.needchannels:
-            if ctx.channels is None:  # pragma: no cover
-                click.secho(
-                    "ERROR: No channels selected !", err=True, fg="red"
-                )
-                return False
 
         # connect nxscope to phandler
         assert ctx.nxscope
         ctx.phandler.nxscope_connect(ctx.nxscope)
 
-        # configure channles after connected to nxscope
-        if ctx.needchannels and ctx.channels:
-            ctx.phandler.channels_configure(ctx.channels[0], ctx.channels[1])
+        # register optional nxscope-side plugins
+        if ctx.nxscope_plugins:
+            for plugin in ctx.nxscope_plugins:
+                reg_names.append(ctx.nxscope.register_plugin(plugin))
 
-        # start plugins
-        ctx.phandler.start()
+        try:
+            # configure channles after connected to nxscope
+            if ctx.needchannels and ctx.channels:
+                ctx.phandler.channels_configure(
+                    ctx.channels[0], ctx.channels[1]
+                )
 
-        if ctx.waitenter:  # pragma: no cover
-            _ = input("wait for Enter key...")
+            # start plugins
+            ctx.phandler.start()
 
-        # plugins loop
-        plugin_loop(ctx)
+            if ctx.waitenter:  # pragma: no cover
+                _ = input("wait for Enter key...")
 
-        # wait for plugin
-        wait_for_plugins(ctx)
+            # plugins loop
+            plugin_loop(ctx)
 
-        print("closing...")
-        ctx.phandler.stop()
-        ctx.phandler.nxscope_disconnect()
+            # wait for plugin
+            wait_for_plugins(ctx)
+
+            print("closing...")
+            ctx.phandler.stop()
+        finally:
+            for name in reg_names:
+                ctx.nxscope.unregister_plugin(name)
+            ctx.phandler.nxscope_disconnect()
 
     return True
 

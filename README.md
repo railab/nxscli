@@ -20,7 +20,7 @@ Compatible with Python 3.10+.
 * Stream data over UDP (compatible with [PlotJuggler](https://github.com/facontidavide/PlotJuggler))
 * NxScope protocol via serial port or Segger RTT interface
 * Virtual channels and math operations on channels data
-
+* Optional control server (`--control-server`) for extentions
 
 ## Features Planned
 
