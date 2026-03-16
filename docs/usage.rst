@@ -69,6 +69,10 @@ Supported interface commands:
   - 14: hist_bimodal - vdim = 1, deterministic bi-modal
   - 15: xy_lissajous - vdim = 2, correlated XY signal
   - 16: polar_theta_radius - vdim = 2, (theta, radius) signal
+  - 17: step_up_once - vdim = 1, one rising step
+  - 18: step_down_once - vdim = 1, one falling step
+  - 19: pulse_square_20p - vdim = 1, periodic square pulse (20% duty)
+  - 20: pulse_single_sparse - vdim = 1, one-sample pulse every 250 samples
 
 * ``serial`` - select serial port NxScope interface
 
