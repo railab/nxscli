@@ -52,16 +52,23 @@ Supported interface commands:
 
   Available device channels:
 
-  - chan0 - vdim = 1, random()
-  - chan1 - vdim = 1, saw wave
-  - chan2 - vdim = 1, triangle wave
-  - chan3 - vdim = 2, random()
-  - chan4 - vdim = 3, random()
-  - chan5 - vdim = 3, static vector = [1.0, 0.0, -1.0]
-  - chan6 - vdim = 1, 'hello' string
-  - chan7 - vdim = 3, static vector = [1.0, 0.0, -1.0], meta = 1B int
-  - chan8 - vdim = 0, meta = 'hello string', mlen = 16
-  - chan9 - vdim = 3, 3-phase sine wave
+  - 0: noise_uniform_scalar - vdim = 1, random()
+  - 1: ramp_saw_up - vdim = 1, saw wave
+  - 2: ramp_triangle - vdim = 1, triangle wave
+  - 3: noise_uniform_vec2 - vdim = 2, random()
+  - 4: noise_uniform_vec3 - vdim = 3, random()
+  - 5: static_vec3 - vdim = 3, static vector = [1.0, 0.0, -1.0]
+  - 6: text_hello_sparse - vdim = 1, sparse 'hello' string
+  - 7: static_vec3_meta_counter - vdim = 3, static vec + 1B meta counter
+  - 8: meta_hello_only - vdim = 0, mlen = 16, meta = 'hello string'
+  - 9: sine_three_phase - vdim = 3, 3-phase sine wave
+  - 10: reserved (undefined)
+  - 11: fft_multitone - vdim = 1, deterministic multi-tone
+  - 12: fft_chirp - vdim = 1, deterministic chirp-like signal
+  - 13: hist_gaussian - vdim = 1, deterministic Gaussian-like
+  - 14: hist_bimodal - vdim = 1, deterministic bi-modal
+  - 15: xy_lissajous - vdim = 2, correlated XY signal
+  - 16: polar_theta_radius - vdim = 2, (theta, radius) signal
 
 * ``serial`` - select serial port NxScope interface
 
