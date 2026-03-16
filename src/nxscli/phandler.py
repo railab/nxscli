@@ -288,6 +288,18 @@ class PluginHandler:
         # Remove from started list
         self._started.pop(pid)
 
+    def plugin_get_instance(self, pid: int) -> "IPlugin | None":
+        """Return running plugin instance for a given plugin ID.
+
+        :param pid: plugin ID from plugin_start_dynamic()
+
+        :return: IPlugin instance, or None if the ID is out of range
+        """
+        if pid < 0 or pid >= len(self._started):
+            return None
+        plugin, _ = self._started[pid]
+        return plugin
+
     def get_started_plugins(self) -> tuple[tuple[int, str], ...]:
         """Get list of started plugins.
 

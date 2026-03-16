@@ -538,6 +538,30 @@ def test_phandler_plugin_start_stop_dynamic(nxscope):
             pytest.raises(IndexError, p.plugin_stop_dynamic, 99)
 
 
+def test_phandler_plugin_get_instance(nxscope):
+    """Test plugin_get_instance returns instance or None."""
+    with nxscope:
+        plugins = [DPluginDescription("plugin1", MockPlugin1)]
+        with PluginHandler(plugins=plugins) as p:
+            p.nxscope_connect(nxscope)
+
+            # Out-of-range before any plugin started
+            assert p.plugin_get_instance(-1) is None
+            assert p.plugin_get_instance(0) is None
+
+            pid = p.plugin_start_dynamic("plugin1", channels=[0])
+            assert pid == 0
+
+            # Valid pid returns the IPlugin instance
+            instance = p.plugin_get_instance(pid)
+            assert isinstance(instance, MockPlugin1)
+
+            # Out-of-range pid returns None
+            assert p.plugin_get_instance(99) is None
+
+            p.plugin_stop_dynamic(pid)
+
+
 def test_phandler_get_started_plugins_unregistered():
     """Test get_started_plugins with unregistered plugin class."""
     plugins = [DPluginDescription("plugin1", MockPlugin1)]
@@ -896,3 +920,9 @@ def test_pluginnone_handle_blocks_empty_and_done_path() -> None:
     plugin._datalen = [0]
     plugin._handle_blocks([full_block], pdata, 0)
     assert plugin._datalen == [1]
+
+
+def test_iplugin_get_plot_handler_default():
+    """Test that IPlugin.get_plot_handler() returns None by default."""
+    plugin = MockPlugin1()
+    assert plugin.get_plot_handler() is None
