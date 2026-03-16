@@ -71,6 +71,16 @@ class IPlugin(ABC):
         """
         self._handled = val
 
+    def get_plot_handler(self) -> Any:
+        """Return the plot handler for this plugin.
+
+        Plugins with a visual output (plot backends) override this method
+        to expose their plot handler instance.
+
+        :return: plot handler instance, or None if the plugin has no plot
+        """
+        return None
+
     def wait_for_plugin(self) -> bool:
         """Return True if plugin is dont't need to wait."""
         return True
