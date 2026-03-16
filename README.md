@@ -16,6 +16,7 @@ Compatible with Python 3.10+.
 * Plugins architecture, extendable through ``nxscli.extensions`` entrypoint
 * Client-based triggering (global and per-channel triggers)
 * Save data to CSV files
+* Save data to Numpy files (`pnpsave`) and memmap files (`pnpmem`)
 * Print samples
 * Stream data over UDP (compatible with [PlotJuggler](https://github.com/facontidavide/PlotJuggler))
 * NxScope protocol via serial port or Segger RTT interface
@@ -31,14 +32,14 @@ Compatible with Python 3.10+.
 
 ## Plugins
 
-By default, we only support features that depend on the standard Python libraries.
-The functionality is expadned by installing plugins.
-Plugins are automatically deteceted by Nxscli.
+By default, `nxscli` ships with core plugins including CSV, printer, UDP,
+and NumPy file capture (`pnpsave` and `pnpmem`).
+Additional functionality is expanded by installing optional plugins.
+Plugins are automatically detected by Nxscli.
 
 Available plugins:
 
 * [nxscli-mpl](https://github.com/railab/nxscli-mpl) - Matplotlib extension
-* [nxscli-np](https://github.com/railab/nxscli-np) - Numpy extension
 
 ## Plugins Planned
 

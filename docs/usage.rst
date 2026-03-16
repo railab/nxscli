@@ -110,6 +110,8 @@ Plugin Commands
 Plugins supported so far:
 
 * ``pcsv`` - store samples in CSV files
+* ``pnpsave`` - store samples in Numpy ``.npy`` files
+* ``pnpmem`` - store samples in Numpy memmap ``.dat`` files
 * ``pdevinfo`` - show information about the connected NxScope device
 * ``pnone`` - capture data and do nothing with them
 * ``pprinter`` - capture data and print samples
@@ -150,6 +152,20 @@ Store samples to CSV
 .. code-block:: bash
 
    python -m nxscli dummy chan 0 pcsv 200 /tmp/nxscope_csv
+
+Store samples to Numpy files
+----------------------------
+
+.. code-block:: bash
+
+   python -m nxscli dummy chan 0 pnpsave 200 /tmp/nxscope_np
+
+Store samples to Numpy memmap
+-----------------------------
+
+.. code-block:: bash
+
+   python -m nxscli dummy chan 0 pnpmem 200 /tmp/nxscope_mem 100
 
 Stream samples over UDP
 =======================
