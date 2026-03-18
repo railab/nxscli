@@ -1,3 +1,5 @@
+import socket
+
 import pytest  # type: ignore
 from click.testing import CliRunner
 
@@ -27,16 +29,59 @@ def test_main_dummy(runner):
     assert result.exit_code == 2
 
 
-def test_main_control_server_enabled(runner):
+@pytest.mark.parametrize("_has_af_unix", [True, False])
+def test_main_control_server_enabled(runner, monkeypatch, _has_af_unix):
+    if _has_af_unix:
+        monkeypatch.setattr(socket, "AF_UNIX", 1, raising=False)
+    else:
+        monkeypatch.delattr(socket, "AF_UNIX", raising=False)
+    if hasattr(socket, "AF_UNIX"):
+        endpoint = "unix-abstract://nxscli-test-control"
+    else:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind(("127.0.0.1", 0))
+            host, port = sock.getsockname()
+        endpoint = f"tcp://{host}:{port}"
+
     args = [
         "--control-server",
         "--control-endpoint",
-        "unix-abstract://nxscli-test-control",
+        endpoint,
         "dummy",
         "pdevinfo",
     ]
     result = runner.invoke(main, args)
     assert result.exit_code == 0
+
+
+def test_main_control_server_enabled_init_failure(runner, monkeypatch):
+    cleanup_called = {"flag": False}
+
+    def fail_init(*_, **__):
+        raise RuntimeError("boom")
+
+    orig_cleanup = nxscli.cli.main.PluginHandler.cleanup
+
+    def cleanup(self):
+        cleanup_called["flag"] = True
+        orig_cleanup(self)
+
+    monkeypatch.setattr("nxscli.cli.main.ControlServerPlugin", fail_init)
+    monkeypatch.setattr(
+        "nxscli.cli.main.PluginHandler.cleanup", cleanup, raising=False
+    )
+    result = runner.invoke(
+        main,
+        [
+            "--control-server",
+            "--control-endpoint",
+            "tcp://127.0.0.1:12345",
+            "dummy",
+            "pdevinfo",
+        ],
+    )
+    assert result.exit_code != 0
+    assert cleanup_called["flag"] is True
 
 
 def test_main_pdevinfo(runner):

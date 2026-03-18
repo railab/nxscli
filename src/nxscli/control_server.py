@@ -36,6 +36,15 @@ class _EndpointConfig:
     cleanup_path: str | None
 
 
+def _require_af_unix(endpoint: str) -> None:
+    """Fail early for unix endpoints on platforms without AF_UNIX."""
+    if not hasattr(socket, "AF_UNIX"):
+        raise ValueError(
+            f"unix endpoint '{endpoint}' is not supported on this platform; "
+            "use tcp://<host>:<port>"
+        )
+
+
 def _parse_endpoint(endpoint: str) -> _EndpointConfig:
     """Parse IPC endpoint string into socket configuration."""
     if endpoint.startswith("tcp://"):
@@ -51,6 +60,7 @@ def _parse_endpoint(endpoint: str) -> _EndpointConfig:
         )
 
     if endpoint.startswith("unix-abstract://"):
+        _require_af_unix(endpoint)
         name = endpoint[len("unix-abstract://") :]
         if not name:
             raise ValueError("unix-abstract endpoint name cannot be empty")
@@ -64,7 +74,10 @@ def _parse_endpoint(endpoint: str) -> _EndpointConfig:
 
     path = endpoint
     if endpoint.startswith("unix://"):
+        _require_af_unix(endpoint)
         path = endpoint[len("unix://") :]
+    else:
+        _require_af_unix(endpoint)
     if not path:
         raise ValueError("unix endpoint path cannot be empty")
     return _EndpointConfig(
