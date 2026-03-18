@@ -55,7 +55,11 @@ def main(
     ctx.triggers = {}
     ctx.nxscope_plugins = []
     if control_server:
-        ctx.nxscope_plugins.append(ControlServerPlugin(control_endpoint))
+        try:
+            ctx.nxscope_plugins.append(ControlServerPlugin(control_endpoint))
+        except Exception:
+            ctx.phandler.cleanup()
+            raise
 
     click.get_current_context().call_on_close(cli_on_close)
 

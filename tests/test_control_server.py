@@ -1,4 +1,5 @@
 import base64
+import socket
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -11,6 +12,71 @@ from nxscli.control_server import (
     _parse_endpoint,
 )
 from tests.fake_nxscope import FakeNxscope
+
+
+def _get_test_endpoint(name: str) -> str:
+    if hasattr(socket, "AF_UNIX"):
+        return f"unix-abstract://{name}"
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        host, port = sock.getsockname()
+    return f"tcp://{host}:{port}"
+
+
+def _ensure_af_unix(monkeypatch: pytest.MonkeyPatch) -> None:
+    desired = getattr(socket, "AF_UNIX", 1)
+    monkeypatch.setattr(socket, "AF_UNIX", desired, raising=False)
+
+
+class _DummySocket:
+    def __init__(self, family, sock_type):
+        self.family = family
+        self.sock_type = sock_type
+        self.closed = False
+
+    def bind(self, addr):
+        self.addr = addr
+
+    def listen(self, backlog):
+        self.backlog = backlog
+
+    def settimeout(self, timeout):
+        self.timeout = timeout
+
+    def close(self):
+        self.closed = True
+
+
+class _DummyThread:
+    def __init__(self, target, name, daemon):
+        self.target = target
+        self.name = name
+        self.daemon = daemon
+        self.started = False
+
+    def start(self):
+        self.started = True
+
+    def is_alive(self):
+        return False
+
+    def join(self, timeout=None):
+        del timeout
+
+
+class _SockCloseErr(_DummySocket):
+    def close(self):
+        raise OSError("close failed")
+
+
+def _patch_control_server_start(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("nxscli.control_server.socket.socket", _DummySocket)
+    monkeypatch.setattr("nxscli.control_server.threading.Thread", _DummyThread)
+    monkeypatch.setattr(
+        "nxscli.control_server.ControlServerPlugin._serve_loop",
+        lambda self: None,
+        raising=False,
+    )
 
 
 @dataclass(frozen=True)
@@ -88,7 +154,7 @@ class _ControlStub:
 
 
 def test_control_server_roundtrip_unix_abstract():
-    endpoint = "unix-abstract://nxscli-test-control"
+    endpoint = _get_test_endpoint("nxscli-test-control")
     plugin = ControlServerPlugin(endpoint)
     control = _ControlStub()
 
@@ -144,7 +210,13 @@ def test_control_client_connection_error_returns_failed_ack(
     assert ack.retcode == -1
 
 
-def test_control_server_parse_unix_and_invalid_endpoints():
+def test_control_server_parse_unix_and_invalid_endpoints(monkeypatch):
+    _ensure_af_unix(monkeypatch)
+
+    ep = _parse_endpoint("unix-abstract://nxscli.sock")
+    assert ep.cleanup_path is None
+    assert ep.bind_addr == "\x00nxscli.sock"
+
     ep = _parse_endpoint("unix:///tmp/nxscli.sock")
     assert ep.cleanup_path == "/tmp/nxscli.sock"
     assert ep.bind_addr == "/tmp/nxscli.sock"
@@ -159,8 +231,40 @@ def test_control_server_parse_unix_and_invalid_endpoints():
         _parse_endpoint("unix-abstract://")
 
 
+def test_control_server_parse_unix_endpoints_without_af_unix(monkeypatch):
+    monkeypatch.delattr(socket, "AF_UNIX", raising=False)
+    with pytest.raises(ValueError, match="not supported"):
+        _parse_endpoint("unix:///tmp/nxscli.sock")
+    with pytest.raises(ValueError, match="not supported"):
+        _parse_endpoint("unix-abstract://nxscli")
+    with pytest.raises(ValueError, match="not supported"):
+        _parse_endpoint("/tmp/nxscli2.sock")
+
+
+def test_control_server_enabled_parse_requires_af_unix(monkeypatch):
+    monkeypatch.delattr(socket, "AF_UNIX", raising=False)
+    with pytest.raises(ValueError, match="not supported"):
+        _parse_endpoint("unix:///tmp/nxscli.sock")
+    with pytest.raises(ValueError, match="not supported"):
+        _parse_endpoint("unix-abstract://nxscli")
+    with pytest.raises(ValueError, match="not supported"):
+        _parse_endpoint("/tmp/nxscli2.sock")
+
+
+def test_control_server_enabled_endpoint_tcp(monkeypatch):
+    monkeypatch.delattr(socket, "AF_UNIX", raising=False)
+    endpoint = _get_test_endpoint("nxscli-test-endpoint")
+    assert endpoint.startswith("tcp://")
+
+
+def test_control_server_enabled_endpoint_unix(monkeypatch):
+    _ensure_af_unix(monkeypatch)
+    endpoint = _get_test_endpoint("nxscli-test-endpoint")
+    assert endpoint == "unix-abstract://nxscli-test-endpoint"
+
+
 def test_control_server_handle_validation_paths():
-    plugin = ControlServerPlugin("unix-abstract://nxscli-test-handle")
+    plugin = ControlServerPlugin(_get_test_endpoint("nxscli-test-handle"))
 
     with pytest.raises(RuntimeError):
         plugin._handle({"method": "send_user_frame", "params": {}})
@@ -170,8 +274,20 @@ def test_control_server_handle_validation_paths():
         plugin._handle({"method": "unknown", "params": {}})
 
 
+def test_control_server_start_noop_when_thread_alive():
+    plugin = ControlServerPlugin(_get_test_endpoint("nxscli-start-alive"))
+
+    class _AliveThread:
+        def is_alive(self):
+            return True
+
+    plugin._thread = _AliveThread()
+    plugin._start()
+    assert isinstance(plugin._thread, _AliveThread)
+
+
 def test_control_server_recv_json_paths():
-    plugin = ControlServerPlugin("unix-abstract://nxscli-test-recv")
+    plugin = ControlServerPlugin(_get_test_endpoint("nxscli-test-recv"))
 
     class _Conn:
         def __init__(self, chunks):
@@ -197,7 +313,7 @@ def test_control_server_recv_json_paths():
 
 
 def test_control_server_serve_loop_timeout_and_exception_paths():
-    plugin = ControlServerPlugin("unix-abstract://nxscli-test-loop")
+    plugin = ControlServerPlugin(_get_test_endpoint("nxscli-test-loop"))
     plugin._control = _ControlStub()
 
     class _ConnOK:
@@ -239,7 +355,7 @@ def test_control_server_serve_loop_timeout_and_exception_paths():
 
 
 def test_control_server_serve_loop_timeout_to_exit_branch():
-    plugin = ControlServerPlugin("unix-abstract://nxscli-test-loop-exit")
+    plugin = ControlServerPlugin(_get_test_endpoint("nxscli-test-loop-exit"))
     plugin._control = _ControlStub()
 
     class _Sock:
@@ -251,7 +367,12 @@ def test_control_server_serve_loop_timeout_to_exit_branch():
     plugin._serve_loop()
 
 
-def test_control_server_start_stop_unix_cleanup_and_sock_close_error(tmp_path):
+def test_control_server_start_stop_unix_cleanup_and_sock_close_error(
+    tmp_path, monkeypatch
+):
+    _ensure_af_unix(monkeypatch)
+    _patch_control_server_start(monkeypatch)
+
     sock_path = Path(tmp_path) / "ctrl.sock"
     plugin = ControlServerPlugin(f"unix://{sock_path}")
     plugin._control = _ControlStub()
@@ -265,11 +386,7 @@ def test_control_server_start_stop_unix_cleanup_and_sock_close_error(tmp_path):
 
     plugin._stop_server()
 
-    class _SockCloseErr:
-        def close(self):
-            raise OSError("close failed")
-
-    plugin._sock = _SockCloseErr()
+    plugin._sock = _SockCloseErr(socket.AF_UNIX, socket.SOCK_STREAM)
     plugin._stop_server()
 
 
