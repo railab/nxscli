@@ -21,7 +21,7 @@ Compatible with Python 3.10+.
 * Stream data over UDP (compatible with [PlotJuggler](https://github.com/facontidavide/PlotJuggler))
 * NxScope protocol via serial port or Segger RTT interface
 * Virtual channels and math operations on channels data
-* Optional control server (`--control-server`) for extentions
+* Optional control server (`--control-server`) for extensions
 
 ## Features Planned
 
@@ -46,7 +46,7 @@ Available plugins:
 * Stream data as audio (inspired by audio knock detection systems)
 * PyQtGraph support
 
-## Instalation
+## Installation
 
 Nxscli can be installed by running `pip install nxscli`.
 
