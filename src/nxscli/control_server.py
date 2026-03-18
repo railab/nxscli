@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, cast
 
+from nxslib.comm import AckMode
 from nxslib.plugin import INxscopePlugin
 from nxslib.proto.iparse import ParseAck
 
@@ -195,7 +196,9 @@ class ControlServerPlugin(INxscopePlugin):
             ack = self._control.send_user_frame(
                 int(params["fid"]),
                 payload,
-                ack_mode=str(params.get("ack_mode", "auto")),
+                ack_mode=AckMode(
+                    str(params.get("ack_mode", "disabled")).lower()
+                ),
                 ack_timeout=float(params.get("ack_timeout", 1.0)),
             )
             return {
@@ -213,7 +216,9 @@ class ControlServerPlugin(INxscopePlugin):
                 cmd_id=int(params["cmd_id"]),
                 payload=payload,
                 fid=int(params.get("fid", 8)),
-                ack_mode=str(params.get("ack_mode", "auto")),
+                ack_mode=AckMode(
+                    str(params.get("ack_mode", "disabled")).lower()
+                ),
                 ack_timeout=float(params.get("ack_timeout", 1.0)),
             )
             return {
@@ -232,7 +237,9 @@ class ControlServerPlugin(INxscopePlugin):
                 payload=payload,
                 fid=int(params.get("fid", 8)),
                 timeout=float(params.get("timeout", 1.0)),
-                ack_mode=str(params.get("ack_mode", "auto")),
+                ack_mode=AckMode(
+                    str(params.get("ack_mode", "disabled")).lower()
+                ),
                 ack_timeout=float(params.get("ack_timeout", 1.0)),
             )
             return {
@@ -307,7 +314,7 @@ class ControlClient:
         self,
         fid: int,
         payload: bytes,
-        ack_mode: str = "auto",
+        ack_mode: str = "disabled",
         ack_timeout: float = 1.0,
     ) -> ParseAck:
         """Proxy send_user_frame."""
@@ -333,7 +340,7 @@ class ControlClient:
         cmd_id: int,
         payload: bytes,
         fid: int = 8,
-        ack_mode: str = "auto",
+        ack_mode: str = "disabled",
         ack_timeout: float = 1.0,
     ) -> ParseAck:
         """Proxy ext_notify."""
@@ -362,7 +369,7 @@ class ControlClient:
         payload: bytes,
         fid: int = 8,
         timeout: float = 1.0,
-        ack_mode: str = "auto",
+        ack_mode: str = "disabled",
         ack_timeout: float = 1.0,
     ) -> ControlResult:
         """Proxy ext_request."""
