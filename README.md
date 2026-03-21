@@ -40,11 +40,11 @@ Plugins are automatically detected by Nxscli.
 Available plugins:
 
 * [nxscli-mpl](https://github.com/railab/nxscli-mpl) - Matplotlib extension
+* [nxscli-pqg](https://github.com/railab/nxscli-pqg) - PyQtGraph extension
 
 ## Plugins Planned
 
 * Stream data as audio (inspired by audio knock detection systems)
-* PyQtGraph support
 
 ## Installation
 
