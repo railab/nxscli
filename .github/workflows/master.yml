@@ -15,6 +15,15 @@ jobs:
           - os: ubuntu-latest
             python: '3.11'
             toxenv: py
+          - os: ubuntu-latest
+            python: '3.12'
+            toxenv: py
+          - os: ubuntu-latest
+            python: '3.13'
+            toxenv: py
+          - os: ubuntu-latest
+            python: '3.14'
+            toxenv: py
           # windows
           - os: windows-latest
             python: "3.10"
