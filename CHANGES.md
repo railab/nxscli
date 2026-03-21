@@ -18,3 +18,9 @@
 - add support for control server
 - add shared sample and window transform modules
 - add virtual channel runtime and vadd command
+
+## 1.0.1 (23/03/2026)
+
+- improve pdevinfo output
+- new triggering logic
+- add version command
