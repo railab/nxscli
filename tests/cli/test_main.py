@@ -1,9 +1,11 @@
 import socket
+from importlib.metadata import PackageNotFoundError
 
 import pytest  # type: ignore
 from click.testing import CliRunner
 
 import nxscli
+import nxscli.commands.cmd_version
 from nxscli.cli.main import main
 from tests.fake_nxscope import FakeNxscope
 
@@ -82,6 +84,86 @@ def test_main_control_server_enabled_init_failure(runner, monkeypatch):
     )
     assert result.exit_code != 0
     assert cleanup_called["flag"] is True
+
+
+def test_main_version_builtin(runner):
+    result = runner.invoke(main, ["version"])
+    assert result.exit_code == 0
+    assert "nxscli:" in result.output
+    assert "nxslib:" in result.output
+    assert "plugins:" in result.output
+    assert "- nxscli:" not in result.output
+
+
+def test_main_version_external_plugins(runner, monkeypatch):
+    class FakeEntryPoint:
+        def __init__(self, group):
+            self.group = group
+
+    class FakeDist:
+        def __init__(self, name, version, entry_points):
+            self.metadata = {"Name": name}
+            self.version = version
+            self.entry_points = entry_points
+
+    monkeypatch.setattr(
+        nxscli.commands.cmd_version,
+        "distributions",
+        lambda: [
+            FakeDist(
+                "nxscli-mpl", "2.0.0", [FakeEntryPoint("nxscli.extensions")]
+            ),
+            FakeDist(
+                "irrelevant",
+                "9.9.9",
+                [FakeEntryPoint("other.group")],
+            ),
+            FakeDist(
+                "nxscli-pqg", "3.1.4", [FakeEntryPoint("nxscli.extensions")]
+            ),
+        ],
+    )
+
+    result = runner.invoke(main, ["version"])
+    assert result.exit_code == 0
+    assert "- nxscli-mpl: 2.0.0" in result.output
+    assert "- nxscli-pqg: 3.1.4" in result.output
+    assert "- irrelevant:" not in result.output
+
+
+def test_main_version_missing_package_and_skip_builtin(runner, monkeypatch):
+    class FakeEntryPoint:
+        def __init__(self, group):
+            self.group = group
+
+    class FakeDist:
+        def __init__(self, name, version, entry_points):
+            self.metadata = {"Name": name}
+            self.version = version
+            self.entry_points = entry_points
+
+    def fake_version(name):
+        if name == "nxslib":
+            raise PackageNotFoundError
+        return "1.0.0"
+
+    monkeypatch.setattr(nxscli.commands.cmd_version, "version", fake_version)
+    monkeypatch.setattr(
+        nxscli.commands.cmd_version,
+        "distributions",
+        lambda: [
+            FakeDist("nxscli", "1.0.0", [FakeEntryPoint("nxscli.extensions")]),
+            FakeDist(
+                "nxscli-mpl", "2.0.0", [FakeEntryPoint("nxscli.extensions")]
+            ),
+        ],
+    )
+
+    result = runner.invoke(main, ["version"])
+    assert result.exit_code == 0
+    assert "nxslib: not installed" in result.output
+    assert "- nxscli:" not in result.output
+    assert "- nxscli-mpl: 2.0.0" in result.output
 
 
 def test_main_pdevinfo(runner):
