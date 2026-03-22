@@ -1,15 +1,13 @@
 import queue
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest  # type: ignore
 from nxslib.dev import DeviceChannel
+from nxslib.nxscope import DNxscopeStreamBlock
 
+from nxscli.channelref import ChannelRef
 from nxscli.idata import PluginData, PluginDataCb, PluginQueueData
 from nxscli.trigger import DTriggerConfig, ETriggerType, TriggerHandler
-
-if TYPE_CHECKING:
-    from nxscli.channelref import ChannelRef
 
 g_queue: queue.Queue[list] = queue.Queue()
 
@@ -81,6 +79,34 @@ def test_pluginqueuedata_queue_get_handles_block_without_meta() -> None:
     ret = qdata.queue_get(block=False)
     assert len(ret) == 1
     assert ret[0].meta is None
+    TriggerHandler.cls_cleanup()
+
+
+def test_pluginqueuedata_exposes_trigger_event_metadata() -> None:
+    q = queue.Queue()
+    q.put(
+        [
+            DNxscopeStreamBlock(
+                data=np.asarray([0.0, 0.0, 1.0, 2.0], dtype=float).reshape(
+                    -1, 1
+                ),
+                meta=None,
+            )
+        ]
+    )
+    chan = DeviceChannel(7, 2, 1, "chan7")
+    dtc = DTriggerConfig(ETriggerType.EDGE_RISING, hoffset=1, level=0.5)
+    trig = TriggerHandler(7, dtc)
+    qdata = PluginQueueData(q, chan, trig)
+
+    ret = qdata.queue_get(block=False)
+    event = qdata.pop_trigger_event()
+
+    assert len(ret) == 1
+    assert event is not None
+    assert event.channel == 7
+    assert event.sample_index == 1.0
+    assert qdata.pop_trigger_event() is None
     TriggerHandler.cls_cleanup()
 
 
@@ -164,4 +190,106 @@ def test_nxsclipdata_virtual_channel_name_is_supported() -> None:
     assert got["name"] == "v2"
     pdata._queue_deinit()
 
+    TriggerHandler.cls_cleanup()
+
+
+def test_nxsclipdata_drains_hidden_virtual_trigger_source() -> None:
+    queues: dict[str, queue.Queue[list]] = {
+        "0": queue.Queue(),
+        "v0": queue.Queue(),
+    }
+
+    def stream_sub(channel: "ChannelRef"):  # noqa: ANN001
+        if channel.is_virtual:
+            return queues[channel.virtual_name()]
+        return queues[str(channel.physical_id())]
+
+    def stream_unsub(_q):  # noqa: ANN001
+        return
+
+    target = DeviceChannel(0, 2, 1, "chan0")
+    _ = TriggerHandler(
+        -2,
+        DTriggerConfig(
+            ETriggerType.ALWAYS_OFF,
+            source_ref=ChannelRef.virtual(0),
+        ),
+    )
+    trig = TriggerHandler(
+        0,
+        DTriggerConfig(
+            ETriggerType.EDGE_RISING,
+            srcchan=-2,
+            level=0.5,
+            source_ref=ChannelRef.virtual(0),
+        ),
+    )
+    cb = PluginDataCb(stream_sub, stream_unsub)
+    pdata = PluginData([target], [trig], cb)
+
+    queues["v0"].put(
+        [
+            DNxscopeStreamBlock(
+                data=np.asarray([0.0, 1.0, 1.0], dtype=float).reshape(-1, 1),
+                meta=None,
+            )
+        ]
+    )
+    queues["0"].put(
+        [
+            DNxscopeStreamBlock(
+                data=np.asarray([10.0, 11.0, 12.0], dtype=float).reshape(
+                    -1, 1
+                ),
+                meta=None,
+            )
+        ]
+    )
+
+    ret = pdata.qdlist[0].queue_get(block=False)
+
+    assert len(pdata._aux_qd) == 1
+    assert len(ret) == 1
+    assert ret[0].data.shape[0] > 0
+    pdata._queue_deinit()
+    TriggerHandler.cls_cleanup()
+
+
+def test_nxsclipdata_missing_hidden_trigger_raises() -> None:
+    def stream_sub(channel: "ChannelRef"):  # noqa: ANN001
+        return queue.Queue()
+
+    def stream_unsub(_q):  # noqa: ANN001
+        return
+
+    target = DeviceChannel(0, 2, 1, "chan0")
+    trig = TriggerHandler(
+        0,
+        DTriggerConfig(
+            ETriggerType.EDGE_RISING,
+            srcchan=-2,
+            level=0.5,
+            source_ref=ChannelRef.virtual(0),
+        ),
+    )
+    cb = PluginDataCb(stream_sub, stream_unsub)
+
+    with pytest.raises(AssertionError):
+        _ = PluginData([target], [trig], cb)
+
+    stream_unsub(queue.Queue())
+    TriggerHandler.cls_cleanup()
+
+
+def test_nxsclipdata_find_trigger_prefers_visible_list() -> None:
+    q = queue.Queue()
+    chan = DeviceChannel(0, 2, 1, "chan0")
+    trig = TriggerHandler(0, DTriggerConfig(ETriggerType.ALWAYS_ON))
+    qdata = PluginData(
+        [chan], [trig], PluginDataCb(lambda _ch: q, lambda _q: None)
+    )
+
+    assert qdata._find_trigger(0) is trig
+
+    qdata._queue_deinit()
     TriggerHandler.cls_cleanup()

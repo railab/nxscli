@@ -44,10 +44,19 @@ def cmd_trig(
        off - always off
        er - edge rising, parameters: [hoffset, level]
        ef - edge falling: [hoffset, level]
+       we - window enter, parameters: [hoffset, low, high]
+       wx - window exit, parameters: [hoffset, low, high]
+
+    Optional named trigger options:
+       mode=start_after|stop_after
+       pre=<samples>
+       post=<samples>
+       holdoff=<samples>
+       rearm=true|false
 
     \b
     where:
-       hoffset - horizontal offset for triggered data
+       hoffset - legacy pre-trigger sample count
        level - trigger level
 
     Default: all channels on ('g:on').
@@ -67,6 +76,14 @@ def cmd_trig(
       chan 4 always off,
       white spaces ignored:
       '2 : er#2@1, 0, 1; 3 : on; 4 : off'
+    - all chans stream until edge, then keep 64 post-trigger samples:
+      'g:er,0,0.5,mode=stop_after,post=64'
+    - all chans capture 32 samples before rising edge:
+      'g:er,0,0.5,pre=32'
+    - all chans capture 32 samples before entering window [-0.5, 0.5]:
+      'g:we,0,-0.5,0.5,pre=32'
+    - all chans capture after exiting window [-0.25, 0.25]:
+      'g:wx,0,-0.25,0.25'
     """  # noqa: D301
     assert ctx.phandler
     ctx.triggers = triggers

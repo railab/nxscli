@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from nxslib.dev import DeviceChannel
 
     from nxscli.channelref import ChannelRef
-    from nxscli.trigger import TriggerHandler
+    from nxscli.trigger import DTriggerEvent, TriggerHandler
 
 ###############################################################################
 # Class: PluginDataCb
@@ -40,6 +40,7 @@ class PluginQueueData:
         que: queue.Queue[Any],
         channel: "DeviceChannel",
         trig: "TriggerHandler",
+        aux_drain: "Callable[[], None] | None" = None,
     ):
         """Initialize a queue data handler.
 
@@ -50,6 +51,8 @@ class PluginQueueData:
         self._queue = que
         self._channel = channel
         self._trigger = trig
+        self._aux_drain = aux_drain
+        self._last_trigger_event: "DTriggerEvent | None" = None
 
     def __str__(self) -> str:
         """Format string representation."""
@@ -98,13 +101,23 @@ class PluginQueueData:
         :param timeout: get data timeout
         """
         ret = []
+        if self._aux_drain is not None:
+            self._aux_drain()
         try:
             # get data from queue
             ret = self._queue.get(block=block, timeout=timeout)
         except queue.Empty:
             pass
 
-        return self._trigger.data_triggered(ret)
+        payload = self._trigger.data_triggered(ret)
+        self._last_trigger_event = self._trigger.pop_trigger_event()
+        return payload
+
+    def pop_trigger_event(self) -> "DTriggerEvent | None":
+        """Return and clear the last trigger event metadata."""
+        event = self._last_trigger_event
+        self._last_trigger_event = None
+        return event
 
 
 ###############################################################################
@@ -134,6 +147,7 @@ class PluginData:
         self._cb = cb
 
         # queue handlers
+        self._aux_qd: list[tuple[queue.Queue[Any], "TriggerHandler"]] = []
         self._qdlist = self._qdlist_init()
 
     def __del__(self) -> None:
@@ -147,6 +161,8 @@ class PluginData:
         from nxscli.channelref import ChannelRef
 
         ret = []
+        visible_ids = {chan.data.chan for chan in self._chanlist}
+        aux_source_ids: set[int] = set()
         for i, channel in enumerate(self._chanlist):
             # get queue with data
             if channel.data.chan >= 0:
@@ -162,16 +178,57 @@ class PluginData:
                     )
             que = self._cb.stream_sub(cref)
             # initialize queue handler
-            pdata = PluginQueueData(que, channel, self._trig[i])
+            pdata = PluginQueueData(
+                que, channel, self._trig[i], aux_drain=self._aux_drain
+            )
             # add hanler to a list
             ret.append(pdata)
+
+            srcchan = self._trig[i].config.srcchan
+            srcref = self._trig[i].config.source_ref
+            if (
+                srcchan is None
+                or srcref is None
+                or srcchan in visible_ids
+                or srcchan in aux_source_ids
+            ):
+                continue
+            src_trig = self._find_trigger(srcchan)
+            if src_trig is None:
+                raise AssertionError(
+                    f"missing source trigger handler for channel {srcchan}"
+                )
+            aux_q = self._cb.stream_sub(srcref)
+            self._aux_qd.append((aux_q, src_trig))
+            aux_source_ids.add(srcchan)
         return ret
+
+    def _find_trigger(self, chan: int) -> "TriggerHandler | None":
+        for trig in self._trig:
+            if trig.chan == chan:
+                return trig
+        from nxscli.trigger import TriggerHandler
+
+        return TriggerHandler.find_by_channel(chan)
+
+    def _aux_drain(self) -> None:
+        for aux_q, trig in self._aux_qd:
+            while True:
+                try:
+                    data = aux_q.get(block=False)
+                except queue.Empty:
+                    break
+                trig.data_triggered(data)
+                trig.pop_trigger_event()
 
     def _queue_deinit(self) -> None:
         """Deinitialize queue."""
         for pdata in self._qdlist:
             self._cb.stream_unsub(pdata.queue)
         self._qdlist.clear()
+        for aux_q, _ in self._aux_qd:
+            self._cb.stream_unsub(aux_q)
+        self._aux_qd.clear()
 
         # clean up triggers
         # TODO: revisit where this beleong, here or in plugins ?

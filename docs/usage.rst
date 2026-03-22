@@ -42,6 +42,7 @@ with various channel configurations (based on ``pcap`` from ``nxscli-mpl``):
 Library integration guide:
 
 * :doc:`library`
+* :doc:`triggers`
 
 Interface Commands
 ------------------
@@ -69,10 +70,15 @@ Supported interface commands:
   - 14: hist_bimodal - vdim = 1, deterministic bi-modal
   - 15: xy_lissajous - vdim = 2, correlated XY signal
   - 16: polar_theta_radius - vdim = 2, (theta, radius) signal
-  - 17: step_up_once - vdim = 1, one rising step
-  - 18: step_down_once - vdim = 1, one falling step
-  - 19: pulse_square_20p - vdim = 1, periodic square pulse (20% duty)
-  - 20: pulse_single_sparse - vdim = 1, one-sample pulse every 250 samples
+  - 17: step_low_to_high - vdim = 1, one low-to-high step
+  - 18: step_high_to_low - vdim = 1, one high-to-low step
+  - 19: square_wave_20p - vdim = 1, periodic square wave (20% duty)
+  - 20: impulse_sparse - vdim = 1, one-sample impulse every 250 samples
+  - 21: square_wave_50p - vdim = 1, periodic square wave (50% duty)
+  - 22: sine_slow - vdim = 1, slow sine wave
+  - 23: impulse_clustered - vdim = 1, clustered impulses
+  - 24: impulse_once_ref - vdim = 1, one-shot impulse reference
+  - 25: vec3_mixed_steps - vdim = 3, mixed vector step source
 
 * ``serial`` - select serial port NxScope interface
 
@@ -95,6 +101,7 @@ Available configuration commands:
   Optional, at default all channels are always-on.
 
   Triggers can be configured per channel with the option ``--trig``.
+  For syntax, modes, and validation commands see :doc:`triggers`.
 
 * ``vadd`` - add virtual channel in `nxscli` virtual runtime.
 

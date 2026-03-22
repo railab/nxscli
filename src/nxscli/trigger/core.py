@@ -5,12 +5,15 @@ from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
 from threading import Lock
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from nxslib.nxscope import DNxscopeStreamBlock
 
 from nxscli.logger import logger
+
+if TYPE_CHECKING:
+    from nxscli.channelref import ChannelRef
 
 ###############################################################################
 # Enum: ETriggerType
@@ -24,6 +27,15 @@ class ETriggerType(Enum):
     ALWAYS_ON = 1
     EDGE_RISING = 2
     EDGE_FALLING = 3
+    WINDOW_ENTER = 4
+    WINDOW_EXIT = 5
+
+
+class ETriggerCaptureMode(Enum):
+    """Trigger capture behavior."""
+
+    START_AFTER = "start_after"
+    STOP_AFTER = "stop_after"
 
 
 ###############################################################################
@@ -39,6 +51,15 @@ class DTriggerState:
     idx: int
 
 
+@dataclass
+class DTriggerEvent:
+    """Metadata about one emitted trigger event."""
+
+    sample_index: float
+    channel: int
+    capture_mode: ETriggerCaptureMode
+
+
 ###############################################################################
 # Class: DDTriggerConfigReq
 ###############################################################################
@@ -49,9 +70,14 @@ class DTriggerConfigReq:
     """The class representing trigger configuration request."""
 
     ttype: str
-    srcchan: int | None
+    srcchan: "int | ChannelRef | None"
     vect: int = 0
     params: list[Any] | None = None
+    mode: str | None = None
+    pre_samples: int | None = None
+    post_samples: int | None = None
+    holdoff: int = 0
+    rearm: bool = False
 
 
 ###############################################################################
@@ -64,12 +90,20 @@ def trigger_from_req(req: DTriggerConfigReq) -> "DTriggerConfig":
 
     :param req: trigger configuration request
     """
+    capture_mode = ETriggerCaptureMode.START_AFTER
+    if req.mode is not None:
+        capture_mode = ETriggerCaptureMode(req.mode)
+
+    srcchan = req.srcchan if isinstance(req.srcchan, int) else None
+
     if req.ttype == "off":
         # no arguments
-        dtc = DTriggerConfig(ETriggerType.ALWAYS_OFF)
+        dtc = DTriggerConfig(
+            ETriggerType.ALWAYS_OFF, capture_mode=capture_mode
+        )
     elif req.ttype == "on":
         # no arguments
-        dtc = DTriggerConfig(ETriggerType.ALWAYS_ON)
+        dtc = DTriggerConfig(ETriggerType.ALWAYS_ON, capture_mode=capture_mode)
     elif req.ttype == "er":
         # argument 1 horisontal offset
         # argument 2 trigger level
@@ -77,7 +111,12 @@ def trigger_from_req(req: DTriggerConfigReq) -> "DTriggerConfig":
         hoffset = int(req.params[0])
         level = float(req.params[1])
         dtc = DTriggerConfig(
-            ETriggerType.EDGE_RISING, req.srcchan, req.vect, hoffset, level
+            ETriggerType.EDGE_RISING,
+            srcchan,
+            req.vect,
+            hoffset,
+            level,
+            capture_mode=capture_mode,
         )
     elif req.ttype == "ef":
         # argument 1 horisontal offset
@@ -86,10 +125,50 @@ def trigger_from_req(req: DTriggerConfigReq) -> "DTriggerConfig":
         hoffset = int(req.params[0])
         level = float(req.params[1])
         dtc = DTriggerConfig(
-            ETriggerType.EDGE_FALLING, req.srcchan, req.vect, hoffset, level
+            ETriggerType.EDGE_FALLING,
+            srcchan,
+            req.vect,
+            hoffset,
+            level,
+            capture_mode=capture_mode,
+        )
+    elif req.ttype == "we":
+        assert req.params
+        hoffset = int(req.params[0])
+        low = float(req.params[1])
+        high = float(req.params[2])
+        dtc = DTriggerConfig(
+            ETriggerType.WINDOW_ENTER,
+            srcchan,
+            req.vect,
+            hoffset,
+            window_low=low,
+            window_high=high,
+            capture_mode=capture_mode,
+        )
+    elif req.ttype == "wx":
+        assert req.params
+        hoffset = int(req.params[0])
+        low = float(req.params[1])
+        high = float(req.params[2])
+        dtc = DTriggerConfig(
+            ETriggerType.WINDOW_EXIT,
+            srcchan,
+            req.vect,
+            hoffset,
+            window_low=low,
+            window_high=high,
+            capture_mode=capture_mode,
         )
     else:
         raise AssertionError
+
+    if req.pre_samples is not None:
+        dtc.pre_samples = req.pre_samples
+    if req.post_samples is not None:
+        dtc.post_samples = req.post_samples
+    dtc.holdoff = req.holdoff
+    dtc.rearm = req.rearm
     return dtc
 
 
@@ -107,6 +186,21 @@ class DTriggerConfig:
     vect: int = 0
     hoffset: int = 0
     level: float | None = None
+    source_ref: "ChannelRef | None" = None
+    window_low: float | None = None
+    window_high: float | None = None
+    capture_mode: ETriggerCaptureMode = ETriggerCaptureMode.START_AFTER
+    pre_samples: int = 0
+    post_samples: int = 0
+    holdoff: int = 0
+    rearm: bool = False
+
+    @property
+    def effective_pre_samples(self) -> int:
+        """Return explicit pre-samples or fall back to legacy hoffset."""
+        if self.pre_samples > 0:
+            return self.pre_samples
+        return self.hoffset
 
 
 ###############################################################################
@@ -135,6 +229,8 @@ class TriggerHandler(object):
         self._chan: int = chan
         self._trigger: DTriggerState = DTriggerState(False, 0)
         self._triger_done = False
+        self._post_remaining = 0
+        self._last_event: DTriggerEvent | None = None
 
         # trigger source channel reference
         self._src: "TriggerHandler" | None = None  # noqa: TC010
@@ -242,7 +338,7 @@ class TriggerHandler(object):
             return DTriggerState(False, 0)
         hits = np.flatnonzero((vec[:-1] <= level) & (vec[1:] > level))
         if hits.size > 0:
-            return DTriggerState(True, int(hits[0]))
+            return DTriggerState(True, int(hits[0] + 1))
         return DTriggerState(False, 0)
 
     def _edgefalling(
@@ -253,7 +349,31 @@ class TriggerHandler(object):
             return DTriggerState(False, 0)
         hits = np.flatnonzero((vec[:-1] >= level) & (vec[1:] < level))
         if hits.size > 0:
-            return DTriggerState(True, int(hits[0]))
+            return DTriggerState(True, int(hits[0] + 1))
+        return DTriggerState(False, 0)
+
+    def _windowenter(
+        self, combined: list[Any], vect: int, low: float, high: float
+    ) -> DTriggerState:
+        vec = self._combined_vector_np(combined, vect)
+        if vec.size < 2:
+            return DTriggerState(False, 0)
+        inside = (vec >= low) & (vec <= high)
+        hits = np.flatnonzero((~inside[:-1]) & inside[1:])
+        if hits.size > 0:
+            return DTriggerState(True, int(hits[0] + 1))
+        return DTriggerState(False, 0)
+
+    def _windowexit(
+        self, combined: list[Any], vect: int, low: float, high: float
+    ) -> DTriggerState:
+        vec = self._combined_vector_np(combined, vect)
+        if vec.size < 2:
+            return DTriggerState(False, 0)
+        inside = (vec >= low) & (vec <= high)
+        hits = np.flatnonzero(inside[:-1] & (~inside[1:]))
+        if hits.size > 0:
+            return DTriggerState(True, int(hits[0] + 1))
         return DTriggerState(False, 0)
 
     def _is_self_trigger(
@@ -269,6 +389,24 @@ class TriggerHandler(object):
         elif config.ttype is ETriggerType.EDGE_FALLING:
             assert config.level is not None
             return self._edgefalling(combined, config.vect, config.level)
+        elif config.ttype is ETriggerType.WINDOW_ENTER:
+            assert config.window_low is not None
+            assert config.window_high is not None
+            return self._windowenter(
+                combined,
+                config.vect,
+                config.window_low,
+                config.window_high,
+            )
+        elif config.ttype is ETriggerType.WINDOW_EXIT:
+            assert config.window_low is not None
+            assert config.window_high is not None
+            return self._windowexit(
+                combined,
+                config.vect,
+                config.window_low,
+                config.window_high,
+            )
         else:
             raise AssertionError
 
@@ -322,6 +460,20 @@ class TriggerHandler(object):
     def config(self) -> DTriggerConfig:
         """Get trigger configuration."""
         return self._config
+
+    def pop_trigger_event(self) -> DTriggerEvent | None:
+        """Return and clear the last emitted trigger event."""
+        event = self._last_event
+        self._last_event = None
+        return event
+
+    @classmethod
+    def find_by_channel(cls, chan: int) -> "TriggerHandler | None":
+        """Return registered trigger handler for one channel if present."""
+        for inst in cls._instances:
+            if inst.chan == chan:
+                return inst
+        return None
 
     @classmethod
     def cls_cleanup(cls: type["TriggerHandler"]) -> None:
@@ -402,44 +554,157 @@ class TriggerHandler(object):
         start = max(total - hoffset, 0)
         return self._slice_from(combined, start)
 
-    def data_triggered(self, data: list[Any]) -> list[Any]:
-        """Get triggered data.
+    def _sample_count(self, combined: list[Any]) -> int:
+        """Return number of samples in combined payload."""
+        if not combined:
+            return 0
+        if not self._is_block_payload(combined):
+            return len(combined)
+        return sum(int(block.data.shape[0]) for block in combined)
 
-        :param data: stream data
-        """
+    def _should_emit_event(self) -> bool:
+        """Return ``True`` only for real trigger detections."""
+        return self._config.ttype not in (
+            ETriggerType.ALWAYS_ON,
+            ETriggerType.ALWAYS_OFF,
+        )
+
+    def _slice_range(
+        self, combined: list[Any], start: int, stop: int
+    ) -> list[Any]:
+        """Slice combined payload by sample range."""
+        if stop <= start:
+            return []
+        if not combined:
+            return []
+        if not self._is_block_payload(combined):
+            return combined[start:stop]
+
+        ret: list[Any] = []
+        offset = 0
+        for block in combined:
+            rows = int(block.data.shape[0])
+            block_start = max(start - offset, 0)
+            block_stop = min(stop - offset, rows)
+            if block_stop > block_start:
+                data = block.data[block_start:block_stop, :]
+                meta = (
+                    None
+                    if block.meta is None
+                    else block.meta[block_start:block_stop, :]
+                )
+                ret.append(DNxscopeStreamBlock(data=data, meta=meta))
+            offset += rows
+            if offset >= stop:
+                break
+        return ret
+
+    def _tail_samples(self, combined: list[Any], count: int) -> list[Any]:
+        """Keep only the last N samples for boundary detection."""
+        if count <= 0:
+            return []
+        total = self._sample_count(combined)
+        start = max(total - count, 0)
+        return self._slice_range(combined, start, total)
+
+    def _data_triggered_start_after(self, data: list[Any]) -> list[Any]:
+        """Legacy start-after-trigger behavior with pre-trigger history."""
         combined = self._cache + data
+        self._last_event = None
 
         self._trigger = self._is_triggered(combined)
 
         # check all cross-channel triggers
         self._cross_channel_handle(combined)
 
+        pre_samples = self._config.effective_pre_samples
+
         if not self._trigger.state:
-            # not triggered yet
             ret = []
-            # update cache
             if self._is_block_payload(combined):
-                if self._config.hoffset <= 0:
-                    # keep only current block batch when no history is needed
+                if pre_samples <= 0:
                     self._cache = data
                 else:
-                    self._cache = self._cache_tail(
-                        combined, self._config.hoffset
-                    )
+                    self._cache = self._cache_tail(combined, pre_samples)
             else:
                 clen = len(self._cache)
-                self._cache = combined[clen - self._config.hoffset :]
+                self._cache = combined[clen - pre_samples :]
         else:
-            # one time hoffset for trigger
+            first_trigger = not self._triger_done
             if not self._triger_done:
-                hoffset = self._config.hoffset
+                hoffset = pre_samples
                 self._triger_done = True
             else:
                 hoffset = 0
 
-            # return data with a configured horisontal offset
-            ret = self._slice_from(combined, self._trigger.idx - hoffset)
-            # reset cache
+            start_idx = self._trigger.idx - hoffset
+            ret = self._slice_from(combined, start_idx)
+            trigger_sample = self._trigger.idx - max(start_idx, 0)
+            if first_trigger and self._should_emit_event():
+                self._last_event = DTriggerEvent(
+                    sample_index=float(trigger_sample),
+                    channel=self._chan,
+                    capture_mode=self._config.capture_mode,
+                )
             self._cache = []
 
         return ret
+
+    def _data_triggered_stop_after(self, data: list[Any]) -> list[Any]:
+        """Stream immediately, then stop after trigger plus tail samples."""
+        self._last_event = None
+        if not self._should_emit_event():
+            return data
+        if not data and self._post_remaining <= 0:
+            return []
+
+        if not self._is_block_payload(data):
+            raise NotImplementedError(
+                "stop_after capture mode requires NumPy block stream payloads"
+            )
+
+        if self._trigger.state:
+            total = self._sample_count(data)
+            if self._post_remaining <= 0:
+                return []
+            returned = self._slice_range(
+                data, 0, min(total, self._post_remaining)
+            )
+            self._post_remaining -= min(total, self._post_remaining)
+            return returned
+
+        combined = self._cache + data
+        cache_rows = self._sample_count(self._cache)
+
+        self._trigger = self._is_triggered(combined)
+        self._cross_channel_handle(combined)
+
+        if not self._trigger.state:
+            self._cache = self._tail_samples(combined, 1)
+            return data
+
+        total = self._sample_count(combined)
+        stop_at = self._trigger.idx + self._config.post_samples + 1
+        returned = self._slice_range(combined, cache_rows, min(total, stop_at))
+        self._last_event = DTriggerEvent(
+            sample_index=max(
+                self._trigger.idx - cache_rows,
+                0.0,
+            ),
+            channel=self._chan,
+            capture_mode=self._config.capture_mode,
+        )
+        self._post_remaining = max(stop_at - total, 0)
+        self._cache = []
+        return returned
+
+    def data_triggered(self, data: list[Any]) -> list[Any]:
+        """Get triggered data.
+
+        :param data: stream data
+        """
+        if self._config.capture_mode is ETriggerCaptureMode.START_AFTER:
+            return self._data_triggered_start_after(data)
+        if self._config.capture_mode is ETriggerCaptureMode.STOP_AFTER:
+            return self._data_triggered_stop_after(data)
+        raise AssertionError

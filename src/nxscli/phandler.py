@@ -6,7 +6,13 @@ from nxscli.channelref import ChannelRef
 from nxscli.idata import PluginDataCb
 from nxscli.logger import logger
 from nxscli.stream_hub import SharedStreamProvider
-from nxscli.trigger import DTriggerConfigReq, TriggerHandler, trigger_from_req
+from nxscli.trigger import (
+    DTriggerConfig,
+    DTriggerConfigReq,
+    ETriggerType,
+    TriggerHandler,
+    trigger_from_req,
+)
 
 if TYPE_CHECKING:
     import queue
@@ -687,12 +693,59 @@ class PluginHandler:
                 tcfg = self.trigger_get(chan.data.chan)
                 trgs.append((chan.data.chan, tcfg))
 
-        ret = []
+        visible_ids = {chan.data.chan for chan in chanlist}
+        resolved: list[tuple[int, DTriggerConfig]] = []
+        hidden_handlers: list[TriggerHandler] = []
         for item in trgs:
-            # get trigger configuration
             dtc = trigger_from_req(item[1])
-            # get trigger
-            trig = TriggerHandler(item[0], dtc)
-            ret.append(trig)
+            source_ref = self._trigger_source_ref(item[1])
+            if source_ref is not None:
+                src_channel = self._trigger_source_channel(source_ref)
+                if src_channel.data.chan == item[0]:
+                    dtc.source_ref = None
+                    dtc.srcchan = None
+                else:
+                    dtc.source_ref = source_ref
+                    dtc.srcchan = src_channel.data.chan
+                    if dtc.srcchan not in visible_ids:
+                        hidden = self._hidden_trigger_source(
+                            dtc.srcchan, source_ref
+                        )
+                        hidden_handlers.append(hidden)
 
+            resolved.append((item[0], dtc))
+
+        ret = []
+        for chan_id, dtc in resolved:
+            ret.append(TriggerHandler(chan_id, dtc))
         return ret
+
+    def _trigger_source_ref(self, req: DTriggerConfigReq) -> ChannelRef | None:
+        source = req.srcchan
+        if isinstance(source, ChannelRef):
+            return source
+        if isinstance(source, int):
+            return ChannelRef.physical(source)
+        return None
+
+    def _trigger_source_channel(
+        self, source_ref: ChannelRef
+    ) -> "DeviceChannel":
+        src_channel = self.channel_get(source_ref)
+        if src_channel is None or not src_channel.data.is_valid:
+            raise ValueError(f"invalid trigger source channel: {source_ref}")
+        return src_channel
+
+    def _hidden_trigger_source(
+        self, chan: int, source_ref: ChannelRef
+    ) -> TriggerHandler:
+        hidden = TriggerHandler.find_by_channel(chan)
+        if hidden is None:
+            hidden = TriggerHandler(
+                chan,
+                DTriggerConfig(
+                    ETriggerType.ALWAYS_OFF,
+                    source_ref=source_ref,
+                ),
+            )
+        return hidden
