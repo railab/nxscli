@@ -118,6 +118,56 @@ class Trigger(click.ParamType):
     req_global = "g"
     req_vect = "@"
 
+    @staticmethod
+    def _parse_bool(value: str) -> bool:
+        """Parse common boolean tokens."""
+        norm = value.strip().lower()
+        if norm in ("1", "true", "yes", "on"):
+            return True
+        if norm in ("0", "false", "no", "off"):
+            return False
+        raise click.BadParameter(f"invalid trigger boolean value: {value}")
+
+    @staticmethod
+    def _parse_channel_ref(value: str) -> int | ChannelRef:
+        """Parse physical or virtual trigger source token."""
+        if value.startswith("v"):
+            virt = value[1:]
+            if not virt.isnumeric():
+                raise click.BadParameter(
+                    "virtual trigger source must be like v0"
+                )
+            return ChannelRef.virtual(int(virt))
+        return int(value)
+
+    def _parse_named_args(
+        self, cfg: list[str]
+    ) -> tuple[list[str], dict[str, Any]]:
+        """Split positional and named trigger arguments."""
+        positional: list[str] = []
+        named: dict[str, Any] = {}
+
+        for item in cfg:
+            if "=" not in item:
+                positional.append(item)
+                continue
+
+            key, raw = item.split("=", 1)
+            if key == "mode":
+                named["mode"] = raw
+            elif key == "pre":
+                named["pre_samples"] = int(raw)
+            elif key == "post":
+                named["post_samples"] = int(raw)
+            elif key == "holdoff":
+                named["holdoff"] = int(raw)
+            elif key == "rearm":
+                named["rearm"] = self._parse_bool(raw)
+            else:
+                raise click.BadParameter(f"unsupported trigger option: {key}")
+
+        return positional, named
+
     def convert(
         self, value: Any, param: Any, ctx: Any
     ) -> dict[int, DTriggerConfigReq]:
@@ -135,15 +185,17 @@ class Trigger(click.ParamType):
             if vect_idx != -1 and cross_idx != -1:
                 if vect_idx > cross_idx:
                     trg = tmp[0][:cross_idx]
-                    cross = int(tmp[0][cross_idx + 1 : vect_idx])
+                    cross = self._parse_channel_ref(
+                        tmp[0][cross_idx + 1 : vect_idx]
+                    )
                     vect = int(tmp[0][vect_idx + 1 :])
                 else:
                     trg = tmp[0][:vect_idx]
                     vect = int(tmp[0][vect_idx + 1 : cross_idx])
-                    cross = int(tmp[0][cross_idx + 1 :])
+                    cross = self._parse_channel_ref(tmp[0][cross_idx + 1 :])
             elif vect_idx == -1 and cross_idx != -1:
                 trg, cross_s = tmp[0].split(self.req_cross)
-                cross = int(cross_s)
+                cross = self._parse_channel_ref(cross_s)
                 vect = 0
             elif vect_idx != -1 and cross_idx == -1:
                 trg, vect_s = tmp[0].split(self.req_vect)
@@ -154,7 +206,7 @@ class Trigger(click.ParamType):
                 vect = 0
                 cross = None
 
-            cfg = tmp[1:]
+            cfg, named = self._parse_named_args(tmp[1:])
             # special case for global configuration
             if schan == self.req_global:
                 chan = -1
@@ -165,7 +217,7 @@ class Trigger(click.ParamType):
             if cross == chan:
                 cross = None
 
-            req = DTriggerConfigReq(trg, cross, vect, cfg)
+            req = DTriggerConfigReq(trg, cross, vect, cfg, **named)
             ret[chan] = req
         return ret
 

@@ -17,7 +17,7 @@ from nxscli.iplugin import (
 )
 from nxscli.phandler import PluginHandler
 from nxscli.plugins.none import PluginNone
-from nxscli.trigger import DTriggerConfigReq
+from nxscli.trigger import DTriggerConfigReq, TriggerHandler
 from tests.fake_nxscope import FakeNxscope
 
 
@@ -816,6 +816,99 @@ def test_phandler_chanlist_plugin_virtual_multi_refs(nxscope) -> None:
             [ChannelRef.virtual(42), ChannelRef.virtual(0)]
         )
         assert any(ch.data.chan == -2 for ch in chanlist)
+
+
+def test_phandler_triggers_plugin_resolves_virtual_source(nxscope) -> None:
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
+
+        provider = _MockProvider()
+        provider.channels["v0"] = DeviceChannel(-2, 10, 1, "v0")
+        p.stream_provider_add(provider)
+
+        chan = p.channel_get(ChannelRef.physical(0))
+        assert chan is not None
+
+        trig = p.triggers_plugin(
+            [chan],
+            {
+                0: DTriggerConfigReq(
+                    "er", ChannelRef.virtual(0), 0, ["0", "0.5"]
+                )
+            },
+        )
+
+        assert trig[0].config.srcchan == -2
+        assert trig[0].config.source_ref is not None
+        assert trig[0].config.source_ref.virtual_name() == "v0"
+        assert TriggerHandler.find_by_channel(-2) is not None
+        TriggerHandler.cls_cleanup()
+
+
+def test_phandler_triggers_plugin_keeps_visible_source_inline(
+    nxscope,
+) -> None:
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
+
+        chans = [
+            p.channel_get(ChannelRef.physical(0)),
+            p.channel_get(ChannelRef.physical(1)),
+        ]
+        assert chans[0] is not None
+        assert chans[1] is not None
+
+        trig = p.triggers_plugin(
+            chans, {1: DTriggerConfigReq("er", 0, 0, ["0", "0.5"])}
+        )
+
+        assert trig[1].config.srcchan == 0
+        assert trig[1].config.source_ref is not None
+        assert trig[1].config.source_ref.physical_id() == 0
+        TriggerHandler.cls_cleanup()
+
+
+def test_phandler_triggers_plugin_ignores_same_channel_explicit_source(
+    nxscope,
+) -> None:
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
+
+        chan = p.channel_get(ChannelRef.physical(0))
+        assert chan is not None
+
+        trig = p.triggers_plugin(
+            [chan],
+            {0: DTriggerConfigReq("er", 0, 0, ["0", "0.5"])},
+        )
+
+        assert trig[0].config.srcchan is None
+        assert trig[0].config.source_ref is None
+        TriggerHandler.cls_cleanup()
+
+
+def test_phandler_triggers_plugin_rejects_invalid_source(nxscope) -> None:
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
+        chan = p.channel_get(ChannelRef.physical(0))
+        assert chan is not None
+
+        with pytest.raises(ValueError):
+            p.triggers_plugin(
+                [chan], {0: DTriggerConfigReq("er", 99, 0, ["0", "0.5"])}
+            )
+
+        TriggerHandler.cls_cleanup()
+
+
+def test_phandler_hidden_trigger_source_reuses_existing(nxscope) -> None:
+    with PluginHandler() as p:
+        p.nxscope_connect(nxscope)
+        hidden = p._hidden_trigger_source(9, ChannelRef.physical(0))
+        reused = p._hidden_trigger_source(9, ChannelRef.physical(0))
+
+        assert reused is hidden
+        TriggerHandler.cls_cleanup()
 
 
 def test_mock_provider_non_virtual_paths() -> None:
