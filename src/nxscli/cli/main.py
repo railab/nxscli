@@ -43,17 +43,23 @@ def main(
     control_endpoint: str,
 ) -> bool:
     """Nxscli - Command-line clinet to the NxScope."""
+    click_ctx = click.get_current_context()
+
     ctx.debug = debug
     if debug:  # pragma: no cover
         logger.setLevel("DEBUG")
     else:
         logger.setLevel("INFO")
 
-    ctx.phandler = PluginHandler(plugins_list)
     parse = Parser()
     ctx.parser = parse
     ctx.triggers = {}
     ctx.nxscope_plugins = []
+
+    if click_ctx.invoked_subcommand == "version":
+        return True
+
+    ctx.phandler = PluginHandler(plugins_list)
     if control_server:
         try:
             ctx.nxscope_plugins.append(ControlServerPlugin(control_endpoint))
@@ -61,7 +67,7 @@ def main(
             ctx.phandler.cleanup()
             raise
 
-    click.get_current_context().call_on_close(cli_on_close)
+    click_ctx.call_on_close(cli_on_close)
 
     return True
 
@@ -212,6 +218,11 @@ def cli_on_close(ctx: Environment) -> bool:
 
 def click_final_init() -> None:
     """Handle final Click initialization."""
+    # add standalone commands
+    for cmd in commands_list:
+        if cmd.name == "version":
+            main.add_command(cmd)
+
     # add interfaces
     for intf in interfaces_list:
         main.add_command(intf)
@@ -219,6 +230,8 @@ def click_final_init() -> None:
     # add commands to interfaces
     for group in interfaces_list:
         for cmd in commands_list:
+            if cmd.name == "version":
+                continue
             group.add_command(cmd)
 
 

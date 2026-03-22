@@ -9,6 +9,7 @@ from nxscli.commands.cmd_npmem import cmd_pnpmem
 from nxscli.commands.cmd_npsave import cmd_pnpsave
 from nxscli.commands.cmd_printer import cmd_printer
 from nxscli.commands.cmd_udp import cmd_pudp
+from nxscli.commands.cmd_version import cmd_version
 from nxscli.commands.config.cmd_chan import cmd_chan
 from nxscli.commands.config.cmd_trig import cmd_trig
 from nxscli.commands.config.cmd_vadd import cmd_vadd
@@ -27,4 +28,5 @@ commands_list: list["click.Command"] = [
     cmd_pnone,
     cmd_printer,
     cmd_pudp,
+    cmd_version,
 ]
