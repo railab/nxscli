@@ -49,7 +49,7 @@ def get_list_from_str2(
 ###############################################################################
 
 
-class Channels(click.ParamType):
+class Channels(click.ParamType[list[ChannelRef]]):
     """Parse channels argument."""
 
     name = "channels"
@@ -86,7 +86,7 @@ class Channels(click.ParamType):
 ###############################################################################
 
 
-class Samples(click.ParamType):
+class Samples(click.ParamType[int]):
     """Parse samples argument."""
 
     name = "samples"
@@ -106,7 +106,7 @@ class Samples(click.ParamType):
 ###############################################################################
 
 
-class Trigger(click.ParamType):
+class Trigger(click.ParamType[dict[int, DTriggerConfigReq]]):
     """Parse trigger argument."""
 
     name = "trigger"
@@ -227,7 +227,7 @@ class Trigger(click.ParamType):
 ###############################################################################
 
 
-class Divider(click.ParamType):
+class Divider(click.ParamType[list[int] | int]):
     """Parse divider argument."""
 
     name = "divider"
@@ -255,7 +255,7 @@ class Divider(click.ParamType):
 ###############################################################################
 
 
-class StringList(click.ParamType):
+class StringList(click.ParamType[list[str]]):
     """Parse a string list argument."""
 
     name = "stringlist"
@@ -275,7 +275,7 @@ class StringList(click.ParamType):
 ###############################################################################
 
 
-class StringList2(click.ParamType):  # pragma: no cover
+class StringList2(click.ParamType[list[list[str]]]):  # pragma: no cover
     """Parse a string list argument (2 separators)."""
 
     name = "stringlist2"
