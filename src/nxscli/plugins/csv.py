@@ -76,19 +76,21 @@ class PluginCsv(PluginThread, IPluginFile):
                 if rows <= 0:  # pragma: no cover
                     break
 
-            data_rows = (tuple(row) for row in block_data[:rows])
-            meta_rows: Any
+            out_rows: Any
             if block.meta is None:
-                meta_rows = (() for _ in range(rows))
+                out_rows = (list(row) for row in block_data[:rows])
             elif self._meta_string:
-                meta_rows = (
-                    bytes(np.asarray(mrow, dtype=np.uint8)).decode()
-                    for mrow in block.meta[:rows]
+                out_rows = (
+                    [*row, bytes(np.asarray(mrow, dtype=np.uint8)).decode()]
+                    for row, mrow in zip(block_data[:rows], block.meta[:rows])
                 )
             else:
-                meta_rows = (tuple(mrow) for mrow in block.meta[:rows])
+                out_rows = (
+                    [*row, *mrow]
+                    for row, mrow in zip(block_data[:rows], block.meta[:rows])
+                )
 
-            writer.writerows(zip(data_rows, meta_rows))
+            writer.writerows(out_rows)
             self._datalen[j] += rows
 
     def start(self, kwargs: Any) -> bool:
